@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    nav_header.xml  — Patient profile header in the navigation drawer.
+    Background color is set programmatically (indigo #4F46E5).
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@color/colorDrawerHeaderPatient"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:paddingTop="44dp"
+    android:paddingBottom="20dp">
+
+    <!-- ── Avatar row ───────────────────────────────────────────────────────── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Circle avatar -->
+        <FrameLayout
+            android:layout_width="64dp"
+            android:layout_height="64dp">
+
+            <View
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:background="@drawable/bg_avatar_circle" />
+
+            <TextView
+                android:id="@+id/tvAvatarInitials"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="?"
+                android:textColor="@color/colorDrawerAvatarText"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+        </FrameLayout>
+
+        <!-- Name + role column -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="14dp">
+
+            <TextView
+                android:id="@+id/tvNavName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Name"
+                android:textColor="@color/colorDrawerNameText"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <!-- Role badge -->
+            <TextView
+                android:id="@+id/tvNavRole"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="3dp"
+                android:background="@drawable/bg_role_badge"
+                android:text="Patient"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                android:textAllCaps="true"
+                android:letterSpacing="0.08" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- ── Divider ───────────────────────────────────────────────────────────── -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="12dp"
+        android:background="#33FFFFFF" />
+
+    <!-- ── Info rows ─────────────────────────────────────────────────────────── -->
+
+    <!-- Room number row -->
+    <LinearLayout
+        android:id="@+id/rowRoom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🛏"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tvNavRoom"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="Room —"
+            android:textColor="@color/colorDrawerSubText"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- Status chip row — shows "Listening" / "Idle" -->
+    <LinearLayout
+        android:id="@+id/rowStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="●"
+            android:textSize="10sp"
+            android:textColor="#69F0AE" />
+
+        <TextView
+            android:id="@+id/tvNavStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="Active Session"
+            android:textColor="@color/colorDrawerSubText"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+    <!-- ── Extra / legacy field (kept for compat) ────────────────────────────── -->
+    <TextView
+        android:id="@+id/tvNavExtra"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:text="" />
+
+</LinearLayout>

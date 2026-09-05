@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CareVoice AI</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; background: #f0f4f8; color: #1a202c; min-height: 100vh; }
+
+/* ── Header ── */
+header {
+  background: #1a365d; color: white;
+  padding: 0 24px; height: 56px;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  position: sticky; top: 0; z-index: 100;
+}
+header .title { font-size: 1.1rem; font-weight: 700; }
+#header-user { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: .82rem; }
+.user-pill { background: rgba(255,255,255,.15); border-radius: 20px; padding: 4px 12px; display: flex; align-items: center; gap: 6px; }
+.role-badge { font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; padding: 2px 7px; border-radius: 10px; }
+.role-badge.nurse   { background: #bee3f8; color: #1a365d; }
+.role-badge.patient { background: #c6f6d5; color: #1c4532; }
+.btn-logout { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3); color: white; padding: 5px 13px; border-radius: 6px; font-size: .78rem; font-weight: 600; cursor: pointer; }
+.btn-logout:hover { background: rgba(255,255,255,.25); }
+
+/* ── Shared ── */
+.card { background: white; border-radius: 10px; padding: 20px 22px; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+.card h2 { font-size: .88rem; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #2d3748; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+.pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: .75rem; font-weight: 700; text-transform: uppercase; }
+.pill.ok       { background: #c6f6d5; color: #22543d; }
+.pill.error    { background: #fed7d7; color: #742a2a; }
+.pill.checking { background: #fefcbf; color: #744210; }
+.btn { display: inline-block; padding: 8px 16px; border: none; border-radius: 6px; font-size: .84rem; font-weight: 600; cursor: pointer; transition: opacity .15s; white-space: nowrap; }
+.btn:hover { opacity: .88; } .btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-blue  { background: #3182ce; color: white; }
+.btn-green { background: #38a169; color: white; }
+.btn-sm    { padding: 4px 11px; font-size: .76rem; }
+
+/* ── NURSE ── */
+#nurse-view { display: none; }
+
+/* ── Sidebar shell ── */
+.nv-shell { display: flex; min-height: calc(100vh - 56px); }
+.sidebar { width: 250px; flex-shrink: 0; background: #ffffff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; position: sticky; top: 56px; height: calc(100vh - 56px); }
+.nv-content { flex: 1; padding: 24px 28px; max-width: 900px; overflow-y: auto; }
+@media (max-width: 760px) {
+  .nv-shell { flex-direction: column; }
+  .sidebar { width: 100%; height: auto; position: static; flex-direction: row; overflow-x: auto; }
+}
+
+/* Sidebar profile */
+.sb-profile { padding: 22px 18px 16px; border-bottom: 1px solid #edf2f7; text-align: center; }
+.sb-avatar { width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg,#4299e1,#3182ce); color: white; font-size: 1.3rem; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+.sb-name { font-weight: 700; font-size: .95rem; color: #1a365d; }
+.sb-ward { font-size: .78rem; color: #718096; margin-top: 2px; }
+.sb-conn { margin-top: 10px; font-size: .76rem; color: #4a5568; display: flex; align-items: center; justify-content: center; gap: 6px; }
+#ws-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; background: #fc8181; transition: background .3s; }
+#ws-dot.connected { background: #48bb78; animation: pulse 2s infinite; }
+@keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(72,187,120,.5);} 70%{box-shadow:0 0 0 6px rgba(72,187,120,0);} 100%{box-shadow:0 0 0 0 rgba(72,187,120,0);} }
+
+/* Sidebar nav */
+.sb-nav { padding: 12px 10px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.sb-link { display: flex; align-items: center; gap: 10px; width: 100%; border: none; background: transparent; padding: 10px 12px; border-radius: 8px; font-size: .88rem; font-weight: 600; color: #4a5568; cursor: pointer; text-align: left; transition: background .15s; }
+.sb-link:hover { background: #f7fafc; }
+.sb-link.active { background: #ebf8ff; color: #2b6cb0; }
+.sb-ico { font-size: 1rem; width: 20px; text-align: center; }
+.sb-badge { margin-left: auto; background: #e53e3e; color: white; font-size: .72rem; font-weight: 700; min-width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0 6px; }
+.sb-badge.muted { background: #cbd5e0; color: #2d3748; }
+.sb-badge.zero { display: none; }
+.sb-foot { padding: 14px 18px; font-size: .7rem; color: #a0aec0; border-top: 1px solid #edf2f7; }
+
+/* Panels */
+.panel-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.panel-title { font-size: 1.35rem; font-weight: 800; color: #1a365d; }
+.panel-sub { font-size: .84rem; color: #718096; margin-top: 2px; }
+
+/* Mini stat strip */
+.stat-strip { display: flex; gap: 12px; margin-bottom: 18px; }
+.mini-stat { flex: 1; background: white; border-radius: 10px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,.08); border-left: 4px solid #a0aec0; }
+.mini-stat span { font-size: 1.5rem; font-weight: 800; display: block; }
+.mini-stat label { font-size: .74rem; color: #718096; text-transform: uppercase; letter-spacing: .4px; }
+.mini-stat.crit { border-left-color: #e53e3e; } .mini-stat.crit span { color: #c53030; }
+.mini-stat.urg  { border-left-color: #dd6b20; } .mini-stat.urg span  { color: #c05621; }
+.mini-stat.rout { border-left-color: #38a169; } .mini-stat.rout span { color: #276749; }
+
+/* Overview */
+.ov-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+@media (max-width:700px){ .ov-grid { grid-template-columns: repeat(2,1fr); } }
+.ov-card { background: white; border-radius: 12px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,.08); text-align: center; }
+.ov-num { font-size: 2rem; font-weight: 800; color: #2b6cb0; }
+.ov-num.crit-text { color: #c53030; }
+.ov-lbl { font-size: .78rem; color: #718096; margin-top: 4px; }
+.bytype-row { display:flex; align-items:center; gap:10px; padding:6px 0; font-size:.85rem; }
+.bytype-row .bt-label { width:130px; color:#4a5568; }
+.bytype-row .bt-bar { height:14px; border-radius:7px; background:#4299e1; }
+.bytype-row .bt-count { color:#718096; font-size:.8rem; }
+
+/* Card heads */
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+.card-head h2 { border: none; padding: 0; margin: 0; }
+.head-actions { display: flex; align-items: center; gap: 10px; }
+.chk { display: flex; align-items: center; gap: 5px; font-size: .78rem; color: #4a5568; cursor: pointer; user-select: none; }
+.muted-count { font-size: .76rem; color: #a0aec0; }
+.btn-ghost { background: #edf2f7; color: #2d3748; }
+
+/* Alerts */
+#alert-feed { display: flex; flex-direction: column; gap: 10px; max-height: 460px; overflow-y: auto; }
+#alert-feed:empty::after { content: "\2713  All clear \2014 no pending requests."; color: #a0aec0; font-size: .88rem; display: block; text-align: center; padding: 24px 0; }
+.alert-card { border-radius: 10px; padding: 13px 15px; border-left: 5px solid #a0aec0; background: #f7fafc; font-size: .84rem; animation: slideIn .35s ease; }
+.alert-card.Critical { border-left-color: #e53e3e; background: #fff5f5; }
+.alert-card.Urgent   { border-left-color: #dd6b20; background: #fffaf0; }
+.alert-card.Routine  { border-left-color: #38a169; background: #f0fff4; }
+.alert-card.acked { opacity: .55; }
+@keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+.alert-header { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; flex-wrap: wrap; }
+.ap { font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing:.4px; padding: 3px 9px; border-radius: 20px; }
+.ap.Critical { background: #fed7d7; color: #c53030; }
+.ap.Urgent   { background: #feebc8; color: #c05621; }
+.ap.Routine  { background: #c6f6d5; color: #276749; }
+.ai { font-size: .74rem; color: #4a5568; background: #edf2f7; padding: 3px 9px; border-radius: 20px; font-weight:600; }
+.ar { font-size: .8rem; font-weight: 800; color: #1a365d; margin-left: auto; }
+.at { color: #2d3748; line-height: 1.5; margin-bottom: 9px; font-size:.92rem; }
+.am { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.as, .ats { font-size: .73rem; color: #718096; } .ats { margin-left: auto; color: #a0aec0; }
+.btn-ack { background: #38a169; color:white; padding: 6px 18px; border-radius:6px; font-weight:700; font-size:.8rem; border:none; cursor:pointer; }
+.btn-ack:hover { background:#2f855a; }
+.ackd-label { font-size:.74rem; color:#276749; font-weight:700; background:#c6f6d5; padding:4px 10px; border-radius:20px; }
+
+/* Patients table */
+#patient-table-wrap { overflow-x: auto; }
+#patient-tbody:empty::after { content: "No patients assigned to you."; color: #a0aec0; font-size: .84rem; }
+table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+th { background: #f7fafc; padding: 9px 12px; text-align: left; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing:.4px; color: #718096; }
+td { padding: 10px 12px; border-bottom: 1px solid #edf2f7; color: #2d3748; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f7fafc; }
+.room-tag { background: #ebf8ff; color: #2b6cb0; padding: 3px 10px; border-radius: 20px; font-weight: 700; font-size: .78rem; }
+
+/* ── PATIENT ── */
+#patient-view { display: none; }
+
+/* Sidebar shell (mirrors nurse layout) */
+.pv-shell { display: flex; min-height: calc(100vh - 56px); }
+.pv-content { flex: 1; padding: 32px 28px; max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
+@media (max-width: 760px) {
+  .pv-shell { flex-direction: column; }
+}
+.sb-avatar.pt { background: linear-gradient(135deg,#48bb78,#2f855a); }
+.sb-link.pt.active { background: #f0fff4; color: #276749; }
+.room-pill { background:#ebf8ff; color:#2b6cb0; border-radius:10px; padding:3px 10px; font-size:.8rem; font-weight:700; }
+#pt-conn-dot { width:9px; height:9px; border-radius:50%; display:inline-block; background:#cbd5e0; }
+#pt-conn-dot.on { background:#48bb78; animation: pulse 2s infinite; }
+
+/* Panels */
+.pv-panel { width: 100%; display: flex; flex-direction: column; align-items: center; }
+#ptview-requests, #ptview-info, #ptview-help { align-items: stretch; }
+.pv-greet { font-size: 1.5rem; font-weight: 800; color: #1a365d; text-align: center; }
+.pv-greet-sub { font-size: .9rem; color: #718096; margin: 6px 0 22px; text-align: center; }
+
+/* Info card */
+.info-card { display:flex; flex-direction:column; gap:0; }
+.info-row { display:flex; justify-content:space-between; padding:12px 4px; border-bottom:1px solid #edf2f7; font-size:.9rem; }
+.info-row:last-child { border-bottom:none; }
+.info-k { color:#718096; } .info-v { font-weight:600; color:#2d3748; }
+
+/* Help card */
+.help-card { display:flex; flex-direction:column; gap:16px; }
+.help-step { display:flex; gap:12px; align-items:flex-start; font-size:.9rem; color:#4a5568; line-height:1.5; }
+.help-num { flex-shrink:0; width:26px; height:26px; border-radius:50%; background:#ebf8ff; color:#2b6cb0; font-weight:700; display:flex; align-items:center; justify-content:center; font-size:.85rem; }
+.help-note { margin-top:6px; font-size:.82rem; color:#276749; background:#f0fff4; border-radius:8px; padding:10px 12px; text-align:center; }
+
+/* Mic banner */
+#mic-banner { display: none; background: #fffbeb; border: 1px solid #f6e05e; border-radius: 10px; padding: 14px 16px; font-size: .84rem; color: #744210; width: 100%; text-align: center; line-height: 1.6; }
+#mic-banner strong { display: block; margin-bottom: 4px; font-size: .9rem; }
+#mic-banner button { margin-top: 10px; display: block; width: 100%; background: #d69e2e; color: white; border: none; border-radius: 7px; padding: 10px; font-weight: 700; font-size: .88rem; cursor: pointer; }
+
+/* VAD orb */
+.vad-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+.vad-ring { position: relative; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; }
+.vad-ring::before { content: ''; position: absolute; inset: -10px; border-radius: 50%; border: 3px solid transparent; transition: border-color .4s; }
+.vad-ring.listening::before { border-color: rgba(49,130,206,.35); animation: ring-pulse 2s ease-in-out infinite; }
+.vad-ring.speech::before    { border-color: rgba(39,103,73,.5);   animation: ring-pulse 0.8s ease-in-out infinite; }
+@keyframes ring-pulse { 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(1.08); opacity:.6; } }
+
+.vad-orb {
+  width: 180px; height: 180px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  color: white; font-weight: 700; font-size: .95rem; user-select: none;
+  transition: background .35s, box-shadow .35s;
+  cursor: pointer;
+  /* idle — pulsing blue "Tap to start" */
+  background: linear-gradient(145deg, #4299e1, #2b6cb0);
+  box-shadow: 0 6px 24px rgba(66,153,225,.5);
+  animation: orb-idle 2.5s ease-in-out infinite;
+}
+@keyframes orb-idle {
+  0%,100% { box-shadow: 0 6px 24px rgba(66,153,225,.5); }
+  50%      { box-shadow: 0 6px 40px rgba(66,153,225,.85), 0 0 0 14px rgba(66,153,225,.12); }
+}
+.vad-orb.started  { cursor: default; animation: none; background: linear-gradient(145deg, #3182ce, #2b6cb0); box-shadow: 0 8px 28px rgba(49,130,206,.45); }
+.vad-orb.speech   { cursor: default; animation: orb-breathe .9s ease-in-out infinite; background: linear-gradient(145deg, #2f855a, #276749); box-shadow: 0 8px 36px rgba(39,103,73,.55); }
+.vad-orb.sending  { cursor: default; animation: none; background: linear-gradient(145deg, #c05621, #dd6b20); box-shadow: 0 8px 28px rgba(192,86,33,.5); }
+.vad-orb.sent     { cursor: default; animation: none; background: linear-gradient(145deg, #276749, #38a169); box-shadow: 0 8px 28px rgba(56,161,105,.5); }
+.vad-orb.error    { cursor: pointer; animation: none; background: linear-gradient(145deg, #c53030, #e53e3e); box-shadow: 0 8px 24px rgba(197,48,48,.4); }
+.vad-orb.muted    { cursor: default; animation: none; background: linear-gradient(145deg, #4a5568, #2d3748); box-shadow: 0 6px 20px rgba(45,55,72,.4); }
+@keyframes orb-breathe { 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.05); } }
+
+/* Wave bars (CSS-shown only when speech class is active) */
+.wave-bars { display: none; align-items: flex-end; gap: 3px; height: 28px; }
+.vad-orb.speech .wave-bars     { display: flex; }
+.vad-orb.speech .vad-orb-label { display: none; }
+.wave-bar { width: 5px; border-radius: 3px; background: rgba(255,255,255,.85); animation: wave-anim .6s ease-in-out infinite; }
+.wave-bar:nth-child(1){ height:10px; animation-delay:0s; }
+.wave-bar:nth-child(2){ height:22px; animation-delay:.1s; }
+.wave-bar:nth-child(3){ height:16px; animation-delay:.05s; }
+.wave-bar:nth-child(4){ height:26px; animation-delay:.15s; }
+.wave-bar:nth-child(5){ height:12px; animation-delay:.08s; }
+@keyframes wave-anim { 0%,100%{ transform:scaleY(1); } 50%{ transform:scaleY(1.6); } }
+
+#patient-status { font-size: .9rem; font-weight: 600; color: #4a5568; text-align: center; min-height: 22px; }
+.amp-track { width: 200px; height: 5px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+.amp-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #3182ce, #63b3ed); border-radius: 3px; transition: width 60ms linear; }
+
+#mute-btn { border: none; border-radius: 8px; padding: 9px 24px; font-size: .85rem; font-weight: 700; cursor: pointer; transition: background .15s; display: none; }
+#mute-btn.muted  { background: #fed7d7; color: #c53030; }
+#mute-btn.active { background: #e2e8f0; color: #4a5568; }
+
+.sends-card { background: white; border-radius: 12px; padding: 14px 16px; width: 100%; box-shadow: 0 1px 6px rgba(0,0,0,.08); }
+.sends-card h3 { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #718096; margin-bottom: 9px; }
+#sends-list { display: flex; flex-direction: column; gap: 5px; }
+#sends-list:empty::after { content: "No requests sent this session."; font-size: .79rem; color: #a0aec0; }
+.send-item { display: flex; align-items: center; gap: 8px; font-size: .79rem; padding: 5px 8px; background: #f7fafc; border-radius: 7px; }
+.send-item .si-p { font-weight: 700; }
+.si-p.Critical { color: #c53030; } .si-p.Urgent { color: #c05621; } .si-p.Routine { color: #276749; }
+.send-item .si-t { color: #718096; font-size: .73rem; margin-left: auto; }
+</style>
+</head>
+<body>
+
+<header>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+    <line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/>
+  </svg>
+  <div class="title">CareVoice AI</div>
+  <div id="header-user">
+    <div class="user-pill">
+      <span id="hdr-name">…</span>
+      <span class="role-badge" id="hdr-role-badge"></span>
+    </div>
+    <button class="btn-logout" onclick="logout()">Log out</button>
+  </div>
+</header>
+
+<!-- ══ NURSE DASHBOARD ══════════════════════════════════════════════════ -->
+<div id="nurse-view">
+<div class="nv-shell">
+
+  <!-- ══ LEFT SIDEBAR ═══════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <!-- Profile block -->
+    <div class="sb-profile">
+      <div class="sb-avatar" id="sb-avatar">N</div>
+      <div class="sb-name" id="sb-name">Nurse</div>
+      <div class="sb-ward" id="sb-ward">—</div>
+      <div class="sb-conn">
+        <span id="ws-dot"></span>
+        <span id="ws-status-text">Disconnected</span>
+      </div>
+      <button class="btn btn-sm btn-ghost" id="ws-btn" onclick="toggleWs()" style="margin-top:8px;width:100%">Connect</button>
+    </div>
+
+    <!-- Nav -->
+    <nav class="sb-nav">
+      <button class="sb-link active" data-view="requests" onclick="showView('requests')">
+        <span class="sb-ico">🔔</span> Requests
+        <span class="sb-badge" id="nav-pending">0</span>
+      </button>
+      <button class="sb-link" data-view="acknowledged" onclick="showView('acknowledged')">
+        <span class="sb-ico">✓</span> Acknowledged
+      </button>
+      <button class="sb-link" data-view="patients" onclick="showView('patients')">
+        <span class="sb-ico">🛏</span> My Patients
+        <span class="sb-badge muted" id="nav-patients">0</span>
+      </button>
+      <button class="sb-link" data-view="stats" onclick="showView('stats')">
+        <span class="sb-ico">📊</span> Overview
+      </button>
+    </nav>
+
+    <div class="sb-foot">CareVoice AI · Nurse Station</div>
+  </aside>
+
+  <!-- ══ MAIN CONTENT ═══════════════════════════════════════════ -->
+  <div class="nv-content">
+
+    <!-- ── Requests (pending) ── -->
+    <section class="nv-panel" id="view-requests">
+      <div class="panel-head">
+        <div>
+          <h1 class="panel-title">Incoming Requests</h1>
+          <p class="panel-sub" id="req-sub">Live patient requests awaiting your attention</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="fetchAlerts()">↻ Refresh</button>
+      </div>
+      <div class="stat-strip">
+        <div class="mini-stat crit"><span id="cnt-crit">0</span><label>Critical</label></div>
+        <div class="mini-stat urg"><span id="cnt-urg">0</span><label>Urgent</label></div>
+        <div class="mini-stat rout"><span id="cnt-rout">0</span><label>Routine</label></div>
+      </div>
+      <div id="alert-feed"></div>
+    </section>
+
+    <!-- ── Acknowledged ── -->
+    <section class="nv-panel" id="view-acknowledged" style="display:none">
+      <div class="panel-head">
+        <div>
+          <h1 class="panel-title">Acknowledged</h1>
+          <p class="panel-sub">Requests you've already attended to</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="fetchAcked()">↻ Refresh</button>
+      </div>
+      <div id="acked-feed"></div>
+    </section>
+
+    <!-- ── My Patients ── -->
+    <section class="nv-panel" id="view-patients" style="display:none">
+      <div class="panel-head">
+        <div>
+          <h1 class="panel-title">My Patients</h1>
+          <p class="panel-sub" id="pat-sub">Patients assigned to you</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="fetchPatients()">↻ Refresh</button>
+      </div>
+      <div class="card" style="padding:0">
+        <div id="patient-table-wrap">
+          <table>
+            <thead><tr><th>Room</th><th>Patient</th><th>Age</th><th>Diagnosis</th></tr></thead>
+            <tbody id="patient-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Overview / stats ── -->
+    <section class="nv-panel" id="view-stats" style="display:none">
+      <div class="panel-head">
+        <div>
+          <h1 class="panel-title">Overview</h1>
+          <p class="panel-sub">Your shift at a glance</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="refreshStats()">↻ Refresh</button>
+      </div>
+      <div class="ov-grid">
+        <div class="ov-card"><div class="ov-num" id="ov-pending">0</div><div class="ov-lbl">Pending requests</div></div>
+        <div class="ov-card"><div class="ov-num" id="ov-acked">0</div><div class="ov-lbl">Acknowledged today</div></div>
+        <div class="ov-card"><div class="ov-num" id="ov-patients">0</div><div class="ov-lbl">My patients</div></div>
+        <div class="ov-card"><div class="ov-num crit-text" id="ov-crit">0</div><div class="ov-lbl">Critical pending</div></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-head"><h2>Requests by type</h2></div>
+        <div id="ov-bytype"></div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</div>
+
+<!-- ══ PATIENT VIEW ═════════════════════════════════════════════════════ -->
+<div id="patient-view">
+<div class="pv-shell">
+
+  <!-- ══ LEFT SIDEBAR ═══════════════════════════════════════════ -->
+  <aside class="sidebar" id="pt-sidebar">
+    <div class="sb-profile">
+      <div class="sb-avatar pt" id="pt-avatar">P</div>
+      <div class="sb-name" id="pt-name">Patient</div>
+      <div class="sb-ward"><span class="room-pill">Room <span id="pt-room">—</span></span></div>
+      <div class="sb-conn">
+        <span id="pt-conn-dot"></span>
+        <span id="pt-conn-text">Not listening</span>
+      </div>
+    </div>
+
+    <nav class="sb-nav">
+      <button class="sb-link pt active" data-view="call" onclick="showPtView('call')">
+        <span class="sb-ico">🎙</span> Call Nurse
+      </button>
+      <button class="sb-link pt" data-view="requests" onclick="showPtView('requests')">
+        <span class="sb-ico">📋</span> My Requests
+        <span class="sb-badge muted" id="pt-nav-count">0</span>
+      </button>
+      <button class="sb-link pt" data-view="info" onclick="showPtView('info')">
+        <span class="sb-ico">ℹ️</span> My Info
+      </button>
+      <button class="sb-link pt" data-view="help" onclick="showPtView('help')">
+        <span class="sb-ico">❓</span> How it works
+      </button>
+    </nav>
+
+    <div class="sb-foot">CareVoice AI · Patient</div>
+  </aside>
+
+  <!-- ══ MAIN CONTENT ═══════════════════════════════════════════ -->
+  <div class="pv-content">
+
+    <!-- ── Call Nurse (the orb) ── -->
+    <section class="pv-panel" id="ptview-call">
+      <div class="pv-greet">Hello, <span id="pt-greet-name">there</span> 👋</div>
+      <p class="pv-greet-sub">Speak naturally — I'm listening for when you need help.</p>
+
+      <div id="mic-banner">
+        <strong>Microphone access required</strong>
+        CareVoice AI needs your microphone to listen. No audio leaves the hospital network.
+        <button onclick="startListening()">Allow microphone &amp; start</button>
+      </div>
+
+      <div class="vad-wrap">
+        <div class="vad-ring" id="vad-ring">
+          <div class="vad-orb" id="vad-orb" onclick="handleOrbClick()">
+            <div class="wave-bars">
+              <div class="wave-bar"></div><div class="wave-bar"></div>
+              <div class="wave-bar"></div><div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+            </div>
+            <span class="vad-orb-label" id="orb-label">Tap to start</span>
+          </div>
+        </div>
+        <div class="amp-track"><div class="amp-bar" id="amp-bar"></div></div>
+        <div id="patient-status">Tap the circle to enable your microphone</div>
+        <button id="mute-btn" class="active" onclick="toggleMute()">🔇 Mute mic</button>
+      </div>
+    </section>
+
+    <!-- ── My Requests (sends this session) ── -->
+    <section class="pv-panel" id="ptview-requests" style="display:none">
+      <div class="pv-greet">My Requests</div>
+      <p class="pv-greet-sub">Requests sent to your nurse this session.</p>
+      <div class="card"><div id="sends-list"></div></div>
+    </section>
+
+    <!-- ── My Info ── -->
+    <section class="pv-panel" id="ptview-info" style="display:none">
+      <div class="pv-greet">My Information</div>
+      <p class="pv-greet-sub">Your admission details.</p>
+      <div class="card info-card">
+        <div class="info-row"><span class="info-k">Name</span><span class="info-v" id="pt-info-name">—</span></div>
+        <div class="info-row"><span class="info-k">Room</span><span class="info-v" id="pt-info-room">—</span></div>
+        <div class="info-row"><span class="info-k">Diagnosis</span><span class="info-v" id="pt-diagnosis">—</span></div>
+        <div class="info-row"><span class="info-k">Attending nurse</span><span class="info-v" id="pt-attending">—</span></div>
+      </div>
+    </section>
+
+    <!-- ── How it works ── -->
+    <section class="pv-panel" id="ptview-help" style="display:none">
+      <div class="pv-greet">How it works</div>
+      <p class="pv-greet-sub">CareVoice AI listens and alerts your nurse automatically.</p>
+      <div class="card help-card">
+        <div class="help-step"><span class="help-num">1</span><div><b>Tap the circle</b> once to start listening. You only need to do this at the beginning.</div></div>
+        <div class="help-step"><span class="help-num">2</span><div><b>Just speak</b> when you need something — say what you need in English, हिंदी, or ಕನ್ನಡ.</div></div>
+        <div class="help-step"><span class="help-num">3</span><div><b>Your nurse is alerted</b> instantly with what you need and how urgent it is.</div></div>
+        <div class="help-step"><span class="help-num">4</span><div><b>Emergencies</b> like "I can't breathe" are marked Critical and reach your nurse immediately.</div></div>
+        <div class="help-note">🔒 Your voice never leaves the hospital network.</div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</div>
+
+<script>
+'use strict';
+
+/* ── Auth ── */
+const token    = localStorage.getItem('cv_token');
+const role     = localStorage.getItem('cv_role');
+const fullName = localStorage.getItem('cv_full_name');
+const room     = localStorage.getItem('cv_room') || '';
+const BASE     = window.location.origin;
+
+// WebSocket state — declared up-front so initNurseDashboard() (called during
+// top-level execution) can assign wsWant without hitting a temporal-dead-zone error.
+let ws = null;
+let wsWant = false;
+let wsReconnectT = null;
+
+if (!token || !role) { window.location.href = '/login'; throw 0; }
+
+function authHeaders(extra) { return { 'Authorization': `Bearer ${token}`, ...extra }; }
+
+document.getElementById('hdr-name').textContent = fullName || '—';
+const badge = document.getElementById('hdr-role-badge');
+badge.textContent = role; badge.className = `role-badge ${role}`;
+
+if (role === 'nurse') {
+  document.getElementById('nurse-view').style.display = 'block';
+  document.title = 'CareVoice AI — Nurse Dashboard';
+  initNurseDashboard();
+} else {
+  document.getElementById('patient-view').style.display = 'block';
+  document.title = 'CareVoice AI — Patient';
+  initPatientView();
+}
+
+function logout() { localStorage.clear(); window.location.href = '/login'; }
+
+/* ══════════════════════════════════════════════════════════════════
+   NURSE DASHBOARD
+══════════════════════════════════════════════════════════════════ */
+// Single source of truth for alerts in this nurse's rooms.
+let alertStore = [];   // array of alert objects (pending + acked), newest first
+
+function initNurseDashboard() {
+  // Sidebar profile
+  const initials = (fullName||'N').split(' ').filter(Boolean).slice(0,2).map(s=>s[0].toUpperCase()).join('');
+  document.getElementById('sb-avatar').textContent = initials || 'N';
+  document.getElementById('sb-name').textContent = fullName || 'Nurse';
+  document.getElementById('sb-ward').textContent = (localStorage.getItem('cv_ward')||'').trim() || 'On duty';
+
+  fetchPatients().then(() => loadAllAlerts()).catch(e => console.error(e));
+  wsWant = true;
+  connectWs();
+}
+
+function showView(view) {
+  document.querySelectorAll('.nv-panel').forEach(p => p.style.display = 'none');
+  document.getElementById(`view-${view}`).style.display = 'block';
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.toggle('active', l.dataset.view===view));
+  if (view === 'acknowledged') renderAcked();
+  if (view === 'stats') refreshStats();
+  if (view === 'patients') fetchPatients();
+}
+
+// Cache of the room numbers assigned to this nurse
+let _myRooms = null;
+async function myRooms() {
+  if (_myRooms) return _myRooms;
+  try {
+    const rows = await fetch(`${BASE}/auth/patients`, { headers: authHeaders() }).then(r=>r.json());
+    _myRooms = new Set((rows||[]).map(p => p.room_number));
+  } catch { _myRooms = new Set(); }
+  return _myRooms;
+}
+
+async function fetchPatients() {
+  try {
+    const r = await fetch(`${BASE}/auth/patients`, { headers: authHeaders() });
+    if (!r.ok) return;
+    const rows = await r.json();
+    const tbody = document.getElementById('patient-tbody');
+    tbody.innerHTML = '';
+    rows.forEach(p => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><span class="room-tag">${esc(p.room_number)}</span></td><td>${esc(p.full_name)}</td><td>${p.age??'—'}</td><td>${esc(p.diagnosis??'—')}</td>`;
+      tbody.appendChild(tr);
+    });
+    document.getElementById('pat-sub').textContent = `${rows.length} patient${rows.length!==1?'s':''} assigned to you`;
+    setBadge('nav-patients', rows.length, true);
+  } catch(e) { console.error(e); }
+}
+
+// Load ALL alerts (pending + acked) for this nurse's rooms into alertStore.
+async function fetchAlerts() { return loadAllAlerts(); }
+async function loadAllAlerts() {
+  try {
+    const rooms = await myRooms();
+    const d = await fetch(`${BASE}/alerts/latest?limit=100&unacked_only=false`, { headers: authHeaders() }).then(r=>r.json());
+    alertStore = (d.alerts||[]).filter(a => rooms.size===0 || rooms.has(a.room_id));
+    renderRequests();
+    renderAcked();
+    updateCounts();
+  } catch(e) { console.error(e); }
+}
+
+// Render the pending (unacknowledged) list.
+function renderRequests() {
+  const feed = document.getElementById('alert-feed');
+  feed.innerHTML = '';
+  const pending = alertStore.filter(a => !a.acknowledged);
+  pending.forEach(a => feed.appendChild(buildAlertCard(a)));
+  updateCounts();
+}
+
+// Render the acknowledged list.
+function renderAcked() {
+  const feed = document.getElementById('acked-feed');
+  if (!feed) return;
+  feed.innerHTML = '';
+  const acked = alertStore.filter(a => a.acknowledged);
+  if (acked.length === 0) { feed.innerHTML = '<p style="color:#a0aec0;text-align:center;padding:24px">Nothing acknowledged yet.</p>'; return; }
+  acked.forEach(a => feed.appendChild(buildAlertCard(a)));
+}
+
+// Recompute every counter from alertStore (single source of truth — no stale counts).
+function updateCounts() {
+  const pending = alertStore.filter(a => !a.acknowledged);
+  const crit = pending.filter(a => a.priority==='Critical').length;
+  const urg  = pending.filter(a => a.priority==='Urgent').length;
+  const rout = pending.filter(a => a.priority==='Routine').length;
+  document.getElementById('cnt-crit').textContent = crit;
+  document.getElementById('cnt-urg').textContent  = urg;
+  document.getElementById('cnt-rout').textContent = rout;
+  document.getElementById('req-sub').textContent =
+    pending.length>0 ? `${pending.length} request${pending.length!==1?'s':''} awaiting your attention` : 'All clear — no pending requests';
+  setBadge('nav-pending', pending.length, false);
+}
+
+function setBadge(id, n, muted) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = n;
+  el.className = 'sb-badge' + (muted?' muted':'') + (n===0?' zero':'');
+}
+
+// Called by WS + poll — insert/replace an alert in the store, re-render.
+async function prependAlert(a, pre=true) {
+  if (pre) {
+    const rooms = await myRooms();
+    if (rooms.size>0 && !rooms.has(a.room_id)) return;
+  }
+  const idx = alertStore.findIndex(x => x.id === a.id);
+  if (idx >= 0) alertStore[idx] = { ...alertStore[idx], ...a };
+  else alertStore.unshift(a);
+  renderRequests();
+  renderAcked();
+}
+
+function buildAlertCard(a) {
+  const div = document.createElement('div');
+  div.className = `alert-card ${a.priority}${a.acknowledged?' acked':''}`; div.id = `alert-${a.id}`;
+  const t = a.created_at ? new Date(a.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—';
+  const action = a.acknowledged
+    ? `<span class="ackd-label">✓ Attended${a.ack_by?` · ${esc(a.ack_by)}`:''}</span>`
+    : `<button class="btn-ack" onclick="ackAlert(${a.id},this)">Acknowledge</button>`;
+  div.innerHTML = `
+    <div class="alert-header"><span class="ap ${a.priority}">${a.priority}</span><span class="ai">${esc(a.intent)}</span><span class="ar">Room ${esc(a.room_id)}</span></div>
+    <div class="at">${esc(a.transcript)}</div>
+    <div class="am">
+      ${action}
+      <span class="ats">${t}</span>
+    </div>`;
+  return div;
+}
+
+async function ackAlert(id, btn) {
+  btn.disabled = true; btn.textContent = 'Acknowledging…';
+  try {
+    const r = await fetch(`${BASE}/alerts/${id}/ack`, { method:'POST', headers: authHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ack_by: fullName||'Nurse'}) });
+    if (r.ok) {
+      // Update the single source of truth — counters recompute from this.
+      const idx = alertStore.findIndex(a => a.id === id);
+      if (idx >= 0) { alertStore[idx].acknowledged = true; alertStore[idx].ack_by = fullName||'Nurse'; }
+      renderRequests();   // removes it from pending + recomputes all counts
+      renderAcked();      // adds it to the acknowledged view
+    } else {
+      const e = await r.json(); btn.disabled=false; btn.textContent='Acknowledge';
+      alert(`Could not acknowledge: ${e.detail||'error'}`);
+    }
+  } catch { btn.disabled=false; btn.textContent='Acknowledge'; }
+}
+
+/* Sidebar-view helpers */
+function fetchAcked() { loadAllAlerts(); }
+
+async function refreshStats() {
+  const rooms = await myRooms();
+  const pending = alertStore.filter(a => !a.acknowledged);
+  const acked   = alertStore.filter(a => a.acknowledged);
+  document.getElementById('ov-pending').textContent  = pending.length;
+  document.getElementById('ov-acked').textContent    = acked.length;
+  document.getElementById('ov-patients').textContent = rooms.size;
+  document.getElementById('ov-crit').textContent     = pending.filter(a=>a.priority==='Critical').length;
+
+  // Requests by intent (bar chart from alertStore)
+  const byType = {};
+  alertStore.forEach(a => { byType[a.intent] = (byType[a.intent]||0)+1; });
+  const max = Math.max(1, ...Object.values(byType));
+  const wrap = document.getElementById('ov-bytype');
+  wrap.innerHTML = '';
+  const entries = Object.entries(byType).sort((a,b)=>b[1]-a[1]);
+  if (entries.length === 0) { wrap.innerHTML = '<p style="color:#a0aec0;padding:8px 0">No requests yet.</p>'; return; }
+  entries.forEach(([intent, n]) => {
+    const row = document.createElement('div'); row.className = 'bytype-row';
+    row.innerHTML = `<span class="bt-label">${esc(intent)}</span><div class="bt-bar" style="width:${Math.round(n/max*100)}%"></div><span class="bt-count">${n}</span>`;
+    wrap.appendChild(row);
+  });
+}
+
+/* WebSocket — manual connect/disconnect + auto-reconnect while active.
+   State vars (ws / wsWant / wsReconnectT) are declared near the top. */
+function toggleWs() {
+  if (wsWant) { wsWant = false; if (ws) { try { ws.close(); } catch(_){} } setWsUI('off'); }
+  else        { wsWant = true;  connectWs(); }
+}
+
+function connectWs() {
+  if (!wsWant) return;
+  clearTimeout(wsReconnectT);
+  setWsUI('connecting');
+  try {
+    const url = `${BASE.replace(/^http/,'ws')}/ws/nurse?nurse_id=${encodeURIComponent(fullName||'Nurse')}`;
+    ws = new WebSocket(url);
+  } catch (e) {
+    setWsUI('off'); return;
+  }
+  ws.onopen = () => setWsUI('on');
+  ws.onmessage = e => {
+    if (e.data === 'ping') { try { ws.send('pong'); } catch(_){} return; }
+    try {
+      const p = JSON.parse(e.data);
+      if (p.event === 'new_alert') prependAlert({ ...p, id: p.alert_id, acknowledged: false });
+    } catch(_) {}
+  };
+  ws.onerror = () => { /* onclose will handle UI + retry */ };
+  ws.onclose = () => {
+    if (wsWant) { setWsUI('connecting'); wsReconnectT = setTimeout(connectWs, 3000); }
+    else        { setWsUI('off'); }
+  };
+}
+
+function setWsUI(state) {
+  const dot = document.getElementById('ws-dot');
+  const txt = document.getElementById('ws-status-text');
+  const btn = document.getElementById('ws-btn');
+  if (state === 'on') {
+    dot.className = 'connected'; txt.textContent = 'Live — receiving requests'; btn.textContent = 'Disconnect';
+  } else if (state === 'connecting') {
+    dot.className = ''; txt.textContent = 'Connecting…'; btn.textContent = 'Disconnect';
+  } else {
+    dot.className = ''; txt.textContent = 'Disconnected'; btn.textContent = 'Connect';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   PATIENT VIEW
+   ─────────────────────────────────────────────────────────────────
+   IMPORTANT: getUserMedia() MUST be called from a direct user click.
+   Browsers (Chrome/Edge/Firefox) block it when called automatically
+   on page load or from async callbacks not triggered by a click.
+   So we show a pulsing "Tap to start" orb first, and only call
+   getUserMedia inside handleOrbClick() which IS a click handler.
+══════════════════════════════════════════════════════════════════ */
+let ptAudioCtx  = null;
+let ptStream    = null;
+let ptProcessor = null;
+let ptWs        = null;
+let ptMuted     = false;
+let ptRoomId    = '';
+let ptStarted   = false;
+
+async function initPatientView() {
+  // Sidebar profile
+  const nm = fullName || 'Patient';
+  const initials = nm.split(' ').filter(Boolean).slice(0,2).map(s=>s[0].toUpperCase()).join('');
+  document.getElementById('pt-avatar').textContent = initials || 'P';
+  document.getElementById('pt-name').textContent = nm;
+  document.getElementById('pt-greet-name').textContent = nm.split(' ')[0] || 'there';
+  document.getElementById('pt-info-name').textContent = nm;
+
+  ptRoomId = (room && room !== '—') ? room : '';
+  document.getElementById('pt-room').textContent = ptRoomId || '—';
+  document.getElementById('pt-info-room').textContent = ptRoomId || '—';
+
+  // Authoritative room/diagnosis/attending from the server
+  try {
+    const r = await fetch(`${BASE}/auth/me`, { headers: authHeaders() });
+    if (r.ok) {
+      const d = await r.json();
+      if (d.diagnosis) document.getElementById('pt-diagnosis').textContent = d.diagnosis;
+      if (d.attending) document.getElementById('pt-attending').textContent = d.attending;
+      if (d.room_number) {
+        ptRoomId = d.room_number;
+        document.getElementById('pt-room').textContent = ptRoomId;
+        document.getElementById('pt-info-room').textContent = ptRoomId;
+        localStorage.setItem('cv_room', ptRoomId);
+      }
+    }
+  } catch(_) {}
+
+  // Leave orb in "Tap to start" state — getUserMedia must come from a click.
+  setOrb('', 'Tap to start');
+  setStatus('Tap the circle to enable your microphone');
+}
+
+/* Patient sidebar view switching */
+function showPtView(view) {
+  document.querySelectorAll('.pv-panel').forEach(p => p.style.display = 'none');
+  document.getElementById(`ptview-${view}`).style.display = 'flex';
+  document.querySelectorAll('.sb-link.pt').forEach(l => l.classList.toggle('active', l.dataset.view===view));
+}
+
+/* Update the sidebar connection indicator */
+function setPtConn(on, label) {
+  const dot = document.getElementById('pt-conn-dot');
+  const txt = document.getElementById('pt-conn-text');
+  if (dot) dot.className = on ? 'on' : '';
+  if (txt) txt.textContent = label;
+}
+
+// ── Called by the orb's onclick AND the mic-banner button ──────────────────
+async function handleOrbClick() {
+  if (ptStarted) return;  // already running
+  await startListening();
+}
+
+async function startListening() {
+  if (ptStarted) return;
+  ptStarted = true;
+
+  if (!ptRoomId) {
+    setOrb('error', 'No room');
+    setStatus('Room number not found — please log out and log back in.');
+    ptStarted = false;
+    return;
+  }
+
+  document.getElementById('mic-banner').style.display = 'none';
+  setOrb('started', 'Allow mic…');
+  setStatus('Please click "Allow" when your browser asks for microphone access…');
+
+  // ── getUserMedia called DIRECTLY from click handler — browser will prompt ──
+  try {
+    ptStream = await navigator.mediaDevices.getUserMedia({
+      audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+    });
+  } catch(err) {
+    ptStarted = false;
+    console.error('getUserMedia:', err.name, err.message);
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      setOrb('error', 'Mic blocked');
+      setStatus('Microphone blocked. Click the 🔒 icon in the address bar → set Microphone to Allow → refresh.');
+      document.getElementById('mic-banner').style.display = 'block';
+    } else if (err.name === 'NotFoundError') {
+      setOrb('error', 'No mic found');
+      setStatus('No microphone detected. Please connect one and tap again.');
+    } else {
+      setOrb('error', 'Mic error');
+      setStatus(`Mic error (${err.name}). Tap to retry.`);
+    }
+    return;
+  }
+
+  // Mic granted — show mute button
+  document.getElementById('mute-btn').style.display = 'inline-block';
+
+  // ── Now open the WebSocket ─────────────────────────────────────────────────
+  connectPatientWs();
+}
+
+function connectPatientWs() {
+  setOrb('started', 'Connecting…');
+  setStatus('Connecting to server…');
+
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const url   = `${proto}://${location.host}/ws/patient?token=${encodeURIComponent(token)}&room_id=${encodeURIComponent(ptRoomId)}`;
+
+  if (ptWs && ptWs.readyState < 2) { ptWs.onclose = null; ptWs.close(); }
+
+  ptWs = new WebSocket(url);
+  ptWs.binaryType = 'arraybuffer';
+
+  ptWs.onopen = () => {
+    // Build AudioContext + ScriptProcessor only after WS is open
+    if (!ptAudioCtx || ptAudioCtx.state === 'closed') ptAudioCtx = new AudioContext({ sampleRate: 16000 });
+    if (ptAudioCtx.state === 'suspended') ptAudioCtx.resume();
+
+    const src = ptAudioCtx.createMediaStreamSource(ptStream);
+    if (ptProcessor) { try { ptProcessor.disconnect(); } catch(_){} }
+
+    // 512 samples = 32 ms @ 16 kHz — Silero VAD's native window size
+    ptProcessor = ptAudioCtx.createScriptProcessor(512, 1, 1);
+    ptProcessor.onaudioprocess = e => {
+      if (ptMuted || ptWs.readyState !== WebSocket.OPEN) return;
+      const s = e.inputBuffer.getChannelData(0);
+      // Amplitude bar
+      let sq = 0; for (let i=0; i<s.length; i++) sq += s[i]*s[i];
+      document.getElementById('amp-bar').style.width = `${Math.min(Math.sqrt(sq/s.length)*500, 100)}%`;
+      // Serialise as 512 × float32 LE = 2048 bytes
+      const buf = new ArrayBuffer(2048); const v = new DataView(buf);
+      for (let i=0; i<512; i++) v.setFloat32(i*4, s[i], true);
+      ptWs.send(buf);
+    };
+
+    src.connect(ptProcessor);
+    ptProcessor.connect(ptAudioCtx.destination);
+    setOrb('started', 'Listening');
+    setStatus('Listening… just speak — no button needed');
+    setPtConn(true, 'Listening');
+  };
+
+  ptWs.onmessage = e => {
+    if (typeof e.data !== 'string') return;
+    if (e.data === 'ping') { ptWs.send('pong'); return; }
+    try { handlePtEvent(JSON.parse(e.data)); } catch(_) {}
+  };
+
+  ptWs.onerror = err => {
+    console.error('Patient WS error', err);
+    setOrb('error', 'WS error');
+    setStatus('Connection error. Retrying in 4s…');
+  };
+
+  ptWs.onclose = evt => {
+    if (ptProcessor) { try { ptProcessor.disconnect(); } catch(_){} ptProcessor = null; }
+    document.getElementById('amp-bar').style.width = '0';
+    setPtConn(false, 'Reconnecting…');
+    if (evt.code === 1000 || evt.code === 1001) return;
+    console.warn('WS closed', evt.code, evt.reason);
+    setOrb('error', 'Disconnected');
+    setStatus(`Disconnected (${evt.code}). Retrying in 4s…`);
+    setTimeout(connectPatientWs, 4000);
+  };
+}
+
+function handlePtEvent(evt) {
+  switch (evt.event) {
+    case 'connected':
+      setOrb('started', 'Listening');
+      setStatus('Listening… just speak — no button needed');
+      break;
+    case 'speech_detected':
+      setOrb('speech', 'Speaking…');
+      setStatus('Speech detected — notifying your nurse…');
+      break;
+    case 'alert_sent':
+      setOrb('sent', 'Sent ✓');
+      setStatus('Your nurse has been notified ✓');
+      addSendItem(evt);
+      setTimeout(() => { if (!ptMuted) { setOrb('started','Listening'); setStatus('Listening… just speak — no button needed'); } }, 2500);
+      break;
+    case 'error':
+      setOrb('error', 'Error');
+      setStatus(evt.message || 'Processing error — please speak again.');
+      setTimeout(() => { if (!ptMuted) { setOrb('started','Listening'); setStatus('Listening… just speak — no button needed'); } }, 3000);
+      break;
+    case 'stopped':
+      setOrb('muted', 'Muted');
+      setStatus('Muted. Tap Unmute to resume.');
+      break;
+    case 'listening':
+      setOrb('started', 'Listening');
+      setStatus('Listening… just speak — no button needed');
+      break;
+  }
+}
+
+function toggleMute() {
+  ptMuted = !ptMuted;
+  const btn = document.getElementById('mute-btn');
+  if (ptMuted) {
+    btn.textContent = '🎤 Unmute mic'; btn.className = 'muted';
+    document.getElementById('amp-bar').style.width = '0';
+    setOrb('muted', 'Muted'); setStatus('Muted. Tap Unmute to resume.');
+    if (ptWs && ptWs.readyState === WebSocket.OPEN) ptWs.send('stop');
+  } else {
+    btn.textContent = '🔇 Mute mic'; btn.className = 'active';
+    setOrb('started', 'Listening'); setStatus('Listening… just speak — no button needed');
+    if (ptWs && ptWs.readyState === WebSocket.OPEN) ptWs.send('start');
+  }
+}
+
+function setOrb(cls, label) {
+  document.getElementById('vad-orb').className  = `vad-orb ${cls}`.trim();
+  document.getElementById('vad-ring').className = `vad-ring ${cls.includes('speech') ? 'speech' : cls.includes('started') || cls.includes('listening') ? 'listening' : ''}`.trim();
+  document.getElementById('orb-label').textContent = label;
+}
+function setStatus(msg) { document.getElementById('patient-status').textContent = msg; }
+
+function addSendItem(data) {
+  const d = document.createElement('div'); d.className = 'send-item';
+  d.innerHTML = `<span class="si-p ${data.priority||''}">${esc(data.priority||'—')}</span><span>${esc(data.intent||'—')}</span><span class="si-t">${new Date().toLocaleTimeString()}</span>`;
+  document.getElementById('sends-list').prepend(d);
+  // Bump the "My Requests" sidebar count badge.
+  const badge = document.getElementById('pt-nav-count');
+  if (badge) {
+    const n = document.getElementById('sends-list').children.length;
+    badge.textContent = n;
+    badge.className = 'sb-badge muted' + (n===0 ? ' zero' : '');
+  }
+}
+
+/* ── Shared utils ── */
+function buildDummyWav() {
+  const b=new ArrayBuffer(44); const v=new DataView(b);
+  const w=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));
+  w(0,'RIFF'); v.setUint32(4,36,true); w(8,'WAVE'); w(12,'fmt ');
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,16000,true); v.setUint32(28,32000,true);
+  v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40,0,true);
+  return b;
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Teal → Sky gradient for nurse login header -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:startColor="#0F766E"
+        android:endColor="#0284C7"
+        android:angle="135"
+        android:type="linear" />
+</shape>

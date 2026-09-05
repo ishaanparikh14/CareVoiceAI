@@ -1,0 +1,81 @@
+# ─────────────────────────────────────────────────────────────
+# CareVoice AI — .gitignore
+# ─────────────────────────────────────────────────────────────
+
+# ── Secrets / local config ──────────────────────────────────
+server/.env
+*.env
+!*.env.example
+local.properties
+
+# ── Python ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# ── Virtual environments ────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ── ML models & large binaries (not for git; download/train separately) ──
+server/storage/models/
+*.safetensors
+*.onnx
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.gguf
+
+# ── Runtime data / generated artifacts ──────────────────────
+server/storage/wav_temp/*
+!server/storage/wav_temp/.gitkeep
+server/storage/*.db
+server/storage/*.db-journal
+*.log
+server/server.log
+server/server_error.log
+
+# ── ML scratch / temp ───────────────────────────────────────
+server/ml/_tts_tmp/
+server/ml/*.mp3
+server/ml/*.wav
+
+# ── Raw datasets (large; keep only prepared_ml CSVs) ─────────
+server/ml/data/*.csv
+
+# ── Android / Gradle ────────────────────────────────────────
+.gradle/
+build/
+app/build/
+*.apk
+*.aab
+*.ap_
+*.dex
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ── IDE ─────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+
+# ── OS ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Scratch / debug files ───────────────────────────────────
+server/_ct.py
+server/_ct_result.txt
+server/_t.txt
+server/ml/_probe.py
+server/ml/_probe.txt
+server/ml/e2e_console.txt
+server/ml/e2e_result.txt

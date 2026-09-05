@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CareVoice AI — Admin Dashboard</title>
+<style>
+/* ── Reset ─────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:        #0f1117;
+  --surface:   #1a1d27;
+  --surface2:  #22263a;
+  --border:    #2e3350;
+  --accent:    #4f8ef7;
+  --accent2:   #7c3aed;
+  --green:     #22c55e;
+  --yellow:    #f59e0b;
+  --red:       #ef4444;
+  --text:      #e2e8f0;
+  --muted:     #8892a4;
+  --font:      system-ui, -apple-system, sans-serif;
+}
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Top nav ────────────────────────────────────────────────────────────── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 58px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.topbar-logo { display: flex; align-items: center; gap: 10px; }
+.topbar-logo svg { color: var(--accent); }
+.topbar-logo h1 { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+.topbar-logo span { font-size: .7rem; font-weight: 600; color: var(--accent); background: rgba(79,142,247,.12); padding: 2px 8px; border-radius: 20px; border: 1px solid rgba(79,142,247,.25); }
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+.admin-badge { font-size: .78rem; color: var(--muted); }
+.admin-badge strong { color: var(--text); }
+.btn-logout { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: .82rem; transition: all .15s; }
+.btn-logout:hover { border-color: var(--red); color: var(--red); }
+.refresh-btn { background: rgba(79,142,247,.12); border: 1px solid rgba(79,142,247,.25); color: var(--accent); padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: .82rem; transition: all .15s; display: flex; align-items: center; gap: 6px; }
+.refresh-btn:hover { background: rgba(79,142,247,.2); }
+.refresh-btn.spinning svg { animation: spin .6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+.layout { display: flex; flex: 1; overflow: hidden; }
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 20px 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  font-size: .88rem;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all .15s;
+  user-select: none;
+}
+.nav-item:hover { color: var(--text); background: var(--surface2); }
+.nav-item.active { color: var(--accent); background: rgba(79,142,247,.08); border-left-color: var(--accent); }
+.nav-item svg { flex-shrink: 0; }
+.nav-badge { margin-left: auto; background: var(--red); color: white; font-size: .68rem; font-weight: 700; padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center; }
+.nav-section { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); padding: 14px 20px 6px; }
+
+/* ── Main content ───────────────────────────────────────────────────────── */
+.main { flex: 1; overflow-y: auto; padding: 28px; }
+
+/* ── Pages ──────────────────────────────────────────────────────────────── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── Page header ────────────────────────────────────────────────────────── */
+.page-header { margin-bottom: 24px; }
+.page-header h2 { font-size: 1.4rem; font-weight: 700; }
+.page-header p  { font-size: .85rem; color: var(--muted); margin-top: 4px; }
+
+/* ── Stat cards ─────────────────────────────────────────────────────────── */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.card-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.card-icon.blue   { background: rgba(79,142,247,.12); color: var(--accent); }
+.card-icon.green  { background: rgba(34,197,94,.12);  color: var(--green); }
+.card-icon.yellow { background: rgba(245,158,11,.12); color: var(--yellow); }
+.card-icon.red    { background: rgba(239,68,68,.12);  color: var(--red); }
+.card-icon.purple { background: rgba(124,58,237,.12); color: var(--accent2); }
+.card-label { font-size: .75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+.card-value { font-size: 2rem; font-weight: 800; line-height: 1; }
+.card-sub   { font-size: .75rem; color: var(--muted); }
+
+/* ── Table wrapper ──────────────────────────────────────────────────────── */
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.table-header h3 { font-size: .95rem; font-weight: 700; }
+.table-header p  { font-size: .78rem; color: var(--muted); }
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .84rem;
+}
+.tbl th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.tbl td {
+  padding: 11px 16px;
+  border-bottom: 1px solid rgba(46,51,80,.5);
+  vertical-align: middle;
+}
+.tbl tbody tr:last-child td { border-bottom: none; }
+.tbl tbody tr:hover td { background: var(--surface2); }
+
+/* ── Badges ─────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: .73rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.badge-critical { background: rgba(239,68,68,.15);  color: #f87171; border: 1px solid rgba(239,68,68,.3); }
+.badge-urgent   { background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+.badge-routine  { background: rgba(34,197,94,.12);  color: #4ade80; border: 1px solid rgba(34,197,94,.25); }
+.badge-active   { background: rgba(34,197,94,.12);  color: #4ade80; border: 1px solid rgba(34,197,94,.25); }
+.badge-inactive { background: rgba(239,68,68,.12);  color: #f87171; border: 1px solid rgba(239,68,68,.25); }
+.badge-acked    { background: rgba(34,197,94,.12);  color: #4ade80; border: 1px solid rgba(34,197,94,.25); }
+.badge-pending  { background: rgba(245,158,11,.12); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+.badge-discharged { background: rgba(139,148,158,.12); color: var(--muted); border: 1px solid var(--border); }
+.badge-info     { background: rgba(79,142,247,.12); color: #93c5fd; border: 1px solid rgba(79,142,247,.25); }
+
+/* ── Filter bar ─────────────────────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+.filter-bar select,
+.filter-bar input[type=text] {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: .82rem;
+  outline: none;
+}
+.filter-bar select:focus,
+.filter-bar input:focus { border-color: var(--accent); }
+.filter-bar label { display: flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--muted); cursor: pointer; }
+.filter-bar input[type=checkbox] { accent-color: var(--accent); cursor: pointer; }
+.btn-filter { background: var(--accent); color: white; border: none; padding: 6px 16px; border-radius: 7px; font-size: .82rem; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+.btn-filter:hover { opacity: .85; }
+
+/* ── Log viewer ─────────────────────────────────────────────────────────── */
+.log-box {
+  background: #0d0f14;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  font-size: .78rem;
+}
+.log-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.log-toolbar h3 { font-size: .9rem; font-weight: 700; }
+.log-controls { display: flex; gap: 8px; align-items: center; }
+.log-controls select { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 4px 10px; border-radius: 6px; font-size: .78rem; outline: none; }
+.btn-auto-refresh { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 4px 12px; border-radius: 6px; font-size: .78rem; cursor: pointer; transition: all .15s; }
+.btn-auto-refresh.on { border-color: var(--green); color: var(--green); background: rgba(34,197,94,.08); }
+.log-lines { padding: 12px 16px; max-height: 520px; overflow-y: auto; line-height: 1.6; }
+.log-line { color: #8892a4; white-space: pre-wrap; word-break: break-all; }
+.log-line.level-ERROR, .log-line.level-CRITICAL { color: #f87171; }
+.log-line.level-WARNING { color: #fbbf24; }
+.log-line.level-INFO { color: #93c5fd; }
+.log-line.level-DEBUG { color: #6b7280; }
+.log-empty { color: var(--muted); text-align: center; padding: 32px; font-family: var(--font); }
+
+/* ── Charts (CSS-only bar charts) ───────────────────────────────────────── */
+.chart-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+.chart-card h4 { font-size: .85rem; font-weight: 700; margin-bottom: 16px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.bar-label { font-size: .78rem; color: var(--text); min-width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width .5s ease; }
+.bar-count { font-size: .75rem; color: var(--muted); min-width: 28px; text-align: right; }
+
+/* ── Empty state ────────────────────────────────────────────────────────── */
+.empty { text-align: center; padding: 48px 24px; color: var(--muted); }
+.empty svg { opacity: .3; margin-bottom: 12px; }
+.empty p { font-size: .9rem; }
+
+/* ── Skeleton loader ────────────────────────────────────────────────────── */
+.skeleton { background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%); background-size: 200%; animation: shimmer 1.3s infinite; border-radius: 6px; height: 16px; }
+@keyframes shimmer { from { background-position: 200% } to { background-position: -200% } }
+
+/* ── Alert detail tooltip ───────────────────────────────────────────────── */
+.transcript-cell { max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-size: .8rem; }
+
+/* ── Last updated ───────────────────────────────────────────────────────── */
+.last-updated { font-size: .73rem; color: var(--muted); margin-left: 10px; }
+
+/* ── Room card grid ─────────────────────────────────────────────────────── */
+.room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.room-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  transition: border-color .15s;
+}
+.room-card:hover { border-color: var(--accent); }
+.room-number { font-size: 1.5rem; font-weight: 800; color: var(--accent); margin-bottom: 4px; }
+.room-patient { font-size: .95rem; font-weight: 600; }
+.room-meta { font-size: .78rem; color: var(--muted); margin-top: 3px; }
+.room-nurse { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: .8rem; color: var(--muted); }
+.room-nurse strong { color: var(--text); }
+.room-alert { margin-top: 8px; }
+.unacked-dot { display: inline-block; width: 8px; height: 8px; background: var(--red); border-radius: 50%; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(1.3)} }
+
+/* ── Pagination ──────────────────────────────────────────────────────────── */
+.pagination { display: flex; align-items: center; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border); }
+.pagination button { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: .82rem; transition: all .15s; }
+.pagination button:disabled { opacity: .4; cursor: not-allowed; }
+.pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.pagination span { font-size: .82rem; color: var(--muted); }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main { padding: 16px; }
+  .cards { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Top bar ────────────────────────────────────────────────────────────── -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+      </svg>
+      <h1>CareVoice AI</h1>
+      <span>Admin</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="admin-badge">Signed in as <strong id="admin-name">—</strong></span>
+    <span class="last-updated" id="last-updated-label"></span>
+    <button class="refresh-btn" id="refresh-btn" onclick="refreshCurrent()">
+      <svg id="refresh-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Refresh
+    </button>
+    <button class="btn-logout" onclick="logout()">Sign Out</button>
+  </div>
+</div>
+
+<!-- ── Layout ──────────────────────────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="nav-section">Monitor</div>
+    <div class="nav-item active" data-page="overview" onclick="nav('overview')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Overview
+    </div>
+    <div class="nav-item" data-page="rooms" onclick="nav('rooms')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Rooms
+    </div>
+    <div class="nav-item" data-page="alerts" onclick="nav('alerts')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      Alerts
+      <span class="nav-badge" id="nav-unacked">0</span>
+    </div>
+    <div class="nav-section">People</div>
+    <div class="nav-item" data-page="nurses" onclick="nav('nurses')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Nurses
+    </div>
+    <div class="nav-item" data-page="patients" onclick="nav('patients')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Patients
+    </div>
+    <div class="nav-section">System</div>
+    <div class="nav-item" data-page="analytics" onclick="nav('analytics')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Analytics
+    </div>
+    <div class="nav-item" data-page="logs" onclick="nav('logs')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Server Logs
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- ── Overview page ───────────────────────────────────────────────────── -->
+    <div class="page active" id="page-overview">
+      <div class="page-header">
+        <h2>Hospital Overview</h2>
+        <p>Live snapshot of all ward activity</p>
+      </div>
+
+      <div class="cards" id="overview-cards">
+        <!-- Populated by JS -->
+        <div class="card"><div class="skeleton" style="width:36px;height:36px;border-radius:10px"></div><div class="skeleton" style="width:80px;margin-top:10px"></div><div class="skeleton" style="width:50px;height:28px;margin-top:6px"></div></div>
+        <div class="card"><div class="skeleton" style="width:36px;height:36px;border-radius:10px"></div><div class="skeleton" style="width:80px;margin-top:10px"></div><div class="skeleton" style="width:50px;height:28px;margin-top:6px"></div></div>
+        <div class="card"><div class="skeleton" style="width:36px;height:36px;border-radius:10px"></div><div class="skeleton" style="width:80px;margin-top:10px"></div><div class="skeleton" style="width:50px;height:28px;margin-top:6px"></div></div>
+        <div class="card"><div class="skeleton" style="width:36px;height:36px;border-radius:10px"></div><div class="skeleton" style="width:80px;margin-top:10px"></div><div class="skeleton" style="width:50px;height:28px;margin-top:6px"></div></div>
+        <div class="card"><div class="skeleton" style="width:36px;height:36px;border-radius:10px"></div><div class="skeleton" style="width:80px;margin-top:10px"></div><div class="skeleton" style="width:50px;height:28px;margin-top:6px"></div></div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-header">
+          <div><h3>Recent Alerts</h3><p>Last 10 requests across all rooms</p></div>
+        </div>
+        <table class="tbl">
+          <thead><tr>
+            <th>Time</th><th>Room</th><th>Priority</th><th>Intent</th>
+            <th>Distress</th><th>Transcript</th><th>Status</th>
+          </tr></thead>
+          <tbody id="overview-alerts-body">
+            <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Rooms page ───────────────────────────────────────────────────────── -->
+    <div class="page" id="page-rooms">
+      <div class="page-header">
+        <h2>Ward Rooms</h2>
+        <p>All occupied rooms — patient, diagnosis, attending nurse, and latest alert</p>
+      </div>
+      <div class="room-grid" id="rooms-grid">
+        <p style="color:var(--muted)">Loading…</p>
+      </div>
+    </div>
+
+    <!-- ── Alerts page ──────────────────────────────────────────────────────── -->
+    <div class="page" id="page-alerts">
+      <div class="page-header">
+        <h2>All Alerts</h2>
+        <p>Complete request log from all patients</p>
+      </div>
+      <div class="table-wrap">
+        <div class="filter-bar">
+          <input type="text" id="filter-room" placeholder="Room, e.g. 4B" style="width:110px"/>
+          <select id="filter-priority">
+            <option value="">All Priorities</option>
+            <option value="Critical">Critical</option>
+            <option value="Urgent">Urgent</option>
+            <option value="Routine">Routine</option>
+          </select>
+          <select id="filter-intent">
+            <option value="">All Intents</option>
+            <option value="Emergency">Emergency</option>
+            <option value="Pain">Pain</option>
+            <option value="Medication">Medication</option>
+            <option value="Food/Water">Food/Water</option>
+            <option value="Mobility">Mobility</option>
+            <option value="Hygiene">Hygiene</option>
+            <option value="Emotional Support">Emotional Support</option>
+            <option value="Information">Information</option>
+            <option value="Other">Other</option>
+          </select>
+          <label><input type="checkbox" id="filter-unacked"/> Unacknowledged only</label>
+          <button class="btn-filter" onclick="loadAlerts(0)">Apply</button>
+        </div>
+        <table class="tbl">
+          <thead><tr>
+            <th>ID</th><th>Time</th><th>Room</th><th>Priority</th><th>Intent</th>
+            <th>Distress</th><th>Transcript</th><th>Acked By</th><th>Ack Time</th>
+          </tr></thead>
+          <tbody id="alerts-body">
+            <tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" id="alerts-pagination"></div>
+      </div>
+    </div>
+
+    <!-- ── Nurses page ──────────────────────────────────────────────────────── -->
+    <div class="page" id="page-nurses">
+      <div class="page-header">
+        <h2>Nursing Staff</h2>
+        <p>All registered nurse accounts and their activity</p>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header">
+          <div><h3>All Nurses</h3></div>
+        </div>
+        <table class="tbl">
+          <thead><tr>
+            <th>Name</th><th>Username</th><th>Ward</th><th>Status</th>
+            <th>Alerts Acknowledged</th><th>Registered</th>
+          </tr></thead>
+          <tbody id="nurses-body">
+            <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Patients page ────────────────────────────────────────────────────── -->
+    <div class="page" id="page-patients">
+      <div class="page-header">
+        <h2>Patient Registry</h2>
+        <p>All registered patients — active and discharged</p>
+      </div>
+      <div class="table-wrap">
+        <div class="filter-bar">
+          <label><input type="checkbox" id="filter-show-discharged" checked onchange="loadPatients()"/> Show discharged</label>
+        </div>
+        <table class="tbl">
+          <thead><tr>
+            <th>Name</th><th>Room</th><th>Age</th><th>Diagnosis</th>
+            <th>Attending Nurse</th><th>Total Requests</th><th>Admitted</th><th>Status</th>
+          </tr></thead>
+          <tbody id="patients-body">
+            <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Analytics page ───────────────────────────────────────────────────── -->
+    <div class="page" id="page-analytics">
+      <div class="page-header">
+        <h2>Analytics</h2>
+        <p>Alert trends, priority distribution, and per-room activity</p>
+      </div>
+      <div class="chart-grid" id="analytics-grid">
+        <p style="color:var(--muted)">Loading…</p>
+      </div>
+    </div>
+
+    <!-- ── Logs page ────────────────────────────────────────────────────────── -->
+    <div class="page" id="page-logs">
+      <div class="page-header">
+        <h2>Server Logs</h2>
+        <p>Live tail of the server log file</p>
+      </div>
+      <div class="log-box">
+        <div class="log-toolbar">
+          <h3>server.log</h3>
+          <div class="log-controls">
+            <select id="log-lines-select" onchange="loadLogs()">
+              <option value="100">Last 100 lines</option>
+              <option value="200" selected>Last 200 lines</option>
+              <option value="500">Last 500 lines</option>
+              <option value="1000">Last 1000 lines</option>
+            </select>
+            <button class="btn-auto-refresh" id="log-auto-btn" onclick="toggleLogAuto()">Auto-refresh: OFF</button>
+          </div>
+        </div>
+        <div class="log-lines" id="log-lines">
+          <p class="log-empty">Loading…</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div><!-- /layout -->
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const BASE  = window.location.origin;
+let token   = localStorage.getItem('cv_token');
+let currentPage = 'overview';
+let alertsOffset = 0;
+const ALERTS_LIMIT = 50;
+let logAutoInterval = null;
+
+// ── Auth guard ─────────────────────────────────────────────────────────────
+if (!token) {
+  window.location.href = '/login';
+}
+
+// ── API helper ─────────────────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const res = await fetch(BASE + path, {
+    ...opts,
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', ...(opts.headers || {}) },
+  });
+  if (res.status === 401 || res.status === 403) {
+    localStorage.clear();
+    window.location.href = '/login';
+    throw new Error('Unauthorized');
+  }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+function nav(page) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  currentPage = page;
+  loadPage(page);
+}
+
+function loadPage(page) {
+  switch(page) {
+    case 'overview':  loadOverview();   break;
+    case 'rooms':     loadRooms();      break;
+    case 'alerts':    loadAlerts(0);    break;
+    case 'nurses':    loadNurses();     break;
+    case 'patients':  loadPatients();   break;
+    case 'analytics': loadAnalytics();  break;
+    case 'logs':      loadLogs();       break;
+  }
+}
+
+function refreshCurrent() {
+  const btn = document.getElementById('refresh-btn');
+  btn.classList.add('spinning');
+  setTimeout(() => btn.classList.remove('spinning'), 600);
+  loadPage(currentPage);
+}
+
+// ── Timestamp stamp ────────────────────────────────────────────────────────
+function stampUpdate() {
+  const now = new Date();
+  document.getElementById('last-updated-label').textContent =
+    `Updated ${now.toLocaleTimeString()}`;
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function priorityBadge(p) {
+  const cls = { Critical: 'critical', Urgent: 'urgent', Routine: 'routine' }[p] || 'info';
+  const dot = p === 'Critical' ? '<span class="unacked-dot" style="width:6px;height:6px;display:inline-block;margin-right:4px;"></span>' : '';
+  return `<span class="badge badge-${cls}">${dot}${p}</span>`;
+}
+function ackBadge(acked, ack_by) {
+  return acked
+    ? `<span class="badge badge-acked">✓ ${ack_by || 'ACK'}</span>`
+    : `<span class="badge badge-pending">Pending</span>`;
+}
+function relTime(iso) {
+  if (!iso) return '—';
+  const diff = Math.round((Date.now() - new Date(iso)) / 1000);
+  if (diff < 60)    return `${diff}s ago`;
+  if (diff < 3600)  return `${Math.floor(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+  return new Date(iso).toLocaleDateString();
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString();
+}
+function distressBar(score) {
+  const pct = Math.round((score || 0) * 100);
+  const col = pct > 80 ? '#ef4444' : pct > 50 ? '#f59e0b' : '#22c55e';
+  return `<div style="display:flex;align-items:center;gap:6px">
+    <div style="width:60px;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+      <div style="width:${pct}%;height:100%;background:${col};border-radius:3px"></div>
+    </div>
+    <span style="font-size:.75rem;color:var(--muted)">${pct}%</span>
+  </div>`;
+}
+
+// ── Overview ───────────────────────────────────────────────────────────────
+async function loadOverview() {
+  try {
+    const [stats, alertData] = await Promise.all([
+      api('/admin/stats'),
+      api('/admin/alerts?limit=10&offset=0'),
+    ]);
+
+    // Update nav badge
+    document.getElementById('nav-unacked').textContent = stats.unacked_alerts || 0;
+
+    // Cards
+    document.getElementById('overview-cards').innerHTML = `
+      <div class="card">
+        <div class="card-icon blue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="card-label">Active Nurses</div>
+        <div class="card-value">${stats.active_nurses}</div>
+      </div>
+      <div class="card">
+        <div class="card-icon green"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+        <div class="card-label">Active Patients</div>
+        <div class="card-value">${stats.active_patients}</div>
+        <div class="card-sub">${stats.discharged_patients} discharged</div>
+      </div>
+      <div class="card">
+        <div class="card-icon purple"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+        <div class="card-label">Occupied Rooms</div>
+        <div class="card-value">${stats.occupied_rooms}</div>
+      </div>
+      <div class="card">
+        <div class="card-icon yellow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+        <div class="card-label">Total Alerts</div>
+        <div class="card-value">${stats.total_alerts}</div>
+        <div class="card-sub">${stats.unacked_alerts} pending</div>
+      </div>
+      <div class="card">
+        <div class="card-icon red"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+        <div class="card-label">Critical Alerts</div>
+        <div class="card-value" style="color:var(--red)">${stats.critical_alerts}</div>
+      </div>
+    `;
+
+    // Recent alerts table
+    const tbody = document.getElementById('overview-alerts-body');
+    if (!alertData.alerts.length) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><p>No alerts yet</p></div></td></tr>`;
+    } else {
+      tbody.innerHTML = alertData.alerts.map(a => `
+        <tr>
+          <td style="white-space:nowrap;color:var(--muted);font-size:.78rem">${relTime(a.created_at)}</td>
+          <td><span class="badge badge-info">${a.room_id}</span></td>
+          <td>${priorityBadge(a.priority)}</td>
+          <td><span style="font-size:.82rem">${a.intent}</span></td>
+          <td>${distressBar(a.distress_score)}</td>
+          <td class="transcript-cell" title="${escHtml(a.transcript)}">${escHtml(a.transcript)}</td>
+          <td>${ackBadge(a.acknowledged, a.ack_by)}</td>
+        </tr>
+      `).join('');
+    }
+    stampUpdate();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+// ── Rooms ──────────────────────────────────────────────────────────────────
+async function loadRooms() {
+  try {
+    const rooms = await api('/admin/rooms');
+    const grid = document.getElementById('rooms-grid');
+    if (!rooms.length) {
+      grid.innerHTML = `<div class="empty"><p>No occupied rooms</p></div>`;
+      return;
+    }
+    grid.innerHTML = rooms.map(r => {
+      const hasUnacked = r.unacked_alerts > 0;
+      const la = r.latest_alert;
+      return `
+        <div class="room-card" style="${hasUnacked ? 'border-color:var(--yellow)' : ''}">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div class="room-number">Room ${r.room_number}</div>
+            ${hasUnacked ? `<span class="badge badge-pending"><span class="unacked-dot"></span> ${r.unacked_alerts} pending</span>` : '<span class="badge badge-acked">All clear</span>'}
+          </div>
+          <div class="room-patient">${escHtml(r.patient_name)}</div>
+          <div class="room-meta">${escHtml(r.diagnosis || 'No diagnosis recorded')}</div>
+          <div class="room-nurse">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <strong>${escHtml(r.attending_name || r.attending_username || 'Unassigned')}</strong>
+            ${r.ward ? `<span style="color:var(--muted)"> · ${escHtml(r.ward)}</span>` : ''}
+          </div>
+          ${la ? `
+          <div class="room-alert" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+            <div style="font-size:.74rem;color:var(--muted);margin-bottom:4px">Latest alert — ${relTime(la.created_at)}</div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              ${priorityBadge(la.priority)}
+              <span style="font-size:.78rem;color:var(--muted)">${la.intent}</span>
+            </div>
+            <div style="font-size:.76rem;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(la.transcript)}</div>
+          </div>` : ''}
+        </div>
+      `;
+    }).join('');
+    stampUpdate();
+  } catch(e) { console.error(e); }
+}
+
+// ── Alerts ─────────────────────────────────────────────────────────────────
+async function loadAlerts(offset) {
+  alertsOffset = offset;
+  const room     = document.getElementById('filter-room').value.trim();
+  const priority = document.getElementById('filter-priority').value;
+  const unacked  = document.getElementById('filter-unacked').checked;
+  const intent   = document.getElementById('filter-intent').value;
+
+  let url = `/admin/alerts?limit=${ALERTS_LIMIT}&offset=${offset}`;
+  if (room)     url += `&room_id=${encodeURIComponent(room)}`;
+  if (priority) url += `&priority=${encodeURIComponent(priority)}`;
+  if (unacked)  url += `&unacked_only=true`;
+
+  try {
+    const data = await api(url);
+    const tbody = document.getElementById('alerts-body');
+
+    // Client-side intent filter (not in API but easy to add)
+    const filtered = intent ? data.alerts.filter(a => a.intent === intent) : data.alerts;
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><p>No alerts match the current filters</p></div></td></tr>`;
+    } else {
+      tbody.innerHTML = filtered.map(a => `
+        <tr>
+          <td style="color:var(--muted);font-size:.78rem">#${a.id}</td>
+          <td style="white-space:nowrap;font-size:.78rem;color:var(--muted)">${fmtDate(a.created_at)}</td>
+          <td><span class="badge badge-info">${a.room_id}</span></td>
+          <td>${priorityBadge(a.priority)}</td>
+          <td><span style="font-size:.82rem">${a.intent}</span></td>
+          <td>${distressBar(a.distress_score)}</td>
+          <td class="transcript-cell" title="${escHtml(a.transcript)}">${escHtml(a.transcript)}</td>
+          <td>${a.ack_by ? escHtml(a.ack_by) : '<span style="color:var(--muted)">—</span>'}</td>
+          <td style="font-size:.76rem;color:var(--muted);white-space:nowrap">${a.ack_at ? relTime(a.ack_at) : '—'}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Pagination
+    const totalPages = Math.ceil(data.total / ALERTS_LIMIT);
+    const currentPage = Math.floor(offset / ALERTS_LIMIT) + 1;
+    document.getElementById('alerts-pagination').innerHTML = `
+      <button onclick="loadAlerts(${offset - ALERTS_LIMIT})" ${offset === 0 ? 'disabled' : ''}>← Prev</button>
+      <span>Page ${currentPage} of ${totalPages || 1} &nbsp;(${data.total} total)</span>
+      <button onclick="loadAlerts(${offset + ALERTS_LIMIT})" ${offset + ALERTS_LIMIT >= data.total ? 'disabled' : ''}>Next →</button>
+    `;
+    stampUpdate();
+  } catch(e) { console.error(e); }
+}
+
+// ── Nurses ─────────────────────────────────────────────────────────────────
+async function loadNurses() {
+  try {
+    const nurses = await api('/admin/nurses');
+    const tbody = document.getElementById('nurses-body');
+    if (!nurses.length) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><p>No nurses registered</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = nurses.map(n => `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0">
+              ${escHtml(n.full_name.charAt(0).toUpperCase())}
+            </div>
+            <span style="font-weight:600">${escHtml(n.full_name)}</span>
+          </div>
+        </td>
+        <td style="color:var(--muted);font-family:monospace;font-size:.82rem">${escHtml(n.username)}</td>
+        <td>${n.ward ? `<span class="badge badge-info">${escHtml(n.ward)}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+        <td>${n.is_active ? '<span class="badge badge-active">Active</span>' : '<span class="badge badge-inactive">Inactive</span>'}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-weight:700;font-size:1.1rem">${n.alerts_acked}</span>
+            <span style="font-size:.75rem;color:var(--muted)">alerts ack'd</span>
+          </div>
+        </td>
+        <td style="font-size:.78rem;color:var(--muted)">${relTime(n.created_at)}</td>
+      </tr>
+    `).join('');
+    stampUpdate();
+  } catch(e) { console.error(e); }
+}
+
+// ── Patients ───────────────────────────────────────────────────────────────
+async function loadPatients() {
+  const showDischarged = document.getElementById('filter-show-discharged').checked;
+  try {
+    const patients = await api(`/admin/patients?include_discharged=${showDischarged}`);
+    const tbody = document.getElementById('patients-body');
+    if (!patients.length) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><p>No patients found</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = patients.map(p => `
+      <tr style="${p.is_discharged ? 'opacity:.55' : ''}">
+        <td>
+          <div>
+            <span style="font-weight:600">${escHtml(p.full_name)}</span>
+            <div style="font-size:.75rem;color:var(--muted);font-family:monospace">${escHtml(p.username)}</div>
+          </div>
+        </td>
+        <td>${p.is_discharged ? '<span style="color:var(--muted)">—</span>' : `<span class="badge badge-info">${escHtml(p.room_number)}</span>`}</td>
+        <td style="color:var(--muted)">${p.age ?? '—'}</td>
+        <td style="font-size:.82rem;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.diagnosis || '—')}</td>
+        <td style="font-size:.82rem;color:var(--muted)">${escHtml(p.attending || 'Unassigned')}</td>
+        <td style="text-align:center">
+          ${p.total_alerts > 0
+            ? `<span style="font-weight:700">${p.total_alerts}</span>`
+            : '<span style="color:var(--muted)">0</span>'}
+        </td>
+        <td style="font-size:.78rem;color:var(--muted)">${relTime(p.admitted_at)}</td>
+        <td>${p.is_discharged ? '<span class="badge badge-discharged">Discharged</span>' : '<span class="badge badge-active">Active</span>'}</td>
+      </tr>
+    `).join('');
+    stampUpdate();
+  } catch(e) { console.error(e); }
+}
+
+// ── Analytics ──────────────────────────────────────────────────────────────
+async function loadAnalytics() {
+  try {
+    const stats = await api('/admin/alerts/stats');
+    const grid = document.getElementById('analytics-grid');
+
+    const maxPri = Math.max(...stats.by_priority.map(r => r.count), 1);
+    const maxRoom = Math.max(...stats.by_room.map(r => r.count), 1);
+    const maxInt  = Math.max(...stats.by_intent.map(r => r.count), 1);
+    const maxDay  = Math.max(...stats.by_day.map(r => r.count), 1);
+
+    const priColors = { Critical: '#ef4444', Urgent: '#f59e0b', Routine: '#22c55e' };
+    const intColors = ['#4f8ef7','#7c3aed','#ef4444','#f59e0b','#22c55e','#06b6d4','#ec4899','#84cc16','#8b5cf6'];
+
+    function barChart(items, maxVal, colorFn) {
+      return items.map((r, i) => `
+        <div class="bar-row">
+          <span class="bar-label" title="${escHtml(r.label)}">${escHtml(r.label)}</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${Math.round(r.count/maxVal*100)}%;background:${colorFn(r.label, i)}"></div>
+          </div>
+          <span class="bar-count">${r.count}</span>
+        </div>
+      `).join('');
+    }
+
+    // Daily activity timeline
+    const dayBars = stats.by_day.length ? stats.by_day.map(d => `
+      <div class="bar-row">
+        <span class="bar-label">${d.date ? d.date.slice(5) : '—'}</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${Math.round(d.count/maxDay*100)}%;background:var(--accent)"></div>
+        </div>
+        <span class="bar-count">${d.count}</span>
+      </div>
+    `).join('') : '<p style="color:var(--muted);font-size:.82rem">No data yet</p>';
+
+    grid.innerHTML = `
+      <div class="chart-card" style="grid-column:span 2">
+        <h4>Alerts per day (last 14 days)</h4>
+        ${dayBars}
+        <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:24px">
+          <div><span style="font-size:.75rem;color:var(--muted)">Ack Rate</span><br>
+            <span style="font-size:1.6rem;font-weight:800;color:var(--green)">${stats.ack_rate}%</span>
+          </div>
+          <div><span style="font-size:.75rem;color:var(--muted)">Total Alerts</span><br>
+            <span style="font-size:1.6rem;font-weight:800">${stats.by_priority.reduce((s,r) => s+r.count, 0)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h4>By Priority</h4>
+        ${barChart(stats.by_priority, maxPri, l => priColors[l] || '#4f8ef7')}
+      </div>
+
+      <div class="chart-card">
+        <h4>Top Rooms by Alerts</h4>
+        ${stats.by_room.length
+          ? barChart(stats.by_room, maxRoom, (l, i) => intColors[i % intColors.length])
+          : '<p style="color:var(--muted);font-size:.82rem">No data yet</p>'}
+      </div>
+
+      <div class="chart-card" style="grid-column:span 2">
+        <h4>By Intent</h4>
+        ${barChart(stats.by_intent, maxInt, (l, i) => intColors[i % intColors.length])}
+      </div>
+    `;
+    stampUpdate();
+  } catch(e) { console.error(e); }
+}
+
+// ── Logs ───────────────────────────────────────────────────────────────────
+async function loadLogs() {
+  const lines = document.getElementById('log-lines-select').value;
+  try {
+    const data = await api(`/admin/logs?lines=${lines}`);
+    const container = document.getElementById('log-lines');
+    if (!data.lines || !data.lines.length) {
+      container.innerHTML = `<p class="log-empty">Log file is empty or not found.<br><small>${data.file || ''}</small></p>`;
+      return;
+    }
+    container.innerHTML = data.lines.map(line => {
+      let cls = '';
+      if (/\bERROR\b|\bCRITICAL\b/i.test(line)) cls = 'level-ERROR';
+      else if (/\bWARNING\b/i.test(line)) cls = 'level-WARNING';
+      else if (/\bINFO\b/i.test(line)) cls = 'level-INFO';
+      else if (/\bDEBUG\b/i.test(line)) cls = 'level-DEBUG';
+      return `<div class="log-line ${cls}">${escHtml(line)}</div>`;
+    }).join('');
+    // Scroll to bottom
+    container.scrollTop = container.scrollHeight;
+    stampUpdate();
+  } catch(e) { console.error(e); }
+}
+
+function toggleLogAuto() {
+  const btn = document.getElementById('log-auto-btn');
+  if (logAutoInterval) {
+    clearInterval(logAutoInterval);
+    logAutoInterval = null;
+    btn.textContent = 'Auto-refresh: OFF';
+    btn.classList.remove('on');
+  } else {
+    loadLogs();
+    logAutoInterval = setInterval(loadLogs, 5000);
+    btn.textContent = 'Auto-refresh: ON';
+    btn.classList.add('on');
+  }
+}
+
+// ── Escape HTML ────────────────────────────────────────────────────────────
+function escHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Logout ─────────────────────────────────────────────────────────────────
+function logout() {
+  localStorage.clear();
+  window.location.href = '/login';
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+(async function init() {
+  try {
+    const me = await api('/auth/me');
+    if (me.role !== 'admin') {
+      alert('Admin access required.');
+      logout();
+      return;
+    }
+    document.getElementById('admin-name').textContent = me.full_name;
+  } catch(e) {
+    logout();
+    return;
+  }
+  // Load first page
+  loadOverview();
+})();
+</script>
+</body>
+</html>

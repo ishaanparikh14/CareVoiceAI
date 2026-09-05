@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#2196F3</color>
+    <color name="colorPrimaryDark">#1565C0</color>
+    <color name="colorAccent">#4CAF50</color>
+    <color name="colorStop">#F44336</color>
+    <color name="colorBackground">#FAFAFA</color>
+    <color name="colorText">#1A1A1A</color>
+    <color name="colorTextSecondary">#555555</color>
+    <color name="colorAmplitudeTrack">#E0E0E0</color>
+    <color name="colorAmplitudeBar">#4CAF50</color>
+
+    <!-- Nurse dashboard — priority badge colors -->
+    <color name="colorPriorityCritical">#D32F2F</color>
+    <color name="colorPriorityCriticalBg">#FFEBEE</color>
+    <color name="colorPriorityUrgent">#F57C00</color>
+    <color name="colorPriorityUrgentBg">#FFF3E0</color>
+    <color name="colorPriorityRoutine">#388E3C</color>
+    <color name="colorPriorityRoutineBg">#E8F5E9</color>
+
+    <!-- Navigation drawer -->
+    <color name="colorDrawerBg">#FFFFFF</color>
+    <color name="colorDrawerHeaderPatient">#4F46E5</color>
+    <color name="colorDrawerHeaderNurse">#0F766E</color>
+    <color name="colorDrawerAvatarText">#FFFFFF</color>
+    <color name="colorDrawerNameText">#FFFFFF</color>
+    <color name="colorDrawerSubText">#FFFFFFCC</color>
+    <color name="colorDrawerItemText">#1A1A1A</color>
+    <color name="colorDrawerItemIcon">#555555</color>
+    <color name="colorDrawerDivider">#E0E0E0</color>
+    <color name="colorDrawerLogoutText">#D32F2F</color>
+
+    <!-- Login screen — modern palette -->
+    <color name="colorLoginPatientAccent">#4F46E5</color>   <!-- indigo-600 -->
+    <color name="colorLoginPatientAccentEnd">#7C3AED</color><!-- violet-600 gradient end -->
+    <color name="colorLoginNurseAccent">#0F766E</color>     <!-- teal-700 -->
+    <color name="colorLoginNurseAccentEnd">#0284C7</color>  <!-- sky-600 gradient end -->
+    <color name="colorLoginScreenBg">#F1F5F9</color>        <!-- slate-100 screen bg -->
+    <color name="colorLoginCard">#FFFFFF</color>            <!-- white card -->
+    <color name="colorLoginTitle">#0F172A</color>           <!-- slate-900 strong title -->
+    <color name="colorLoginSubtitle">#475569</color>        <!-- slate-600 subtitle -->
+    <color name="colorLoginFieldText">#0F172A</color>       <!-- slate-900 input text -->
+    <color name="colorLoginFieldHint">#94A3B8</color>       <!-- slate-400 hint -->
+    <color name="colorLoginFieldStroke">#CBD5E1</color>     <!-- slate-300 border -->
+    <color name="colorLoginChipText">#CBD5E1</color>        <!-- slate-300 chip text -->
+
+    <!-- Nurse dashboard — card and surface -->
+    <color name="colorCardBackground">#FFFFFF</color>
+    <color name="colorDivider">#E0E0E0</color>
+    <color name="colorAcknowledged">#9E9E9E</color>
+    <color name="colorAcknowledgedBg">#F5F5F5</color>
+    <color name="colorNurseHeader">#1565C0</color>
+</resources>
