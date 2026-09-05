@@ -106,17 +106,87 @@ All settings live in `server/config.py` and can be overridden via environment va
 
 ---
 
-## Intent model
+## Getting the intent model
 
-The multilingual intent classifier is trained separately and stored in `server/storage/models/intent_ml/` (not tracked in git — it's ~500 MB). Training and evaluation scripts are in `server/ml/`:
+The multilingual intent classifier (`intent_ml`) is **not committed to git** — the trained
+weights are ~516 MB, which exceeds GitHub's file-size limits. You have two ways to run the
+project depending on whether you need real ML classification.
+
+### Option A — Run without the model (stub mode, fastest)
+
+For UI/dashboard testing you don't need the model at all. Set stub mode and the server uses
+a rule-based placeholder classifier:
+
+```bash
+# in server/.env
+USE_STUB=true
+```
+
+Everything (login, dashboards, alerts, WebSocket) works; only the intent classification is
+simplified. No GPU, no download, no training required.
+
+### Option B — Train the real model (fully reproducible)
+
+The prepared training splits are committed (`server/ml/data/prepared_ml/{train,val,test}.csv`),
+so you can regenerate the exact model yourself. It fine-tunes
+`distilbert-base-multilingual-cased` on the trilingual (en/hi/kn) 9-intent dataset.
+
+**1. Install the ML dependencies** (already in `requirements.txt`):
+
+```bash
+pip install -r server/requirements.txt
+# transformers, torch, faster-whisper are the heavy ones
+```
+
+**2. Train** (writes to `server/storage/models/intent_ml/` automatically):
 
 ```bash
 cd server/ml
-python train_intent_ml.py       # fine-tune mBERT on prepared_ml/*.csv
-python evaluate_intent_ml.py     # report accuracy per language
+python train_intent_ml.py
 ```
 
-Prepared training splits (`prepared_ml/train.csv`, `val.csv`, `test.csv`) are tracked so training is reproducible. Raw source datasets and generated audio are gitignored.
+- With an NVIDIA GPU (CUDA) this takes only a few minutes.
+- On CPU it still runs, just slower.
+- Output files land in `server/storage/models/intent_ml/`
+  (`model.safetensors`, `config.json`, `tokenizer.json`, `vocab.txt`, …).
+
+**3. Verify accuracy** (optional):
+
+```bash
+python evaluate_intent_ml.py     # reports overall + per-language accuracy
+```
+
+**4. Enable the real pipeline:**
+
+```bash
+# in server/.env
+USE_STUB=false
+```
+
+### Where the model must live
+
+The server loads the model from this exact path (see `pipeline.py`):
+
+```
+server/storage/models/intent_ml/
+├── config.json
+├── model.safetensors
+├── tokenizer.json
+├── tokenizer_config.json
+├── special_tokens_map.json
+└── vocab.txt
+```
+
+If you obtain the trained folder another way (shared drive, release asset, etc.), just drop
+it in at that path and set `USE_STUB=false`.
+
+### Whisper ASR & Silero VAD models
+
+- **Whisper** weights download automatically on first run via `faster-whisper` — nothing to
+  do manually. Control the size/device with `WHISPER_MODEL` / `WHISPER_DEVICE`.
+- **Silero VAD** (`server/storage/models/silero_vad.onnx`) is optional on the server; if it's
+  absent the server falls back to an energy-threshold VAD. The Android app downloads its own
+  copy. To use it server-side, place the `.onnx` file at that path.
 
 ---
 

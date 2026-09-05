@@ -22,7 +22,9 @@ __pycache__/
 venv/
 env/
 
-# ── ML models & large binaries (not for git; download/train separately) ──
+# ── ML models & large binaries (not for git; train/download separately) ──
+# The trained intent classifier (~516 MB) and Silero VAD are NOT committed.
+# See README "Getting the intent model" for how to obtain them.
 server/storage/models/
 *.safetensors
 *.onnx
@@ -72,6 +74,7 @@ Thumbs.db
 desktop.ini
 
 # ── Scratch / debug files ───────────────────────────────────
+push_lfs.txt
 server/_ct.py
 server/_ct_result.txt
 server/_t.txt
