@@ -45,13 +45,25 @@ CREATE TABLE IF NOT EXISTS alerts (
     acknowledged   INTEGER NOT NULL DEFAULT 0,
     ack_by         TEXT,
     created_at     TEXT    NOT NULL,
-    ack_at         TEXT
+    ack_at         TEXT,
+    language       TEXT,                        -- detected/forced ISO lang: en|hi|kn (nullable)
+    escalated      INTEGER NOT NULL DEFAULT 0,  -- 1 once auto-escalated Urgent→Critical
+    escalated_at   TEXT                         -- ISO-8601 UTC when escalation happened
 );
 
 -- Index used by GET /alerts/latest (ordered by created_at DESC, unACK'd first)
 CREATE INDEX IF NOT EXISTS idx_alerts_created ON alerts (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_alerts_ack     ON alerts (acknowledged, created_at DESC);
 """
+
+# Columns added after the original release. SQLite has no "ADD COLUMN IF NOT
+# EXISTS", so we attempt each ALTER and ignore the duplicate-column error. This
+# keeps pre-existing databases working without a manual migration.
+_MIGRATIONS = [
+    "ALTER TABLE alerts ADD COLUMN language TEXT",
+    "ALTER TABLE alerts ADD COLUMN escalated INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE alerts ADD COLUMN escalated_at TEXT",
+]
 
 
 async def init_db() -> None:
@@ -62,6 +74,13 @@ async def init_db() -> None:
     """
     async with aiosqlite.connect(settings.DB_PATH) as db:
         await db.executescript(DDL)
+        # Idempotent column migrations for databases created before these
+        # columns existed. Duplicate-column errors are expected and ignored.
+        for stmt in _MIGRATIONS:
+            try:
+                await db.execute(stmt)
+            except Exception:
+                pass  # column already exists
         await db.commit()
     logger.info("Database initialised at %s", settings.DB_PATH)
 
@@ -98,6 +117,7 @@ async def insert_alert(
     distress_score: float,
     transcript: str,
     wav_path: str | None = None,
+    language: str | None = None,
 ) -> int:
     """
     Insert a new alert row and return its auto-generated id.
@@ -107,11 +127,11 @@ async def insert_alert(
     cursor = await db.execute(
         """
         INSERT INTO alerts
-            (room_id, priority, intent, distress_score, transcript, wav_path, created_at)
+            (room_id, priority, intent, distress_score, transcript, wav_path, created_at, language)
         VALUES
-            (?, ?, ?, ?, ?, ?, ?)
+            (?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (room_id, priority, intent, distress_score, transcript, wav_path, now),
+        (room_id, priority, intent, distress_score, transcript, wav_path, now, language),
     )
     alert_id = cursor.lastrowid
     logger.info(
@@ -194,6 +214,66 @@ async def acknowledge_alert(
     else:
         logger.warning("ACK failed: alert %d not found or already acknowledged", alert_id)
     return updated
+
+
+async def get_stale_unacked_urgent(
+    db: aiosqlite.Connection,
+    *,
+    older_than_seconds: int,
+) -> list[dict]:
+    """
+    Return unacknowledged Urgent alerts created more than `older_than_seconds`
+    ago and not yet escalated. Used by the auto-escalation loop.
+    """
+    cutoff = (
+        datetime.now(timezone.utc).timestamp() - older_than_seconds
+    )
+    query = """
+        SELECT * FROM alerts
+        WHERE acknowledged = 0
+          AND priority = 'Urgent'
+          AND escalated = 0
+        ORDER BY created_at ASC
+    """
+    async with db.execute(query) as cursor:
+        rows = await cursor.fetchall()
+
+    stale: list[dict] = []
+    for row in rows:
+        d = dict(row)
+        try:
+            # created_at is ISO-8601 with a trailing 'Z'.
+            ts = datetime.fromisoformat(d["created_at"].replace("Z", "+00:00")).timestamp()
+        except Exception:
+            continue
+        if ts <= cutoff:
+            stale.append(d)
+    return stale
+
+
+async def escalate_alert(db: aiosqlite.Connection, alert_id: int) -> bool:
+    """
+    Escalate an unacknowledged Urgent alert to Critical.
+
+    Returns True if a row was changed. Guarded so it only affects alerts that
+    are still Urgent, unacknowledged, and not already escalated (idempotent).
+    """
+    now = utcnow()
+    cursor = await db.execute(
+        """
+        UPDATE alerts
+        SET priority     = 'Critical',
+            escalated    = 1,
+            escalated_at = ?
+        WHERE id = ? AND acknowledged = 0 AND priority = 'Urgent' AND escalated = 0
+        """,
+        (now, alert_id),
+    )
+    changed = cursor.rowcount > 0
+    if changed:
+        await db.commit()
+        logger.info("Alert %d auto-escalated Urgent → Critical at %s", alert_id, now)
+    return changed
 
 
 def utcnow() -> str:

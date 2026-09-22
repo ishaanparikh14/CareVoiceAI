@@ -46,6 +46,10 @@ _KEYWORDS: list[tuple[Intent, list[str]]] = [
         # Kannada
         "ಉಸಿರಾಡಲು", "ಉಸಿರು ಕಟ್ಟು", "ಎದೆ ನೋವು", "ಹೃದಯಾಘಾತ", "ಮೂರ್ಛೆ",
         "usiradalu", "usiru kattu", "ede novu",
+        # Kannada spelling variants Whisper 'medium' emits (empirical)
+        "ಸಿರಾಡ", "ಉಸಿರಾಡ", "ಉಸಿರ", "ಎದೆ ನುವು", "ಏದೆ ನುವು", "ಎದೆನುವು",
+        # Kannada→Devanagari transliterations Whisper 'small' emits (empirical)
+        "उसिरो कटु", "उसिरु कटु", "एदे नोउ", "एदे नोव",
     ]),
 
     # ── MEDICATION ────────────────────────────────────────────────────────────
@@ -55,15 +59,19 @@ _KEYWORDS: list[tuple[Intent, list[str]]] = [
         "injection", "insulin", "painkiller", "pain killer", "antibiotic", "dose",
         "drug", "syrup", "drip", "prescription",
         # Hindi (stems — covers दवा/दवाई/दवाईया/दवाइयां etc. after normalisation)
-        "दव", "दवई", "दवइ", "गल", "गोल", "टबलट", "इनजकशन", "सई", "दरद क दव",
+        "दव", "दवई", "दवइ", "गोली", "गोलि", "टबलट", "इनजकशन", "दरद क दव",
         "दवा", "दवाई",
         # Hindi romanized
         "dawai", "dava", "goli", "tablet", "injection",
         # Kannada
         "ಔಷಧಿ", "ಔಷಧ", "ಮಾತ್ರೆ", "ಚುಚ್ಚುಮದ್ದು", "ಇನ್ಸುಲಿನ್",
         "aushadhi", "aushadha", "matre", "medicine beku", "medisin",
+        # Kannada spelling variants Whisper 'medium' emits (empirical)
+        "ಅವ್ಷಿದಿ", "ಅವ್ಷ", "ವ್ಷಿದಿ", "ಔಷಿದಿ", "ಮಾತ್ರಿ", "ಮಾತ್ರ",
         # Kannada-in-Devanagari (Whisper cross-script)
         "मटसन", "मडसन", "औषध",
+        # Kannada→Devanagari transliterations Whisper 'small' emits (empirical)
+        "आउश्दी", "आश्दी", "आउश", "मात्रे", "आउषधी",
     ]),
 
     # ── PAIN ──────────────────────────────────────────────────────────────────
@@ -79,8 +87,13 @@ _KEYWORDS: list[tuple[Intent, list[str]]] = [
         # Kannada
         "ನೋವು", "ನೋಯು", "ನೋಯುತ್ತಿದೆ", "ತಲೆ ನೋವು",
         "novu", "noyu", "nayutti",
+        # Kannada spelling variants Whisper 'medium' emits (empirical)
+        "ನೂಯ", "ನುವಿ", "ನುವು", "ನೂವು", "ನೋಯುತ್", "ನೂಯತ್",
         # Kannada-in-Devanagari
         "नव", "नय",
+        # Kannada→Devanagari transliterations Whisper 'small' emits (empirical)
+        # (normalised: ो/ौ matras stripped, so नोय्→नय, नोई→नई, नोव→नव)
+        "नोय", "नोई", "नोव", "नई",
     ]),
 
     # ── FOOD / WATER ──────────────────────────────────────────────────────────
@@ -96,6 +109,8 @@ _KEYWORDS: list[tuple[Intent, list[str]]] = [
         # Kannada
         "ನೀರು", "ಹಸಿವು", "ಆಹಾರ", "ಊಟ", "ತಿನ್ನಲು", "ಕುಡಿಯಲು",
         "neeru", "hasivu", "aahara", "oota",
+        # Kannada→Devanagari transliterations Whisper 'small' emits (empirical)
+        "नीरु", "हसीव", "हसिव", "वागिद", "कुदियलु", "कुदिय",
     ]),
 
     # ── MOBILITY ──────────────────────────────────────────────────────────────
@@ -111,6 +126,10 @@ _KEYWORDS: list[tuple[Intent, list[str]]] = [
         # Kannada
         "ಶೌಚಾಲಯ", "ಎದ್ದೇಳ", "ನಡೆಯ", "ಗಾಲಿಕುರ್ಚಿ",
         "shauchalaya", "eddel", "nadeya",
+        # Kannada spelling variants Whisper 'medium' emits (empirical)
+        "ಶೌಚಾಲ", "ಶಾವಚಾಲ", "ಶಾವಚ", "ಚಾಲೆಕೆ", "ಗಾಲಿಕ", "ಗಾಲಿಕಾರಿ", "ಗಾಲಿಕುರ್",
+        # Kannada→Devanagari transliterations Whisper 'small' emits (empirical)
+        "शुव्चा", "शवचा", "शुवचा", "गालिकृ", "गालिकु", "इद्दे लल", "इद्देलल",
     ]),
 
     # ── HYGIENE ───────────────────────────────────────────────────────────────
@@ -126,6 +145,8 @@ _KEYWORDS: list[tuple[Intent, list[str]]] = [
         # Kannada
         "ಸ್ವಚ್ಛ", "ಸ್ನಾನ", "ತೊಳೆ", "ಹಾಸಿಗೆ",
         "swachcha", "snaana", "tole",
+        # Kannada→Devanagari transliterations Whisper 'small' emits (empirical)
+        "स्वट्च", "स्वच", "स्नाद", "स्ना", "हासीगे", "हासिगे",
     ]),
 
     # ── EMOTIONAL SUPPORT ─────────────────────────────────────────────────────
@@ -141,6 +162,10 @@ _KEYWORDS: list[tuple[Intent, list[str]]] = [
         # Kannada
         "ಭಯ", "ಒಂಟಿ", "ದುಃಖ", "ಆತಂಕ",
         "bhaya", "onti", "dukha",
+        # Kannada spelling variants Whisper 'medium' emits (empirical)
+        "ವನ್ಟಿ", "ವಂಟಿ", "ಒಂಟಿತನ", "ವನ್ಟಿತನ", "ಭಯ ಆಗು",
+        # Kannada→Devanagari transliterations Whisper 'small' emits (empirical)
+        "वंटी", "वंटि", "ंटी तन", "भय आगु", "बे आगु",
     ]),
 ]
 
@@ -156,6 +181,17 @@ def keyword_intent(transcript: str) -> Intent | None:
     for intent, fragments in _KEYWORDS:
         for frag in fragments:
             nf = _normalize(frag)
-            if nf and nf in t:
+            core = nf.replace(" ", "")
+            if not core:
+                continue
+            # Guard against ultra-short stems that match almost anything.
+            # Latin fragments need >=4 chars (English words share short substrings);
+            # Indic (Devanagari/Kannada) syllables carry a full mora in 2 chars,
+            # so allow >=3 there — but never a single character.
+            is_indic = any(0x0900 <= ord(c) <= 0x0DFF for c in core)
+            min_len = 3 if is_indic else 4
+            if len(core) < min_len:
+                continue
+            if nf in t:
                 return intent
     return None

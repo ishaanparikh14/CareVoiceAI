@@ -56,6 +56,11 @@ header .title { font-size: 1.1rem; font-weight: 700; }
 .sb-name { font-weight: 700; font-size: .95rem; color: #1a365d; }
 .sb-ward { font-size: .78rem; color: #718096; margin-top: 2px; }
 .sb-conn { margin-top: 10px; font-size: .76rem; color: #4a5568; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.sb-voice { margin-top: 10px; padding-top: 10px; border-top: 1px solid #edf2f7; }
+.sb-voice-row { display: flex; align-items: center; gap: 8px; font-size: .8rem; font-weight: 600; color: #4a5568; cursor: pointer; }
+.sb-voice-row input { width: 16px; height: 16px; cursor: pointer; }
+#voice-lang { width: 100%; margin-top: 8px; padding: 6px 8px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: .8rem; color: #2d3748; background: #fff; cursor: pointer; }
+#voice-lang:disabled { opacity: .5; cursor: not-allowed; }
 #ws-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; background: #fc8181; transition: background .3s; }
 #ws-dot.connected { background: #48bb78; animation: pulse 2s infinite; }
 @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(72,187,120,.5);} 70%{box-shadow:0 0 0 6px rgba(72,187,120,0);} 100%{box-shadow:0 0 0 0 rgba(72,187,120,0);} }
@@ -120,6 +125,7 @@ header .title { font-size: 1.1rem; font-weight: 700; }
 .ap.Urgent   { background: #feebc8; color: #c05621; }
 .ap.Routine  { background: #c6f6d5; color: #276749; }
 .ai { font-size: .74rem; color: #4a5568; background: #edf2f7; padding: 3px 9px; border-radius: 20px; font-weight:600; }
+.esc-badge { font-size: .68rem; font-weight: 800; color: #9b2c2c; background: #fed7d7; border: 1px solid #fc8181; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing:.3px; }
 .ar { font-size: .8rem; font-weight: 800; color: #1a365d; margin-left: auto; }
 .at { color: #2d3748; line-height: 1.5; margin-bottom: 9px; font-size:.92rem; }
 .am { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -271,6 +277,20 @@ tr:hover td { background: #f7fafc; }
         <span id="ws-status-text">Disconnected</span>
       </div>
       <button class="btn btn-sm btn-ghost" id="ws-btn" onclick="toggleWs()" style="margin-top:8px;width:100%">Connect</button>
+
+      <!-- Voice announcements (browser TTS for Critical alerts) -->
+      <div class="sb-voice">
+        <label class="sb-voice-row">
+          <span id="voice-ico">🔈</span>
+          <span style="flex:1">Voice alerts</span>
+          <input type="checkbox" id="voice-toggle" onchange="onVoiceToggle()">
+        </label>
+        <select id="voice-lang" onchange="onVoiceLangChange()" title="Announcement language">
+          <option value="en">English</option>
+          <option value="hi">हिंदी (Hindi)</option>
+        </select>
+        <button class="btn btn-sm btn-ghost" onclick="testVoice()" style="width:100%;margin-top:6px;font-size:.74rem">🔊 Test voice</button>
+      </div>
     </div>
 
     <!-- Nav -->
@@ -482,11 +502,18 @@ const fullName = localStorage.getItem('cv_full_name');
 const room     = localStorage.getItem('cv_room') || '';
 const BASE     = window.location.origin;
 
-// WebSocket state — declared up-front so initNurseDashboard() (called during
-// top-level execution) can assign wsWant without hitting a temporal-dead-zone error.
+// WebSocket + voice + room-cache state — declared up-front so
+// initNurseDashboard() (called during top-level execution) can use them
+// without hitting a temporal-dead-zone error (these are `let`/`const` and
+// strict mode forbids access before their declaration line).
 let ws = null;
 let wsWant = false;
 let wsReconnectT = null;
+let voiceOn = false;
+let voiceLang = 'en';
+const _announced = new Set();   // alert ids already spoken (avoid repeats)
+let _myRooms = null;            // cache of this nurse's assigned room numbers
+let alertStore = [];            // single source of truth: alerts (pending + acked)
 
 if (!token || !role) { window.location.href = '/login'; throw 0; }
 
@@ -511,8 +538,8 @@ function logout() { localStorage.clear(); window.location.href = '/login'; }
 /* ══════════════════════════════════════════════════════════════════
    NURSE DASHBOARD
 ══════════════════════════════════════════════════════════════════ */
-// Single source of truth for alerts in this nurse's rooms.
-let alertStore = [];   // array of alert objects (pending + acked), newest first
+// (alertStore — the single source of truth — is declared in the up-front
+//  state block near the top to avoid a temporal-dead-zone error.)
 
 function initNurseDashboard() {
   // Sidebar profile
@@ -524,6 +551,171 @@ function initNurseDashboard() {
   fetchPatients().then(() => loadAllAlerts()).catch(e => console.error(e));
   wsWant = true;
   connectWs();
+  initVoice();
+  startAlertPolling();
+}
+
+/* Polling fallback — guarantees new alerts appear even if the live WebSocket
+   push doesn't arrive (e.g. cross-container broadcast on cloud, proxy buffering,
+   or a dropped socket). Re-reads /alerts/latest every few seconds, detects any
+   NEW unacknowledged Critical alert since the last poll, and announces it once.
+   This is idempotent with the WS path because prependAlert() dedupes by id and
+   _announced tracks already-spoken ids. */
+let _alertPollT = null;
+function startAlertPolling() {
+  clearInterval(_alertPollT);
+  _alertPollT = setInterval(pollAlerts, 5000);
+}
+async function pollAlerts() {
+  try {
+    const rooms = await myRooms();
+    const d = await fetch(`${BASE}/alerts/latest?limit=100&unacked_only=false`, { headers: authHeaders() }).then(r=>r.json());
+    const incoming = (d.alerts||[]).filter(a => rooms.size===0 || rooms.has(a.room_id));
+
+    // Find genuinely new Critical alerts (id not already in the store) so we can
+    // still announce them if the WS push was missed.
+    const knownIds = new Set(alertStore.map(a => a.id));
+    const newCriticals = incoming.filter(a => !knownIds.has(a.id) && !a.acknowledged && a.priority === 'Critical');
+
+    // Replace the store from the DB (authoritative) and re-render.
+    alertStore = incoming;
+    renderRequests();
+    renderAcked();
+    updateCounts();
+
+    // Announce any Critical we hadn't seen (maybeAnnounce dedupes via _announced).
+    for (const a of newCriticals) {
+      try { maybeAnnounce(a); } catch (_) {}
+    }
+  } catch(e) { /* transient network error — next tick retries */ }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   VOICE ANNOUNCEMENTS (browser TTS)
+   ─────────────────────────────────────────────────────────────────
+   Speaks a SHORT keyword summary for Critical alerts (including Urgent
+   alerts auto-escalated to Critical), in the nurse's chosen language
+   (English / Hindi / Kannada). Uses the Web Speech API (speechSynthesis).
+   Browsers require a user gesture before speech works, so the nurse
+   enables it via the sidebar toggle (which counts as that gesture).
+══════════════════════════════════════════════════════════════════ */
+// (voiceOn, voiceLang, _announced are declared in the up-front state block
+//  near the top to avoid a temporal-dead-zone error.)
+
+// Localised intent names + sentence templates. Keyword summary only.
+const VOICE_INTENT = {
+  en: { 'Emergency':'an emergency', 'Pain':'severe pain', 'Medication':'medication',
+        'Food/Water':'food or water', 'Mobility':'mobility help', 'Hygiene':'hygiene help',
+        'Emotional Support':'emotional support', 'Information':'information', 'Other':'assistance' },
+  hi: { 'Emergency':'आपातकाल', 'Pain':'तेज़ दर्द', 'Medication':'दवाई',
+        'Food/Water':'खाना या पानी', 'Mobility':'चलने में मदद', 'Hygiene':'साफ़-सफ़ाई',
+        'Emotional Support':'सहारा', 'Information':'जानकारी', 'Other':'मदद' },
+  kn: { 'Emergency':'ತುರ್ತು ಪರಿಸ್ಥಿತಿ', 'Pain':'ತೀವ್ರ ನೋವು', 'Medication':'ಔಷಧಿ',
+        'Food/Water':'ಆಹಾರ ಅಥವಾ ನೀರು', 'Mobility':'ನಡೆಯಲು ಸಹಾಯ', 'Hygiene':'ಸ್ವಚ್ಛತೆ',
+        'Emotional Support':'ಭಾವನಾತ್ಮಕ ಬೆಂಬಲ', 'Information':'ಮಾಹಿತಿ', 'Other':'ಸಹಾಯ' },
+};
+const VOICE_BCP47 = { en:'en-US', hi:'hi-IN', kn:'kn-IN' };
+
+// Build the spoken sentence for an alert in the chosen language.
+function voiceSentence(a, lang) {
+  const intent = (VOICE_INTENT[lang] && VOICE_INTENT[lang][a.intent]) || (VOICE_INTENT.en[a.intent] || 'assistance');
+  const room = a.room_id || '';
+  const esc2 = a.escalated ? true : false;
+  if (lang === 'hi') {
+    return `${esc2 ? 'बढ़ा हुआ अलर्ट। ' : 'गंभीर अलर्ट। '}कमरा ${room}. मरीज़ को ${intent} की ज़रूरत है। कृपया तुरंत पहुँचें।`;
+  }
+  if (lang === 'kn') {
+    return `${esc2 ? 'ಉನ್ನತೀಕರಿಸಿದ ಎಚ್ಚರಿಕೆ. ' : 'ತೀವ್ರ ಎಚ್ಚರಿಕೆ. '}ಕೊಠಡಿ ${room}. ರೋಗಿಗೆ ${intent} ಅಗತ್ಯವಿದೆ. ದಯವಿಟ್ಟು ಕೂಡಲೇ ಬನ್ನಿ.`;
+  }
+  return `${esc2 ? 'Escalated alert. ' : 'Critical alert. '}Room ${room}. Patient needs ${intent}. Please attend immediately.`;
+}
+
+function initVoice() {
+  voiceOn = localStorage.getItem('cv_voice_on') === '1';
+  voiceLang = localStorage.getItem('cv_voice_lang') || 'en';
+  // Kannada TTS removed — migrate any previously-saved 'kn' choice to English.
+  if (voiceLang !== 'en' && voiceLang !== 'hi') { voiceLang = 'en'; localStorage.setItem('cv_voice_lang', 'en'); }
+  const tgl = document.getElementById('voice-toggle');
+  const sel = document.getElementById('voice-lang');
+  if (tgl) tgl.checked = voiceOn;
+  if (sel) { sel.value = voiceLang; sel.disabled = !voiceOn; }
+  updateVoiceIco();
+  // Warm up the voice list (some browsers load voices asynchronously).
+  if ('speechSynthesis' in window) { try { window.speechSynthesis.getVoices(); } catch(_){} }
+}
+
+function updateVoiceIco() {
+  const ico = document.getElementById('voice-ico');
+  if (ico) ico.textContent = voiceOn ? '🔊' : '🔈';
+}
+
+function onVoiceToggle() {
+  voiceOn = document.getElementById('voice-toggle').checked;
+  localStorage.setItem('cv_voice_on', voiceOn ? '1' : '0');
+  document.getElementById('voice-lang').disabled = !voiceOn;
+  updateVoiceIco();
+  // Speaking once here (inside the click handler) unlocks the audio channel.
+  if (voiceOn) speak(voiceLang === 'en' ? 'Voice alerts enabled.'
+                    : voiceLang === 'hi' ? 'आवाज़ अलर्ट चालू।'
+                    : 'ಧ್ವನಿ ಎಚ್ಚರಿಕೆ ಆನ್ ಆಗಿದೆ.', voiceLang);
+}
+
+function onVoiceLangChange() {
+  voiceLang = document.getElementById('voice-lang').value;
+  localStorage.setItem('cv_voice_lang', voiceLang);
+}
+
+function testVoice() {
+  // Test button also serves as the user-gesture unlock.
+  if (!('speechSynthesis' in window)) {
+    alert('This browser does not support text-to-speech. Try Chrome or Edge.');
+    return;
+  }
+  const demo = { intent:'Emergency', room_id:'4B', escalated:false };
+  const ok = speak(voiceSentence(demo, voiceLang), voiceLang);
+  if (ok === false) {
+    alert('Could not start speech. Check the tab is not muted and system volume is up.');
+  }
+}
+
+// Speak a specific alert if it hasn't been announced yet.
+function maybeAnnounce(a) {
+  if (!voiceOn) return;
+  if (_announced.has(a.id)) return;
+  _announced.add(a.id);
+  speak(voiceSentence(a, voiceLang), voiceLang);
+}
+
+// Low-level speak with language + voice selection.
+function speak(text, lang) {
+  if (!('speechSynthesis' in window)) { console.warn('speechSynthesis not supported'); return false; }
+  try {
+    const synth = window.speechSynthesis;
+    const doSpeak = () => {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = VOICE_BCP47[lang] || 'en-US';
+      u.rate = 0.95; u.pitch = 1.0; u.volume = 1.0;
+      // Prefer a matching-language voice if the browser has one installed.
+      const voices = synth.getVoices() || [];
+      const match = voices.find(v => v.lang && v.lang.toLowerCase().startsWith(lang));
+      if (match) u.voice = match;
+      try { synth.cancel(); } catch(_){}   // clear any stuck/queued utterance
+      if (synth.paused) { try { synth.resume(); } catch(_){} }
+      synth.speak(u);
+    };
+    // Chrome loads voices asynchronously — first getVoices() is often empty.
+    // If so, wait for voiceschanged (once) then speak; also speak immediately
+    // as a fallback in case the event never fires.
+    const voicesNow = synth.getVoices();
+    if (!voicesNow || voicesNow.length === 0) {
+      let spoke = false;
+      synth.onvoiceschanged = () => { if (!spoke) { spoke = true; doSpeak(); } };
+      setTimeout(() => { if (!spoke) { spoke = true; doSpeak(); } }, 250);
+    } else {
+      doSpeak();
+    }
+    return true;
+  } catch (e) { console.warn('TTS failed', e); return false; }
 }
 
 function showView(view) {
@@ -535,15 +727,18 @@ function showView(view) {
   if (view === 'patients') fetchPatients();
 }
 
-// Cache of the room numbers assigned to this nurse
-let _myRooms = null;
+// Cache of the room numbers assigned to this nurse (_myRooms declared up-front).
+// Rooms used to filter the ALERT feed.
+//
+// The web dashboard now shows the ENTIRE ward — identical to the Android app,
+// which lists every incoming alert with no room filtering. Previously this
+// returned only the logged-in nurse's assigned rooms, which silently hid any
+// alert whose patient wasn't attended by that nurse (the "app works, web
+// doesn't" bug). Returning an empty set means "no filter → show all".
+//
+// The "My Patients" sidebar list stays scoped to the nurse via fetchPatients().
 async function myRooms() {
-  if (_myRooms) return _myRooms;
-  try {
-    const rows = await fetch(`${BASE}/auth/patients`, { headers: authHeaders() }).then(r=>r.json());
-    _myRooms = new Set((rows||[]).map(p => p.room_number));
-  } catch { _myRooms = new Set(); }
-  return _myRooms;
+  return new Set();   // empty = show every room's alerts
 }
 
 async function fetchPatients() {
@@ -617,7 +812,9 @@ function setBadge(id, n, muted) {
 }
 
 // Called by WS + poll — insert/replace an alert in the store, re-render.
-async function prependAlert(a, pre=true) {
+// announce=true means this came from a live WS push (new_alert / alert_updated)
+// and is eligible to trigger a voice announcement. Full reloads pass false.
+async function prependAlert(a, pre=true, announce=false) {
   if (pre) {
     const rooms = await myRooms();
     if (rooms.size>0 && !rooms.has(a.room_id)) return;
@@ -627,6 +824,11 @@ async function prependAlert(a, pre=true) {
   else alertStore.unshift(a);
   renderRequests();
   renderAcked();
+  // Voice announcement: only for live pushes, unacknowledged Critical alerts,
+  // and only once per alert id. Never let a TTS problem break rendering.
+  if (announce && !a.acknowledged && a.priority === 'Critical') {
+    try { maybeAnnounce(a); } catch (e) { console.warn('TTS announce failed', e); }
+  }
 }
 
 function buildAlertCard(a) {
@@ -636,8 +838,9 @@ function buildAlertCard(a) {
   const action = a.acknowledged
     ? `<span class="ackd-label">✓ Attended${a.ack_by?` · ${esc(a.ack_by)}`:''}</span>`
     : `<button class="btn-ack" onclick="ackAlert(${a.id},this)">Acknowledge</button>`;
+  const escBadge = a.escalated ? `<span class="esc-badge" title="Auto-escalated: unacknowledged too long">⬆ Escalated</span>` : '';
   div.innerHTML = `
-    <div class="alert-header"><span class="ap ${a.priority}">${a.priority}</span><span class="ai">${esc(a.intent)}</span><span class="ar">Room ${esc(a.room_id)}</span></div>
+    <div class="alert-header"><span class="ap ${a.priority}">${a.priority}</span><span class="ai">${esc(a.intent)}</span>${escBadge}<span class="ar">Room ${esc(a.room_id)}</span></div>
     <div class="at">${esc(a.transcript)}</div>
     <div class="am">
       ${action}
@@ -712,8 +915,16 @@ function connectWs() {
     if (e.data === 'ping') { try { ws.send('pong'); } catch(_){} return; }
     try {
       const p = JSON.parse(e.data);
-      if (p.event === 'new_alert') prependAlert({ ...p, id: p.alert_id, acknowledged: false });
-    } catch(_) {}
+      if (p.event === 'new_alert') {
+        prependAlert({ ...p, id: p.alert_id, acknowledged: false }, true, true);
+      } else if (p.event === 'alert_updated') {
+        // Server-side change (e.g. Urgent auto-escalated to Critical). Merge and
+        // re-announce if it just became Critical and is still unacknowledged.
+        const existing = alertStore.find(x => x.id === p.alert_id);
+        const wasAcked = existing ? existing.acknowledged : false;
+        prependAlert({ ...p, id: p.alert_id, acknowledged: wasAcked }, true, true);
+      }
+    } catch(err) { console.error('WS message handling failed:', err, e.data); }
   };
   ws.onerror = () => { /* onclose will handle UI + retry */ };
   ws.onclose = () => {

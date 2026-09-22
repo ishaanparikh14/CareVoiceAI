@@ -54,6 +54,13 @@ class Settings(BaseSettings):
     # How long (seconds) to keep an idle nurse WebSocket connection alive
     WS_KEEPALIVE_SECONDS: int = 120
 
+    # ── Auto-escalation ───────────────────────────────────────────────────────
+    # An unacknowledged Urgent alert is bumped to Critical after this many
+    # seconds so a forgotten request re-pages the nurse. Set 0 to disable.
+    ESCALATE_URGENT_AFTER_SECONDS: int = 90
+    # How often the escalation loop scans for stale alerts.
+    ESCALATE_CHECK_INTERVAL_SECONDS: int = 20
+
     # ── CORS ──────────────────────────────────────────────────────────────────
     # Restrict to LAN origins; add nurse-dashboard origin here if it's a web app
     CORS_ORIGINS: list[str] = ["*"]   # tighten to specific IP(s) in production
@@ -73,13 +80,37 @@ class Settings(BaseSettings):
     PG_PASSWORD: str = "postgres"
     PG_DATABASE: str = "carevoice"
 
+    # Full connection string override. When set (e.g. a Neon/managed-Postgres
+    # URL for cloud deployment), it takes precedence over the PG_* parts above.
+    # Example: postgresql://user:pass@ep-xxx.aws.neon.tech/carevoice?sslmode=require
+    DATABASE_URL_OVERRIDE: str = ""
+
     @property
     def DATABASE_URL(self) -> str:
-        """asyncpg-compatible connection string."""
+        """asyncpg-compatible connection string.
+
+        Neon/managed URLs often carry libpq params (sslmode, channel_binding)
+        that asyncpg's DSN parser rejects. We strip those query params and rely
+        on ssl being handled separately (see create_pool). SSL is still enforced
+        for Neon hosts via the pool's ssl argument.
+        """
+        if self.DATABASE_URL_OVERRIDE:
+            import urllib.parse as _up
+            url = self.DATABASE_URL_OVERRIDE.replace("postgresql+asyncpg://", "postgresql://")
+            parts = _up.urlsplit(url)
+            # Drop query params asyncpg can't parse (sslmode, channel_binding, etc.)
+            clean = _up.urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+            return clean
         return (
             f"postgresql://{self.PG_USER}:{self.PG_PASSWORD}"
             f"@{self.PG_HOST}:{self.PG_PORT}/{self.PG_DATABASE}"
         )
+
+    @property
+    def DB_REQUIRES_SSL(self) -> bool:
+        """True when the override URL points at a host that needs SSL (e.g. Neon)."""
+        u = (self.DATABASE_URL_OVERRIDE or "").lower()
+        return ("sslmode=require" in u) or ("neon.tech" in u) or ("channel_binding" in u)
 
     @property
     def DATABASE_URL_SYNC(self) -> str:

@@ -13,5 +13,6 @@ data class AlertModel(
     val transcript:    String,
     val createdAt:     String,   // ISO-8601 UTC — formatted for display in the adapter
     val acknowledged:  Boolean,
-    val ackedBy:       String?
+    val ackedBy:       String?,
+    val escalated:     Boolean = false   // true once auto-escalated Urgent→Critical
 )

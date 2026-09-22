@@ -60,6 +60,7 @@ class PipelineResult(BaseModel):
         default=0.0, ge=0.0, le=1.0, description="Deprecated — no longer used; kept for schema compat"
     )
     priority:       Priority = Field(..., description="Computed priority level")
+    language:       str | None = Field(default=None, description="Detected/forced language: en|hi|kn")
 
     # When False the audio was classified as non-medical chatter and should NOT
     # be forwarded to nurses as an alert (still stored for audit purposes).
@@ -107,6 +108,8 @@ class AlertResponse(BaseModel):
     ack_by:         str | None = None
     created_at:     str        = Field(..., description="ISO-8601 UTC creation time")
     ack_at:         str | None = None
+    language:       str | None = Field(default=None, description="Detected/forced language: en|hi|kn")
+    escalated:      bool       = Field(default=False, description="True if auto-escalated Urgent→Critical")
 
     @classmethod
     def from_db_row(cls, row: dict) -> "AlertResponse":
@@ -126,6 +129,8 @@ class AlertResponse(BaseModel):
             ack_by         = row.get("ack_by"),
             created_at     = row["created_at"],
             ack_at         = row.get("ack_at"),
+            language       = row.get("language"),
+            escalated      = bool(row.get("escalated") or 0),
         )
 
 
@@ -167,7 +172,9 @@ class WsAlertPayload(BaseModel):
     Intentionally a subset of AlertResponse — nurses need the essentials fast;
     they can fetch the full record via GET /alerts/{id} if needed.
     """
-    event:          Literal["new_alert"] = "new_alert"
+    # "new_alert" for freshly created alerts; "alert_updated" when an existing
+    # alert changes server-side (e.g. auto-escalation Urgent→Critical).
+    event:          Literal["new_alert", "alert_updated"] = "new_alert"
     alert_id:       int
     room_id:        str
     priority:       Priority
@@ -175,10 +182,13 @@ class WsAlertPayload(BaseModel):
     distress_score: float = 0.0   # deprecated; kept for client compat
     transcript:     str
     created_at:     str
+    language:       str | None = None
+    escalated:      bool = False
 
     @classmethod
-    def from_alert_response(cls, a: AlertResponse) -> "WsAlertPayload":
+    def from_alert_response(cls, a: AlertResponse, event: str = "new_alert") -> "WsAlertPayload":
         return cls(
+            event          = event,
             alert_id       = a.id,
             room_id        = a.room_id,
             priority       = a.priority,
@@ -186,6 +196,8 @@ class WsAlertPayload(BaseModel):
             distress_score = a.distress_score,
             transcript     = a.transcript,
             created_at     = a.created_at,
+            language       = a.language,
+            escalated      = a.escalated,
         )
 
 

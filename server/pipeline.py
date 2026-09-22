@@ -30,8 +30,15 @@ def _register_cuda_dlls():
     Add pip-installed NVIDIA cuBLAS/cuDNN DLL folders to the DLL search path so
     faster-whisper (CTranslate2) can find them on Windows. These come from the
     nvidia-cublas-cu12 / nvidia-cudnn-cu12 wheels and are NOT on PATH by default.
+
+    On Linux (e.g. the Modal CUDA container) the CUDA libraries are already on
+    the system library path and os.add_dll_directory does not exist, so we simply
+    return True to allow the GPU path — no DLL registration is needed there.
     """
     import os, glob, site
+    if os.name != "nt":
+        # Non-Windows: assume the CUDA runtime is provided by the base image.
+        return True
     try:
         registered = False
         # nvidia.* are namespace packages (__file__ may be None); resolve via
@@ -67,9 +74,10 @@ def _get_whisper():
         import os
         from faster_whisper import WhisperModel
 
-        # Model size: "small" is far more accurate for Hindi/Kannada native script
-        # than "base"; on GPU it still runs in well under a second. Overridable.
-        model_size = os.environ.get("WHISPER_MODEL", "small")
+        # Model size: "medium" is required for reliable Kannada — "small" emits
+        # Devanagari/garbled script for Kannada speech. "medium" stays in correct
+        # Kannada script and runs in ~1-2s on GPU. Overridable via WHISPER_MODEL.
+        model_size = os.environ.get("WHISPER_MODEL", "medium")
 
         # Try GPU first (fast + accurate). Requires cuBLAS/cuDNN — register the
         # pip-installed DLLs, then self-test with a real transcribe call so we
@@ -86,8 +94,10 @@ def _get_whisper():
             except Exception as exc:
                 logger.warning("CUDA Whisper unavailable (%s) — falling back to CPU", exc)
 
-        # CPU fallback — use the faster "base" model since "small" is slow on CPU.
-        cpu_size = "base" if model_size == "small" else model_size
+        # CPU fallback — medium/small are slow on CPU. Drop to "small" so the
+        # server stays responsive; Kannada quality degrades without a GPU, which
+        # is an accepted tradeoff for CPU-only deployments.
+        cpu_size = "small" if model_size in ("medium", "large-v3", "large") else model_size
         _whisper_model = WhisperModel(cpu_size, device="cpu", compute_type="int8")
         logger.info("Whisper '%s' loaded on CPU (int8)", cpu_size)
     return _whisper_model
@@ -231,19 +241,22 @@ def _classify_intent(transcript: str) -> Intent:
 
 # ── Main pipeline entry point ─────────────────────────────────────────────────
 
-async def process_audio(wav_bytes: bytes, room_id: str) -> PipelineResult:
+async def process_audio(wav_bytes: bytes, room_id: str, lang_hint: str | None = None) -> PipelineResult:
     """
     Real pipeline:
       1. Transcribe WAV with faster-whisper (multilingual, auto-detect)
       2. Classify intent with the DistilBERT model (keyword fallback)
       3. Map intent -> priority (Critical/Urgent/Routine) with a critical-marker
          safety override; decide whether to notify the nurse.
+
+    lang_hint: optional ISO code ('en'/'hi'/'kn'). When provided, Whisper is
+    forced to that language — the most reliable path (no auto-detect ambiguity).
     """
     import asyncio
 
     # ── Step 1: Transcribe ────────────────────────────────────────────────────
     transcript, language = await asyncio.get_event_loop().run_in_executor(
-        None, _transcribe, wav_bytes
+        None, _transcribe, wav_bytes, lang_hint
     )
     logger.info("[PIPELINE] room=%s lang=%s transcript: %s", room_id, language, transcript)
 
@@ -262,16 +275,60 @@ async def process_audio(wav_bytes: bytes, room_id: str) -> PipelineResult:
         intent         = intent,
         distress_score = 0.0,   # retained for schema compat; no longer used
         priority       = priority,
+        language       = language,
         should_alert   = should_alert,
         is_stub        = False,
     )
 
 
-def _transcribe(wav_bytes: bytes) -> tuple[str, str]:
+# Unicode block ranges used to tell Indic scripts apart in transcripts.
+_KANNADA_RANGE    = (0x0C80, 0x0CFF)
+_DEVANAGARI_RANGE = (0x0900, 0x097F)
+
+# Languages Whisper commonly emits in Devanagari script. When Kannada speech is
+# misdetected it almost always lands in one of these.
+_DEVANAGARI_LANGS = {"hi", "mr", "ne", "sa"}
+
+
+def _script_ratio(text: str, lo: int, hi: int) -> float:
+    """Fraction of letters in `text` whose codepoint falls in [lo, hi]."""
+    letters = [c for c in text if c.isalpha()]
+    if not letters:
+        return 0.0
+    inrange = sum(1 for c in letters if lo <= ord(c) <= hi)
+    return inrange / len(letters)
+
+
+def _run_whisper(model, path: str, language: str | None):
+    """Single transcription pass. Returns (text, info, avg_logprob)."""
+    segments, info = model.transcribe(
+        path,
+        language   = language,   # None → auto-detect
+        beam_size  = 5,
+        vad_filter = False,
+        condition_on_previous_text = False,
+    )
+    segs = list(segments)
+    text = " ".join(s.text.strip() for s in segs).strip()
+    # Average segment log-prob is Whisper's confidence proxy; higher = better.
+    if segs:
+        avg_lp = sum(getattr(s, "avg_logprob", -5.0) for s in segs) / len(segs)
+    else:
+        avg_lp = -10.0
+    return text, info, avg_lp
+
+
+def _transcribe(wav_bytes: bytes, lang_hint: str | None = None) -> tuple[str, str]:
     """
     Run faster-whisper transcription synchronously (called via executor).
-    Language is auto-detected (Hindi / Kannada / English + 90 more).
-    Returns (transcript, detected_language_code).
+
+    Strategy (robust multilingual, en/hi/kn):
+      • If lang_hint is given ('en'/'hi'/'kn'), force that language — most reliable.
+      • Otherwise auto-detect, then correct two known failure modes:
+          - Urdu detected  → re-transcribe as Hindi (Devanagari).
+          - Kannada speech mis-emitted as Devanagari → re-transcribe as Kannada
+            and keep whichever pass is more confident + script-consistent.
+    Returns (transcript, language_code).
     """
     import tempfile, os
     model = _get_whisper()
@@ -281,30 +338,38 @@ def _transcribe(wav_bytes: bytes) -> tuple[str, str]:
         tmp_path = tmp.name
 
     try:
-        # Auto-detect language first.
-        segments, info = model.transcribe(
-            tmp_path,
-            beam_size  = 5,       # better decoding accuracy; still <1s on GPU
-            vad_filter = False,   # app-side VAD already filtered silence
-            condition_on_previous_text = False,  # reduces cross-language script drift
-        )
-        text = " ".join(seg.text.strip() for seg in segments).strip()
+        # ── Forced language (explicit hint) — no ambiguity, best accuracy ──────
+        if lang_hint in ("en", "hi", "kn"):
+            text, info, _ = _run_whisper(model, tmp_path, lang_hint)
+            logger.info("Whisper(forced=%s): text='%s'", lang_hint, text)
+            return (text if text else "[silence]", lang_hint)
+
+        # ── Auto-detect pass ──────────────────────────────────────────────────
+        text, info, lp_auto = _run_whisper(model, tmp_path, None)
         lang = getattr(info, "language", "unknown")
 
-        # Whisper often transcribes Hindi speech as Urdu (same spoken language,
-        # different script). Force a Devanagari re-transcription so nurses never
-        # see Urdu script. 'ur' → 'hi'.
+        # Fix 1: Urdu → Hindi (same spoken language, different script).
         if lang == "ur":
-            segments, info = model.transcribe(
-                tmp_path,
-                language   = "hi",   # force Hindi/Devanagari output
-                beam_size  = 5,
-                vad_filter = False,
-                condition_on_previous_text = False,
-            )
-            text = " ".join(seg.text.strip() for seg in segments).strip()
+            text, info, _ = _run_whisper(model, tmp_path, "hi")
             lang = "hi"
             logger.info("Urdu detected → re-transcribed as Hindi (Devanagari)")
+
+        # Fix 2: Kannada mis-detected as a Devanagari language. This is the main
+        # end-to-end Kannada bug: Kannada speech gets emitted in Devanagari, so
+        # neither the display nor the Kannada keyword layer works. When the auto
+        # pass is Devanagari-Indic, run a forced Kannada pass and compare.
+        if lang in _DEVANAGARI_LANGS:
+            kn_text, _, lp_kn = _run_whisper(model, tmp_path, "kn")
+            kn_ratio = _script_ratio(kn_text, *_KANNADA_RANGE)
+            # Prefer Kannada when the forced pass actually yields Kannada script
+            # and is at least as confident as the Devanagari auto pass. The small
+            # margin (0.5) tolerates Whisper's slightly lower LP on forced runs.
+            if kn_ratio >= 0.5 and lp_kn >= lp_auto - 0.5:
+                logger.info(
+                    "Kannada correction: auto=%s(lp=%.2f) → kn(lp=%.2f, script=%.0f%%) '%s'",
+                    lang, lp_auto, lp_kn, kn_ratio * 100, kn_text,
+                )
+                text, lang = kn_text, "kn"
 
         logger.info("Whisper: lang=%s text='%s'", lang, text)
         return (text if text else "[silence]", lang)

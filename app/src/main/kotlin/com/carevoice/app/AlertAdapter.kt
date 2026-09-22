@@ -47,7 +47,8 @@ class AlertAdapter(
             b.tvTime.text = formatTime(alert.createdAt)
 
             // ── Intent ────────────────────────────────────────────────────────
-            b.tvIntent.text = alert.intent
+            // Mark auto-escalated alerts (Urgent → Critical after timeout).
+            b.tvIntent.text = if (alert.escalated) "⬆ ${alert.intent} (escalated)" else alert.intent
             // Distress score removed from the product — hide the label.
             b.tvDistress.visibility = View.GONE
 

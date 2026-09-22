@@ -24,10 +24,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+import asyncio
+
+import aiosqlite
+
 from config import settings
-from database import init_db
+from database import init_db, get_stale_unacked_urgent, escalate_alert, get_alert_by_id
 from pg_database import create_pool, close_pool, init_pg_db
-from models import HealthResponse
+from models import HealthResponse, AlertResponse, WsAlertPayload
 from routers import audio as audio_router
 from routers import alerts as alerts_router
 from routers import ws as ws_router
@@ -42,6 +46,49 @@ logging.basicConfig(
     datefmt = "%Y-%m-%dT%H:%M:%S",
 )
 logger = logging.getLogger(__name__)
+
+
+# ── Auto-escalation background loop ───────────────────────────────────────────
+
+async def _escalation_loop():
+    """
+    Periodically scan for unacknowledged Urgent alerts that have been waiting
+    longer than ESCALATE_URGENT_AFTER_SECONDS and bump them to Critical, then
+    re-broadcast so the nurse dashboard upgrades the card and re-announces it.
+
+    Runs as a background task for the lifetime of the server. Opens its own
+    short-lived SQLite connection (it can't use the request-scoped get_db dep).
+    """
+    after   = settings.ESCALATE_URGENT_AFTER_SECONDS
+    every   = max(5, settings.ESCALATE_CHECK_INTERVAL_SECONDS)
+    if after <= 0:
+        logger.info("Auto-escalation disabled (ESCALATE_URGENT_AFTER_SECONDS=0)")
+        return
+
+    logger.info("Auto-escalation active: Urgent → Critical after %ds (check every %ds)", after, every)
+    while True:
+        try:
+            await asyncio.sleep(every)
+            async with aiosqlite.connect(settings.DB_PATH) as db:
+                db.row_factory = aiosqlite.Row
+                stale = await get_stale_unacked_urgent(db, older_than_seconds=after)
+                for row in stale:
+                    changed = await escalate_alert(db, row["id"])
+                    if not changed:
+                        continue
+                    updated = await get_alert_by_id(db, row["id"])
+                    if not updated:
+                        continue
+                    payload = WsAlertPayload.from_alert_response(
+                        AlertResponse.from_db_row(updated), event="alert_updated"
+                    )
+                    await ws_router.manager.broadcast(payload.model_dump_json())
+                    logger.info("Broadcast escalation for alert %d (room %s)", row["id"], row["room_id"])
+        except asyncio.CancelledError:
+            logger.info("Escalation loop cancelled — shutting down")
+            break
+        except Exception as exc:
+            logger.warning("Escalation loop error (continuing): %s", exc)
 
 
 # ── Lifespan ──────────────────────────────────────────────────────────────────
@@ -83,11 +130,13 @@ async def lifespan(app: FastAPI):
     set_nurse_broadcaster(ws_router.manager.broadcast)
     logger.info("WebSocket broadcaster wired to audio router and patient WS router")
 
+    # Start the auto-escalation background task (Urgent → Critical after timeout).
+    escalation_task = asyncio.create_task(_escalation_loop())
+
     # Pre-warm the Whisper model so the first real request doesn't timeout
     # waiting for a 150 MB download + GPU load.  Runs in a thread executor so
     # it doesn't block the event loop during startup.
     if not settings.USE_STUB:
-        import asyncio
         loop = asyncio.get_event_loop()
         try:
             logger.info("Pre-warming Whisper + DistilBERT models (may take 30-60s on first run)...")
@@ -101,6 +150,11 @@ async def lifespan(app: FastAPI):
     yield  # ← server is live
 
     # ── Shutdown ──────────────────────────────────────────────────────────────
+    escalation_task.cancel()
+    try:
+        await escalation_task
+    except (asyncio.CancelledError, Exception):
+        pass
     await close_pool()
     logger.info("CareVoice AI server shutting down")
 
@@ -149,10 +203,16 @@ _static_dir = settings.BASE_DIR / "static"
 if _static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
 
+_NO_CACHE = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+}
+
 @app.get("/dashboard", include_in_schema=False)
 async def dashboard():
     """Serve the main app dashboard (requires auth — JS handles redirect)."""
-    return FileResponse(str(_static_dir / "index.html"))
+    return FileResponse(str(_static_dir / "index.html"), headers=_NO_CACHE)
 
 @app.get("/login", include_in_schema=False)
 async def login_page():

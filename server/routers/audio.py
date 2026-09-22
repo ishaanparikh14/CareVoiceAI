@@ -74,6 +74,7 @@ def set_broadcaster(fn):
 async def ingest_audio(
     audio:   UploadFile = File(..., description="WAV audio clip (16kHz mono PCM)"),
     room_id: str        = Form(..., description="Ward room identifier, e.g. '4B'"),
+    lang:    str        = Form("", description="Optional language hint: en | hi | kn (blank = auto-detect)"),
     db:      aiosqlite.Connection = Depends(get_db),
 ):
     # ── 1. Validate room_id ───────────────────────────────────────────────────
@@ -128,10 +129,17 @@ async def ingest_audio(
     try:
         import asyncio
         pipeline = get_pipeline()
-        result   = await asyncio.wait_for(
-            pipeline.process_audio(wav_bytes, room_id),
-            timeout=60.0
-        )
+        lang_hint = (lang or "").strip().lower() or None
+        # Stub pipeline doesn't take a lang hint; only pass it to the real one.
+        if settings.USE_STUB:
+            result = await asyncio.wait_for(
+                pipeline.process_audio(wav_bytes, room_id), timeout=60.0
+            )
+        else:
+            result = await asyncio.wait_for(
+                pipeline.process_audio(wav_bytes, room_id, lang_hint=lang_hint),
+                timeout=60.0,
+            )
     except Exception as exc:
         logger.exception("Pipeline error for room=%s", room_id)
         # Do NOT expose internal stack trace to the client.
@@ -141,6 +149,10 @@ async def ingest_audio(
         ) from exc
 
     # ── 6. Persist alert ──────────────────────────────────────────────────────
+    # Language: prefer what the pipeline actually used/detected; fall back to
+    # the client hint. None for the stub pipeline.
+    alert_language = getattr(result, "language", None) or lang_hint
+
     alert_id = await insert_alert(
         db,
         room_id        = room_id,
@@ -149,6 +161,7 @@ async def ingest_audio(
         distress_score = result.distress_score,
         transcript     = result.transcript,
         wav_path       = str(wav_path),
+        language       = alert_language,
     )
 
     # ── 7. Build response object (needed for WS broadcast too) ────────────────
@@ -162,6 +175,7 @@ async def ingest_audio(
         wav_path       = str(wav_path),
         acknowledged   = False,
         created_at     = utcnow(),
+        language       = alert_language,
     )
 
     # ── 8. WebSocket broadcast — only for genuine nurse alerts ───────────────

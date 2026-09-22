@@ -64,6 +64,10 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     private var pollJob: Job? = null
     private var wsReconnectJob: Job? = null
 
+    // Text-to-speech announcements for Critical alerts (en/hi/kn).
+    private lateinit var tts: NurseTts
+    private val voicePrefs get() = getSharedPreferences(ServerUploader.PREFS_NAME, Context.MODE_PRIVATE)
+
     private val allAlerts = mutableListOf<AlertModel>()
     private var showUnackedOnly = false
 
@@ -90,6 +94,18 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         binding = ActivityNurseBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Voice announcements — load saved prefs (default: on, English).
+        // Kannada TTS removed — migrate any previously-saved 'kn' choice to English.
+        var savedLang = voicePrefs.getString(KEY_VOICE_LANG, "en") ?: "en"
+        if (savedLang != "en" && savedLang != "hi") {
+            savedLang = "en"
+            voicePrefs.edit().putString(KEY_VOICE_LANG, "en").apply()
+        }
+        tts = NurseTts(this).apply {
+            enabled = voicePrefs.getBoolean(KEY_VOICE_ON, true)
+            setLanguage(savedLang)
+        }
+
         setupToolbar()
         setupDrawer()
         populateDrawerHeader()
@@ -107,6 +123,7 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         pollJob?.cancel()
         wsReconnectJob?.cancel()
         webSocket?.cancel()
+        if (::tts.isInitialized) tts.shutdown()
     }
 
     override fun onBackPressed() {
@@ -201,6 +218,7 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         binding.drawerLayout.closeDrawer(GravityCompat.START)
         return when (item.itemId) {
             R.id.nav_profile  -> { showProfileDialog(); true }
+            R.id.nav_voice    -> { showVoiceDialog(); true }
             R.id.nav_settings -> { showSettingsDialog(); true }
             R.id.nav_logout   -> { doLogout(); true }
             else              -> false
@@ -300,6 +318,64 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 }
             }
         }
+    }
+
+    // ── Voice announcements ─────────────────────────────────────────────────
+
+    private fun showVoiceDialog() {
+        val dp = resources.displayMetrics.density
+        val pad = (16 * dp).toInt()
+
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(pad, pad, pad, pad)
+        }
+
+        // Enable/disable checkbox
+        val cb = android.widget.CheckBox(this).apply {
+            text = "Speak Critical alerts aloud"
+            isChecked = tts.enabled
+        }
+        layout.addView(cb)
+
+        // Language spinner (Kannada TTS removed)
+        val labels = arrayOf("English", "हिंदी (Hindi)")
+        val codes  = arrayOf("en", "hi")
+        val spinner = android.widget.Spinner(this).apply {
+            adapter = android.widget.ArrayAdapter(
+                this@NurseActivity, android.R.layout.simple_spinner_dropdown_item, labels
+            )
+            setSelection(codes.indexOf(tts.lang).coerceAtLeast(0))
+        }
+        val langLabel = TextView(this).apply {
+            text = "Announcement language"
+            setPadding(0, pad, 0, (4 * dp).toInt())
+        }
+        layout.addView(langLabel)
+        layout.addView(spinner)
+
+        AlertDialog.Builder(this)
+            .setTitle("Voice Alerts")
+            .setView(layout)
+            .setPositiveButton("Save") { _, _ ->
+                val on   = cb.isChecked
+                val code = codes[spinner.selectedItemPosition]
+                tts.enabled = on
+                tts.setLanguage(code)
+                voicePrefs.edit()
+                    .putBoolean(KEY_VOICE_ON, on)
+                    .putString(KEY_VOICE_LANG, code)
+                    .apply()
+                if (on) tts.speakTest()   // confirm audibly + unlock the engine
+            }
+            .setNeutralButton("Test") { _, _ ->
+                // Apply current selection then speak a sample.
+                tts.enabled = true
+                tts.setLanguage(codes[spinner.selectedItemPosition])
+                tts.speakTest()
+            }
+            .setNegativeButton(getString(R.string.settings_cancel), null)
+            .show()
     }
 
     // ── Settings ──────────────────────────────────────────────────────────────
@@ -543,17 +619,25 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 }
                 try {
                     val j = JSONObject(text)
-                    if (j.optString("event") != "new_alert") return
+                    val event = j.optString("event")
+                    // "new_alert" = freshly created; "alert_updated" = server-side
+                    // change such as an Urgent alert auto-escalated to Critical.
+                    if (event != "new_alert" && event != "alert_updated") return
+
+                    val id = j.getInt("alert_id")
+                    // Preserve acknowledged state on updates (server payload omits it).
+                    val prior = allAlerts.firstOrNull { it.id == id }
                     val alert = AlertModel(
-                        id            = j.getInt("alert_id"),
+                        id            = id,
                         roomId        = j.getString("room_id"),
                         priority      = j.getString("priority"),
                         intent        = j.getString("intent"),
                         distressScore = j.optDouble("distress_score", 0.0).toFloat(),
                         transcript    = j.getString("transcript"),
                         createdAt     = j.getString("created_at"),
-                        acknowledged  = false,
-                        ackedBy       = null
+                        acknowledged  = prior?.acknowledged ?: false,
+                        ackedBy       = prior?.ackedBy,
+                        escalated     = j.optBoolean("escalated", false)
                     )
                     // Ignore alerts for rooms not assigned to this nurse.
                     if (!isMyRoom(alert.roomId)) return
@@ -564,6 +648,15 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                         updateCountBadge()
                         refreshDrawerAlertCount()
                         binding.rvAlerts.scrollToPosition(0)
+                        // Announce Critical alerts (new or auto-escalated) via TTS.
+                        tts.maybeAnnounce(
+                            alertId      = alert.id,
+                            priority     = alert.priority,
+                            roomId       = alert.roomId,
+                            intent       = alert.intent,
+                            escalated    = alert.escalated,
+                            acknowledged = alert.acknowledged
+                        )
                     }
                 } catch (_: Exception) {}
             }
@@ -621,8 +714,14 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 transcript    = j.getString("transcript"),
                 createdAt     = j.getString("created_at"),
                 acknowledged  = j.getBoolean("acknowledged"),
-                ackedBy       = j.optString("ack_by").ifEmpty { null }
+                ackedBy       = j.optString("ack_by").ifEmpty { null },
+                escalated     = j.optBoolean("escalated", false)
             )
         }
+    }
+
+    companion object {
+        private const val KEY_VOICE_ON   = "voice_alerts_on"
+        private const val KEY_VOICE_LANG = "voice_alerts_lang"
     }
 }

@@ -47,8 +47,9 @@ class ServerUploader(private val context: Context) {
         const val KEY_SERVER_URL = "server_url"
         const val KEY_ROOM_ID    = "room_id"
 
-        // Default LAN placeholder — set the real server IP in Settings.
-        const val DEFAULT_SERVER_URL = "http://192.168.1.100:8000"
+        // Default: the public cloud (Modal) server so testers work from anywhere
+        // out of the box. Can be overridden in Settings (e.g. a hospital LAN IP).
+        const val DEFAULT_SERVER_URL = "https://ishaansnehalp-cs24--carevoice-fastapi-app.modal.run"
         const val DEFAULT_ROOM_ID    = "4B"
     }
 
