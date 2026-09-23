@@ -66,6 +66,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setupButtons()
         observeViewModel()
         viewModel.ensureModelReady()
+
+        // Connect the call-signaling socket so the patient can receive incoming
+        // calls from their nurse (and place outgoing ones).
+        ensureCallSignaling()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Reconnect signaling if it dropped while backgrounded.
+        ensureCallSignaling()
     }
 
     override fun onBackPressed() {
@@ -283,6 +293,35 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         // Call Nurse = instant manual alert, no recording needed
         binding.btnCallNurse.setOnClickListener { viewModel.callNurseNow() }
         binding.btnStop.setOnClickListener { viewModel.stopListening() }
+        // Voice Call = real-time WebRTC call to the patient's attending nurse.
+        binding.btnVoiceCall.setOnClickListener { startVoiceCall() }
+    }
+
+    // ── Real-time voice call ────────────────────────────────────────────────---
+
+    /**
+     * Ensure the signaling socket is connected. Called on resume so an incoming
+     * call can reach this patient even when they aren't actively in the app.
+     */
+    private fun ensureCallSignaling() {
+        val serverUrl = getSharedPreferences(ServerUploader.PREFS_NAME, Context.MODE_PRIVATE)
+            .getString(ServerUploader.KEY_SERVER_URL, ServerUploader.DEFAULT_SERVER_URL)
+            ?: ServerUploader.DEFAULT_SERVER_URL
+        val token = UserSession.getToken(this) ?: return
+        CallSession.ensureSignaling(this, serverUrl, token)
+    }
+
+    /** Place a real-time voice call to the attending nurse (server-routed). */
+    private fun startVoiceCall() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED) {
+            requestMicPermission.launch(Manifest.permission.RECORD_AUDIO)
+            Toast.makeText(this, getString(R.string.snack_mic_denied), Toast.LENGTH_SHORT).show()
+            return
+        }
+        ensureCallSignaling()
+        // to=null → server routes to this patient's attending nurse.
+        CallSession.placeCall(to = null, displayName = "Nurse", roomId = UserSession.getRoomNumber(this))
     }
 
     // ── ViewModel observation ─────────────────────────────────────────────────
