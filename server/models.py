@@ -208,3 +208,78 @@ class HealthResponse(BaseModel):
     version:    str = "0.1.0"
     use_stub:   bool
     db_path:    str
+
+
+# ── Real-time call signaling ──────────────────────────────────────────────────
+# These schemas describe the JSON control messages exchanged over the
+# /ws/signal WebSocket to set up a peer-to-peer WebRTC voice call between a
+# patient and a nurse.  The server relays these messages between the two
+# authenticated endpoints and NEVER carries the audio itself — the actual media
+# (Opus over SRTP) flows directly device-to-device across the hospital LAN.
+#
+# Message flow (happy path)
+#   caller → server: call_invite            (server resolves + forwards to callee)
+#   callee → server: call_accept            (forwarded to caller)
+#   caller → server: sdp_offer              (forwarded to callee)
+#   callee → server: sdp_answer             (forwarded to caller)
+#   both   → server: ice_candidate (n×)     (forwarded to the peer)
+#   either → server: call_hangup            (forwarded to the peer)
+#
+# Rejection / abort
+#   callee → server: call_reject            (forwarded to caller)
+#   caller → server: call_cancel            (forwarded to callee, e.g. timeout)
+#   server → caller: busy                   (callee already in a call / offline)
+
+# Signaling event names shared with the Android clients (keep in sync).
+SIGNAL_EVENTS = {
+    "call_invite",    # start a call — carries caller identity + call_id
+    "call_accept",    # callee accepted — caller may now send the SDP offer
+    "call_reject",    # callee declined
+    "call_cancel",    # caller aborted before the callee answered (or timeout)
+    "call_hangup",    # either party ended an in-progress call
+    "sdp_offer",      # WebRTC SDP offer (from caller)
+    "sdp_answer",     # WebRTC SDP answer (from callee)
+    "ice_candidate",  # a single trickled ICE candidate
+    "busy",           # server → caller: callee unavailable / already in a call
+    "error",          # server → sender: malformed / unauthorized message
+    "connected",      # server → client: signaling socket is live
+    "peer_offline",   # server → sender: target is not currently connected
+}
+
+
+class SignalMessage(BaseModel):
+    """
+    A single signaling control frame.
+
+    The client sends `event`, `to` (target username) and, depending on the
+    event, one of `sdp` / `candidate`.  The server stamps `from_user` /
+    `from_name` / `from_role` before relaying so the recipient always knows the
+    authenticated identity of the sender and cannot be spoofed.
+
+    `call_id` groups all frames belonging to one call attempt so clients can
+    ignore stale frames from a previous/parallel call.
+    """
+    event:     str = Field(..., description="One of SIGNAL_EVENTS")
+    call_id:   str | None = Field(default=None, description="Unique id for this call attempt")
+
+    # Routing — the sender specifies who it wants to reach. The server may also
+    # auto-resolve the target for a patient (their attending nurse) when `to`
+    # is omitted on a call_invite.
+    to:        str | None = Field(default=None, description="Target username")
+
+    # Server-stamped sender identity (clients must not set these; server overwrites).
+    from_user: str | None = Field(default=None, description="Authenticated sender username")
+    from_name: str | None = Field(default=None, description="Sender display name")
+    from_role: str | None = Field(default=None, description="Sender role: nurse|patient")
+
+    # Payloads (only present for the relevant events).
+    sdp:       dict | None = Field(default=None, description="WebRTC session description {type, sdp}")
+    candidate: dict | None = Field(default=None, description="ICE candidate {candidate, sdpMid, sdpMLineIndex}")
+
+    # Optional human-friendly context shown on the incoming-call screen.
+    room_id:   str | None = Field(default=None, description="Patient room number, for display")
+    reason:    str | None = Field(default=None, description="Optional reason (reject/cancel/error)")
+
+    def relay_copy(self) -> dict:
+        """Return a JSON-serialisable dict suitable for forwarding to the peer."""
+        return self.model_dump(exclude_none=True)

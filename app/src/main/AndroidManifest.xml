@@ -13,6 +13,17 @@
     <!-- Keeps CPU alive during background recording so the VAD loop is not throttled -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
+    <!-- WebRTC voice calls: audio routing (speaker/earpiece), Bluetooth headsets -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+
+    <!-- Foreground service so an active call keeps mic + audio alive when the
+         app is backgrounded (Android 10+ requires this for background mic). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
     <application
         android:allowBackup="true"
         android:icon="@android:drawable/sym_def_app_icon"
@@ -48,6 +59,32 @@
         <activity
             android:name=".RegisterActivity"
             android:exported="false" />
+
+        <!-- In-call screen (mute / speaker / end / duration) -->
+        <activity
+            android:name=".CallActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@style/Theme.MaterialComponents.Light.NoActionBar" />
+
+        <!-- Incoming-call screen (caller identity + accept / reject).
+             Shows over the lock screen so a call is never missed. -->
+        <activity
+            android:name=".IncomingCallActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@style/Theme.MaterialComponents.Light.NoActionBar" />
+
+        <!-- Keeps microphone + audio alive during a call when backgrounded -->
+        <service
+            android:name=".CallService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
 
     </application>
 

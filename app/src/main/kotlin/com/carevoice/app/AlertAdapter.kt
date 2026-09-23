@@ -22,7 +22,8 @@ import java.time.format.DateTimeFormatter
  * @param onAck  Called with the alert ID when the nurse taps ACK.
  */
 class AlertAdapter(
-    private val onAck: (alertId: Int, nurseName: String) -> Unit
+    private val onAck: (alertId: Int, nurseName: String) -> Unit,
+    private val onCall: (roomId: String) -> Unit = {}
 ) : ListAdapter<AlertModel, AlertAdapter.ViewHolder>(DIFF) {
 
     // Nurse name injected by NurseActivity after login
@@ -54,6 +55,9 @@ class AlertAdapter(
 
             // ── Transcript ────────────────────────────────────────────────────
             b.tvTranscript.text = "\"${alert.transcript}\""
+
+            // ── Call patient ──────────────────────────────────────────────────
+            b.btnCall.setOnClickListener { onCall(alert.roomId) }
 
             // ── ACK state ─────────────────────────────────────────────────────
             if (alert.acknowledged) {
