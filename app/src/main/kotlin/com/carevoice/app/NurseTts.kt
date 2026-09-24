@@ -59,21 +59,23 @@ class NurseTts(context: Context) {
     }
 
     /**
-     * Announce an alert if eligible: enabled, Critical, unacknowledged, and not
-     * already spoken. `escalated` adds a prefix distinguishing an auto-escalated
-     * request from an originally-critical one.
+     * Announce an alert if eligible: enabled, unacknowledged, and not already
+     * spoken. ALL priorities are now announced (feature: every request sounds);
+     * Critical opens with a distinct emergency clause. When an NLP [summary] and
+     * [patientName] are supplied, the English message uses them for a natural,
+     * specific sentence with the fixed "Patient X in Room Y is calling" prefix.
      */
     fun maybeAnnounce(alertId: Int, priority: String, roomId: String, intent: String,
-                      escalated: Boolean, acknowledged: Boolean) {
+                      escalated: Boolean, acknowledged: Boolean,
+                      summary: String? = null, patientName: String? = null) {
         if (!enabled || acknowledged) return
-        if (priority != "Critical") return
         if (!announced.add(alertId)) return   // add() returns false if already present
-        speak(sentence(roomId, intent, escalated))
+        speak(sentence(roomId, intent, escalated, priority, summary, patientName))
     }
 
     /** Speak an arbitrary phrase now (used by the "Test voice" action). */
     fun speakTest() {
-        speak(sentence("4B", "Emergency", false))
+        speak(sentence("4B", "Emergency", false, "Critical", "the patient", "the patient"))
     }
 
     private fun speak(text: String) {
@@ -82,22 +84,35 @@ class NurseTts(context: Context) {
         t.speak(text, TextToSpeech.QUEUE_FLUSH, null, "carevoice-alert")
     }
 
-    /** Build the localized keyword summary. */
-    private fun sentence(roomId: String, intent: String, escalated: Boolean): String = when (lang) {
-        "hi" -> {
-            val i = INTENT_HI[intent] ?: "मदद"
-            val head = if (escalated) "बढ़ा हुआ अलर्ट। " else "गंभीर अलर्ट। "
-            "${head}कमरा $roomId. मरीज़ को $i की ज़रूरत है। कृपया तुरंत पहुँचें।"
-        }
-        "kn" -> {
-            val i = INTENT_KN[intent] ?: "ಸಹಾಯ"
-            val head = if (escalated) "ಉನ್ನತೀಕರಿಸಿದ ಎಚ್ಚರಿಕೆ. " else "ತೀವ್ರ ಎಚ್ಚರಿಕೆ. "
-            "${head}ಕೊಠಡಿ $roomId. ರೋಗಿಗೆ $i ಅಗತ್ಯವಿದೆ. ದಯವಿಟ್ಟು ಕೂಡಲೇ ಬನ್ನಿ."
-        }
-        else -> {
-            val i = INTENT_EN[intent] ?: "assistance"
-            val head = if (escalated) "Escalated alert. " else "Critical alert. "
-            "${head}Room $roomId. Patient needs $i. Please attend immediately."
+    /** Build the localized spoken message. Critical → urgent phrasing + summary. */
+    private fun sentence(roomId: String, intent: String, escalated: Boolean,
+                         priority: String = "Critical",
+                         summary: String? = null, patientName: String? = null): String {
+        val critical = priority == "Critical"
+        return when (lang) {
+            "hi" -> {
+                val i = INTENT_HI[intent] ?: "मदद"
+                if (critical) {
+                    val head = if (escalated) "बढ़ा हुआ अलर्ट। " else "आपातकालीन अलर्ट। "
+                    "${head}कमरा $roomId. मरीज़ को $i की ज़रूरत है। कृपया तुरंत पहुँचें।"
+                } else "कमरा $roomId. मरीज़ को $i की ज़रूरत है।"
+            }
+            "kn" -> {
+                val i = INTENT_KN[intent] ?: "ಸಹಾಯ"
+                if (critical) {
+                    val head = if (escalated) "ಉನ್ನತೀಕರಿಸಿದ ಎಚ್ಚರಿಕೆ. " else "ತುರ್ತು ಎಚ್ಚರಿಕೆ. "
+                    "${head}ಕೊಠಡಿ $roomId. ರೋಗಿಗೆ $i ಅಗತ್ಯವಿದೆ. ದಯವಿಟ್ಟು ಕೂಡಲೇ ಬನ್ನಿ."
+                } else "ಕೊಠಡಿ $roomId. ರೋಗಿಗೆ $i ಅಗತ್ಯವಿದೆ."
+            }
+            else -> {
+                val who = patientName ?: "the patient"
+                val what = summary ?: "needs ${INTENT_EN[intent] ?: "assistance"}"
+                val prefix = "Patient $who in Room $roomId is calling"
+                if (critical) {
+                    val head = if (escalated) "Escalated emergency. " else "Emergency. "
+                    "${head}$prefix. The patient $what. Please attend immediately."
+                } else "$prefix. The patient $what."
+            }
         }
     }
 

@@ -62,6 +62,11 @@ class PipelineResult(BaseModel):
     priority:       Priority = Field(..., description="Computed priority level")
     language:       str | None = Field(default=None, description="Detected/forced language: en|hi|kn")
 
+    # ── NLP layer (summary + emotional intelligence) ──────────────────────────
+    summary:        str | None = Field(default=None, description="NLP request summary, e.g. 'wants water'")
+    emotion:        str | None = Field(default=None, description="calm|anxious|distressed|panicked")
+    alert_message:  str | None = Field(default=None, description="Standardised nurse-station message")
+
     # When False the audio was classified as non-medical chatter and should NOT
     # be forwarded to nurses as an alert (still stored for audit purposes).
     should_alert: bool = Field(default=True, description="False for general non-medical speech")
@@ -84,6 +89,8 @@ class IngestResponse(BaseModel):
     distress_score: float    = Field(default=0.0, ge=0.0, le=1.0, description="Deprecated")
     transcript:     str      = Field(..., description="STT transcription")
     is_stub:        bool     = Field(..., description="Whether real models were used")
+    summary:        str | None = Field(default=None, description="NLP request summary")
+    emotion:        str | None = Field(default=None, description="Detected emotion")
     # True  → alert was forwarded to nurses
     # False → audio was general chatter, stored for audit but not alerted
     should_alert:   bool     = Field(default=True, description="Whether nurses were notified")
@@ -110,6 +117,11 @@ class AlertResponse(BaseModel):
     ack_at:         str | None = None
     language:       str | None = Field(default=None, description="Detected/forced language: en|hi|kn")
     escalated:      bool       = Field(default=False, description="True if auto-escalated Urgent→Critical")
+    # ── NLP (summary + emotional intelligence) ────────────────────────────────
+    patient_name:   str | None = None
+    summary:        str | None = None
+    emotion:        str | None = None
+    alert_message:  str | None = None
 
     @classmethod
     def from_db_row(cls, row: dict) -> "AlertResponse":
@@ -131,6 +143,10 @@ class AlertResponse(BaseModel):
             ack_at         = row.get("ack_at"),
             language       = row.get("language"),
             escalated      = bool(row.get("escalated") or 0),
+            patient_name   = row.get("patient_name"),
+            summary        = row.get("summary"),
+            emotion        = row.get("emotion"),
+            alert_message  = row.get("alert_message"),
         )
 
 
@@ -184,6 +200,11 @@ class WsAlertPayload(BaseModel):
     created_at:     str
     language:       str | None = None
     escalated:      bool = False
+    # ── NLP (summary + emotional intelligence) ────────────────────────────────
+    patient_name:   str | None = None
+    summary:        str | None = None
+    emotion:        str | None = None
+    alert_message:  str | None = None
 
     @classmethod
     def from_alert_response(cls, a: AlertResponse, event: str = "new_alert") -> "WsAlertPayload":
@@ -198,6 +219,10 @@ class WsAlertPayload(BaseModel):
             created_at     = a.created_at,
             language       = a.language,
             escalated      = a.escalated,
+            patient_name   = a.patient_name,
+            summary        = a.summary,
+            emotion        = a.emotion,
+            alert_message  = a.alert_message,
         )
 
 

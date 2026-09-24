@@ -412,6 +412,30 @@ async def get_patient_by_user_id(conn: asyncpg.Connection, user_id: int) -> asyn
     )
 
 
+async def get_patient_name_by_room(room_number: str) -> str | None:
+    """
+    Resolve the active patient's full name for a given room, acquiring its own
+    connection from the pool. Used by the alert pipeline (which otherwise only
+    touches SQLite) to build the standardised "Patient X in Room Y" message.
+    Returns None if the pool isn't ready or no active patient is in that room.
+    """
+    if _pool is None or not room_number:
+        return None
+    try:
+        async with _pool.acquire() as conn:
+            return await conn.fetchval(
+                """
+                SELECT full_name FROM patients
+                WHERE room_number = $1 AND is_discharged = FALSE
+                ORDER BY admitted_at DESC
+                LIMIT 1
+                """,
+                room_number.strip(),
+            )
+    except Exception:
+        return None
+
+
 async def update_user_profile(
     conn:       asyncpg.Connection,
     user_id:    int,

@@ -98,11 +98,22 @@ async def process_audio(wav_bytes: bytes, room_id: str) -> PipelineResult:
         priority.value, intent.value, should_alert,
     )
 
+    # ── NLP summary + emotional intelligence ──────────────────────────────────
+    import nlp_summary
+    from pg_database import get_patient_name_by_room
+    patient_name = await get_patient_name_by_room(room_id)
+    nlp = nlp_summary.analyze(
+        transcript=transcript, intent=intent, room_id=room_id, patient_name=patient_name
+    )
+
     return PipelineResult(
         transcript     = transcript,
         intent         = intent,
-        distress_score = 0.0,   # retained for schema compat; no longer used
+        distress_score = nlp["distress"],
         priority       = priority,
+        summary        = nlp["summary"],
+        emotion        = nlp["emotion"],
+        alert_message  = nlp["alert_message"],
         should_alert   = should_alert,
         is_stub        = True,
     )

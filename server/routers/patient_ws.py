@@ -177,6 +177,10 @@ async def patient_ws(
             async with aiofiles.open(wav_path, "wb") as f:
                 await f.write(wav_bytes)
 
+            # Resolve patient name for the standardised message prefix.
+            from pg_database import get_patient_name_by_room
+            patient_name = await get_patient_name_by_room(room_id)
+
             # Insert alert into SQLite
             async with aiosqlite.connect(settings.DB_PATH) as db:
                 db.row_factory = aiosqlite.Row
@@ -188,12 +192,18 @@ async def patient_ws(
                     distress_score = result.distress_score,
                     transcript     = result.transcript,
                     wav_path       = str(wav_path),
+                    language       = getattr(result, "language", None),
+                    patient_name   = patient_name,
+                    summary        = getattr(result, "summary", None),
+                    emotion        = getattr(result, "emotion", None),
+                    alert_message  = getattr(result, "alert_message", None),
                 )
                 await db.commit()
 
             logger.info(
-                "Alert created via WS: id=%d room=%s priority=%s intent=%s",
+                "Alert created via WS: id=%d room=%s priority=%s intent=%s emotion=%s",
                 alert_id, room_id, result.priority.value, result.intent.value,
+                getattr(result, "emotion", None),
             )
 
             # Broadcast to nurses
@@ -208,6 +218,11 @@ async def patient_ws(
                     wav_path       = str(wav_path),
                     acknowledged   = False,
                     created_at     = utcnow(),
+                    language       = getattr(result, "language", None),
+                    patient_name   = patient_name,
+                    summary        = getattr(result, "summary", None),
+                    emotion        = getattr(result, "emotion", None),
+                    alert_message  = getattr(result, "alert_message", None),
                 )
                 payload_json = WsAlertPayload.from_alert_response(alert_resp).model_dump_json()
                 await _nurse_broadcast(payload_json)

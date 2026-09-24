@@ -89,18 +89,31 @@
             app:layout_constraintTop_toBottomOf="@id/tvTime"
             app:layout_constraintEnd_toEndOf="parent"/>
 
+        <!-- NLP summary line — patient name + what they need (bold, prominent) -->
+        <TextView
+            android:id="@+id/tvSummary"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/colorText"
+            app:layout_constraintTop_toBottomOf="@id/tvIntent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
         <!-- Transcript — italic, up to 2 lines -->
         <TextView
             android:id="@+id/tvTranscript"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:textSize="14sp"
-            android:textColor="@color/colorText"
+            android:layout_marginTop="4dp"
+            android:textSize="13sp"
+            android:textColor="@color/colorTextSecondary"
             android:fontFamily="sans-serif"
             android:maxLines="2"
             android:ellipsize="end"
-            app:layout_constraintTop_toBottomOf="@id/tvIntent"
+            app:layout_constraintTop_toBottomOf="@id/tvSummary"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
@@ -122,7 +135,7 @@
         <!-- "Acknowledged by …" label — shown instead of ACK button -->
         <TextView
             android:id="@+id/tvAckedBy"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:layout_marginEnd="8dp"

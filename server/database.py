@@ -48,7 +48,11 @@ CREATE TABLE IF NOT EXISTS alerts (
     ack_at         TEXT,
     language       TEXT,                        -- detected/forced ISO lang: en|hi|kn (nullable)
     escalated      INTEGER NOT NULL DEFAULT 0,  -- 1 once auto-escalated Urgent→Critical
-    escalated_at   TEXT                         -- ISO-8601 UTC when escalation happened
+    escalated_at   TEXT,                        -- ISO-8601 UTC when escalation happened
+    patient_name   TEXT,                        -- looked up from patients table (nullable)
+    summary        TEXT,                        -- NLP request summary ("wants water")
+    emotion        TEXT,                        -- calm|anxious|distressed|panicked
+    alert_message  TEXT                         -- standardised message w/ prefix + summary
 );
 
 -- Index used by GET /alerts/latest (ordered by created_at DESC, unACK'd first)
@@ -63,6 +67,10 @@ _MIGRATIONS = [
     "ALTER TABLE alerts ADD COLUMN language TEXT",
     "ALTER TABLE alerts ADD COLUMN escalated INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE alerts ADD COLUMN escalated_at TEXT",
+    "ALTER TABLE alerts ADD COLUMN patient_name TEXT",
+    "ALTER TABLE alerts ADD COLUMN summary TEXT",
+    "ALTER TABLE alerts ADD COLUMN emotion TEXT",
+    "ALTER TABLE alerts ADD COLUMN alert_message TEXT",
 ]
 
 
@@ -118,6 +126,10 @@ async def insert_alert(
     transcript: str,
     wav_path: str | None = None,
     language: str | None = None,
+    patient_name: str | None = None,
+    summary: str | None = None,
+    emotion: str | None = None,
+    alert_message: str | None = None,
 ) -> int:
     """
     Insert a new alert row and return its auto-generated id.
@@ -127,16 +139,18 @@ async def insert_alert(
     cursor = await db.execute(
         """
         INSERT INTO alerts
-            (room_id, priority, intent, distress_score, transcript, wav_path, created_at, language)
+            (room_id, priority, intent, distress_score, transcript, wav_path,
+             created_at, language, patient_name, summary, emotion, alert_message)
         VALUES
-            (?, ?, ?, ?, ?, ?, ?, ?)
+            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (room_id, priority, intent, distress_score, transcript, wav_path, now, language),
+        (room_id, priority, intent, distress_score, transcript, wav_path, now,
+         language, patient_name, summary, emotion, alert_message),
     )
     alert_id = cursor.lastrowid
     logger.info(
-        "Alert inserted: id=%d room=%s priority=%s intent=%s distress=%.2f",
-        alert_id, room_id, priority, intent, distress_score,
+        "Alert inserted: id=%d room=%s priority=%s intent=%s emotion=%s",
+        alert_id, room_id, priority, intent, emotion,
     )
     return alert_id
 

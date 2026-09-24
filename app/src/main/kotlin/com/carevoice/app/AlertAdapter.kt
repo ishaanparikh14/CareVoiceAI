@@ -49,8 +49,23 @@ class AlertAdapter(
             // ── Intent ────────────────────────────────────────────────────────
             // Mark auto-escalated alerts (Urgent → Critical after timeout).
             b.tvIntent.text = if (alert.escalated) "⬆ ${alert.intent} (escalated)" else alert.intent
-            // Distress score removed from the product — hide the label.
-            b.tvDistress.visibility = View.GONE
+
+            // ── Emotion chip (emotional intelligence) ─────────────────────────
+            if (!alert.emotion.isNullOrEmpty()) {
+                b.tvDistress.visibility = View.VISIBLE
+                b.tvDistress.text = alert.emotion.uppercase()
+            } else {
+                b.tvDistress.visibility = View.GONE
+            }
+
+            // ── NLP summary line (patient + what they need) ──────────────────
+            val who = alert.patientName ?: "Patient"
+            val summaryLine = when {
+                !alert.summary.isNullOrEmpty()  -> "$who — ${alert.summary}"
+                else                            -> "$who in Room ${alert.roomId} is calling"
+            }
+            b.tvSummary.text = summaryLine
+            b.tvSummary.visibility = View.VISIBLE
 
             // ── Transcript ────────────────────────────────────────────────────
             b.tvTranscript.text = "\"${alert.transcript}\""

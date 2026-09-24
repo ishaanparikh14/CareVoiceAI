@@ -133,6 +133,13 @@ header .title { font-size: 1.1rem; font-weight: 700; }
 .btn-ack { background: #38a169; color:white; padding: 6px 18px; border-radius:6px; font-weight:700; font-size:.8rem; border:none; cursor:pointer; }
 .btn-ack:hover { background:#2f855a; }
 .ackd-label { font-size:.74rem; color:#276749; font-weight:700; background:#c6f6d5; padding:4px 10px; border-radius:20px; }
+/* NLP summary line + emotion chip */
+.a-summary { color:#1a365d; font-weight:700; font-size:.9rem; margin:2px 0 6px; }
+.emo { font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.3px; padding:2px 8px; border-radius:20px; }
+.emo.calm       { background:#c6f6d5; color:#276749; }
+.emo.anxious    { background:#feebc8; color:#c05621; }
+.emo.distressed { background:#fed7d7; color:#c53030; }
+.emo.panicked   { background:#e53e3e; color:#fff; }
 
 /* Patients table */
 #patient-table-wrap { overflow-x: auto; }
@@ -514,6 +521,11 @@ let voiceLang = 'en';
 const _announced = new Set();   // alert ids already spoken (avoid repeats)
 let _myRooms = null;            // cache of this nurse's assigned room numbers
 let alertStore = [];            // single source of truth: alerts (pending + acked)
+// NLP + sound state — declared up-front too (used by init before their original
+// declaration line → strict-mode temporal-dead-zone otherwise).
+let _alertPollT = null;         // polling interval handle
+let _audioCtx = null;           // shared WebAudio context for chimes
+const _chimed = new Set();      // alert ids already chimed (avoid repeats)
 
 if (!token || !role) { window.location.href = '/login'; throw 0; }
 
@@ -555,13 +567,14 @@ function initNurseDashboard() {
   startAlertPolling();
 }
 
+
+
 /* Polling fallback — guarantees new alerts appear even if the live WebSocket
    push doesn't arrive (e.g. cross-container broadcast on cloud, proxy buffering,
    or a dropped socket). Re-reads /alerts/latest every few seconds, detects any
    NEW unacknowledged Critical alert since the last poll, and announces it once.
    This is idempotent with the WS path because prependAlert() dedupes by id and
-   _announced tracks already-spoken ids. */
-let _alertPollT = null;
+   _announced tracks already-spoken ids. (_alertPollT declared up-front.) */
 function startAlertPolling() {
   clearInterval(_alertPollT);
   _alertPollT = setInterval(pollAlerts, 5000);
@@ -572,10 +585,11 @@ async function pollAlerts() {
     const d = await fetch(`${BASE}/alerts/latest?limit=100&unacked_only=false`, { headers: authHeaders() }).then(r=>r.json());
     const incoming = (d.alerts||[]).filter(a => rooms.size===0 || rooms.has(a.room_id));
 
-    // Find genuinely new Critical alerts (id not already in the store) so we can
-    // still announce them if the WS push was missed.
+    // Find genuinely new unacknowledged alerts (id not already in the store) so
+    // we still sound/announce them if a WS push was missed. All priorities now
+    // make a sound; chimeForAlert + maybeAnnounce dedupe per id.
     const knownIds = new Set(alertStore.map(a => a.id));
-    const newCriticals = incoming.filter(a => !knownIds.has(a.id) && !a.acknowledged && a.priority === 'Critical');
+    const fresh = incoming.filter(a => !knownIds.has(a.id) && !a.acknowledged);
 
     // Replace the store from the DB (authoritative) and re-render.
     alertStore = incoming;
@@ -583,8 +597,9 @@ async function pollAlerts() {
     renderAcked();
     updateCounts();
 
-    // Announce any Critical we hadn't seen (maybeAnnounce dedupes via _announced).
-    for (const a of newCriticals) {
+    // Sound + announce anything new we hadn't seen (both dedupe internally).
+    for (const a of fresh) {
+      try { chimeForAlert(a); } catch (_) {}
       try { maybeAnnounce(a); } catch (_) {}
     }
   } catch(e) { /* transient network error — next tick retries */ }
@@ -617,17 +632,39 @@ const VOICE_INTENT = {
 const VOICE_BCP47 = { en:'en-US', hi:'hi-IN', kn:'kn-IN' };
 
 // Build the spoken sentence for an alert in the chosen language.
+// The message opens with the same fixed prefix for every request ("Patient X
+// in Room Y is calling"); Critical alerts append the emergency clause + NLP
+// summary (matching the architecture's nurse-speaker format). Urgent/Routine
+// use a calmer phrasing so the station isn't over-alarmed.
 function voiceSentence(a, lang) {
   const intent = (VOICE_INTENT[lang] && VOICE_INTENT[lang][a.intent]) || (VOICE_INTENT.en[a.intent] || 'assistance');
   const room = a.room_id || '';
+  const who = a.patient_name || 'the patient';
   const esc2 = a.escalated ? true : false;
+  const critical = a.priority === 'Critical';
+
   if (lang === 'hi') {
-    return `${esc2 ? 'बढ़ा हुआ अलर्ट। ' : 'गंभीर अलर्ट। '}कमरा ${room}. मरीज़ को ${intent} की ज़रूरत है। कृपया तुरंत पहुँचें।`;
+    if (critical) {
+      return `${esc2 ? 'बढ़ा हुआ अलर्ट। ' : 'आपातकालीन अलर्ट। '}कमरा ${room}. मरीज़ को ${intent} की ज़रूरत है। कृपया तुरंत पहुँचें।`;
+    }
+    return `कमरा ${room}. मरीज़ को ${intent} की ज़रूरत है।`;
   }
   if (lang === 'kn') {
-    return `${esc2 ? 'ಉನ್ನತೀಕರಿಸಿದ ಎಚ್ಚರಿಕೆ. ' : 'ತೀವ್ರ ಎಚ್ಚರಿಕೆ. '}ಕೊಠಡಿ ${room}. ರೋಗಿಗೆ ${intent} ಅಗತ್ಯವಿದೆ. ದಯವಿಟ್ಟು ಕೂಡಲೇ ಬನ್ನಿ.`;
+    if (critical) {
+      return `${esc2 ? 'ಉನ್ನತೀಕರಿಸಿದ ಎಚ್ಚರಿಕೆ. ' : 'ತುರ್ತು ಎಚ್ಚರಿಕೆ. '}ಕೊಠಡಿ ${room}. ರೋಗಿಗೆ ${intent} ಅಗತ್ಯವಿದೆ. ದಯವಿಟ್ಟು ಕೂಡಲೇ ಬನ್ನಿ.`;
+    }
+    return `ಕೊಠಡಿ ${room}. ರೋಗಿಗೆ ${intent} ಅಗತ್ಯವಿದೆ.`;
   }
-  return `${esc2 ? 'Escalated alert. ' : 'Critical alert. '}Room ${room}. Patient needs ${intent}. Please attend immediately.`;
+  // English — use the NLP summary when available for a natural, specific message.
+  // Summary phrases are third-person singular ("is hungry", "wants water"),
+  // so the subject is "The patient" (singular) — not "They".
+  const summary = a.summary ? a.summary : `needs ${intent}`;
+  const prefix = `Patient ${who} in Room ${room} is calling`;
+  if (critical) {
+    const head = esc2 ? 'Escalated emergency. ' : 'Emergency. ';
+    return `${head}${prefix}. The patient ${summary}. Please attend immediately.`;
+  }
+  return `${prefix}. The patient ${summary}.`;
 }
 
 function initVoice() {
@@ -671,7 +708,10 @@ function testVoice() {
     alert('This browser does not support text-to-speech. Try Chrome or Edge.');
     return;
   }
-  const demo = { intent:'Emergency', room_id:'4B', escalated:false };
+  // Also play the chime so the nurse hears *something* even if the OS has no
+  // TTS voice installed for the chosen language.
+  try { chimeForAlert({ id: -Date.now(), priority: 'Critical' }); } catch(_){}
+  const demo = { intent:'Emergency', room_id:'4B', escalated:false, patient_name:'the patient', summary:'has an emergency', priority:'Critical', emotion:'distressed' };
   const ok = speak(voiceSentence(demo, voiceLang), voiceLang);
   if (ok === false) {
     alert('Could not start speech. Check the tab is not muted and system volume is up.');
@@ -692,25 +732,30 @@ function speak(text, lang) {
   try {
     const synth = window.speechSynthesis;
     const doSpeak = () => {
+      try { synth.cancel(); } catch(_){}   // clear any stuck/queued utterance
       const u = new SpeechSynthesisUtterance(text);
       u.lang = VOICE_BCP47[lang] || 'en-US';
       u.rate = 0.95; u.pitch = 1.0; u.volume = 1.0;
-      // Prefer a matching-language voice if the browser has one installed.
+      // Prefer a matching-language voice if the browser has one installed;
+      // otherwise fall back to any English voice so it still speaks.
       const voices = synth.getVoices() || [];
-      const match = voices.find(v => v.lang && v.lang.toLowerCase().startsWith(lang));
+      const match = voices.find(v => v.lang && v.lang.toLowerCase().startsWith(lang))
+                 || voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en'));
       if (match) u.voice = match;
-      try { synth.cancel(); } catch(_){}   // clear any stuck/queued utterance
+      u.onerror = (e) => console.warn('TTS utterance error', e && e.error);
       if (synth.paused) { try { synth.resume(); } catch(_){} }
       synth.speak(u);
+      // Chrome bug: sometimes speech stays "pending" — nudge it.
+      setTimeout(() => { try { if (synth.paused) synth.resume(); } catch(_){} }, 60);
     };
     // Chrome loads voices asynchronously — first getVoices() is often empty.
-    // If so, wait for voiceschanged (once) then speak; also speak immediately
-    // as a fallback in case the event never fires.
+    // Speak immediately; if no voices yet, also retry once voices load.
     const voicesNow = synth.getVoices();
     if (!voicesNow || voicesNow.length === 0) {
       let spoke = false;
-      synth.onvoiceschanged = () => { if (!spoke) { spoke = true; doSpeak(); } };
-      setTimeout(() => { if (!spoke) { spoke = true; doSpeak(); } }, 250);
+      const fire = () => { if (!spoke) { spoke = true; doSpeak(); } };
+      try { synth.addEventListener('voiceschanged', fire, { once: true }); } catch(_){}
+      setTimeout(fire, 200);
     } else {
       doSpeak();
     }
@@ -824,10 +869,55 @@ async function prependAlert(a, pre=true, announce=false) {
   else alertStore.unshift(a);
   renderRequests();
   renderAcked();
-  // Voice announcement: only for live pushes, unacknowledged Critical alerts,
-  // and only once per alert id. Never let a TTS problem break rendering.
-  if (announce && !a.acknowledged && a.priority === 'Critical') {
+  // Sound + voice for EVERY new unacknowledged alert (live pushes only).
+  //  • Critical → distinct urgent EMERGENCY chime + spoken summary.
+  //  • Urgent/Routine → a softer notification chime (+ spoken summary if voice on).
+  if (announce && !a.acknowledged) {
+    try { chimeForAlert(a); } catch (e) { console.warn('chime failed', e); }
     try { maybeAnnounce(a); } catch (e) { console.warn('TTS announce failed', e); }
+  }
+}
+
+/* ── Alert sounds (WebAudio) ───────────────────────────────────────────────
+   All alerts now make a sound. The EMERGENCY/Critical signal is a distinct,
+   insistent triple-beep at a higher pitch; Urgent is a double-beep; Routine is
+   a single soft beep. Deduped per alert id via _chimed so re-renders/polls
+   don't re-play. Uses the shared AudioContext unlocked on first user gesture.
+   (_audioCtx and _chimed are declared in the up-front state block.) */
+function _ctx() {
+  if (!_audioCtx) {
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch (_) { return null; }
+  }
+  if (_audioCtx.state === 'suspended') { try { _audioCtx.resume(); } catch(_){} }
+  return _audioCtx;
+}
+function _beep(ctx, freq, startTime, dur, vol) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine'; osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(vol, startTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + dur);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(startTime); osc.stop(startTime + dur + 0.02);
+}
+function chimeForAlert(a) {
+  if (_chimed.has(a.id)) return;
+  _chimed.add(a.id);
+  const ctx = _ctx();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  if (a.priority === 'Critical') {
+    // Distinct emergency signal: urgent high triple-beep.
+    _beep(ctx, 988, now,        0.16, 0.5);   // B5
+    _beep(ctx, 988, now + 0.22, 0.16, 0.5);
+    _beep(ctx, 1319, now + 0.44, 0.28, 0.55);  // E6 — rising, insistent
+  } else if (a.priority === 'Urgent') {
+    _beep(ctx, 660, now,        0.14, 0.35);
+    _beep(ctx, 784, now + 0.20, 0.18, 0.35);
+  } else {
+    _beep(ctx, 523, now, 0.18, 0.28);          // single soft C5
   }
 }
 
@@ -839,9 +929,19 @@ function buildAlertCard(a) {
     ? `<span class="ackd-label">✓ Attended${a.ack_by?` · ${esc(a.ack_by)}`:''}</span>`
     : `<button class="btn-ack" onclick="ackAlert(${a.id},this)">Acknowledge</button>`;
   const escBadge = a.escalated ? `<span class="esc-badge" title="Auto-escalated: unacknowledged too long">⬆ Escalated</span>` : '';
+
+  // Fixed prefix (patient + room) is identical for every request; the NLP
+  // summary + emotion follow. Prefer the server-composed alert_message.
+  const who = a.patient_name ? esc(a.patient_name) : 'Patient';
+  const summaryText = a.summary
+    ? `${who} — ${esc(a.summary)}`
+    : (a.alert_message ? esc(a.alert_message) : `${who} in Room ${esc(a.room_id)} is calling`);
+  const emo = a.emotion ? `<span class="emo ${esc(a.emotion)}" title="Emotional signal">${esc(a.emotion)}</span>` : '';
+
   div.innerHTML = `
-    <div class="alert-header"><span class="ap ${a.priority}">${a.priority}</span><span class="ai">${esc(a.intent)}</span>${escBadge}<span class="ar">Room ${esc(a.room_id)}</span></div>
-    <div class="at">${esc(a.transcript)}</div>
+    <div class="alert-header"><span class="ap ${a.priority}">${a.priority}</span><span class="ai">${esc(a.intent)}</span>${emo}${escBadge}<span class="ar">Room ${esc(a.room_id)}</span></div>
+    <div class="a-summary">${summaryText}</div>
+    <div class="at">“${esc(a.transcript)}”</div>
     <div class="am">
       ${action}
       <span class="ats">${t}</span>

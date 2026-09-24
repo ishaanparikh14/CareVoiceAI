@@ -2,6 +2,8 @@ package com.carevoice.app
 
 import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
@@ -124,6 +126,7 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         wsReconnectJob?.cancel()
         webSocket?.cancel()
         if (::tts.isInitialized) tts.shutdown()
+        try { toneGen.release() } catch (_: Exception) {}
     }
 
     override fun onBackPressed() {
@@ -591,6 +594,32 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         }
     }
 
+    // ── Alert sound (all priorities; distinct emergency signal) ─────────────
+
+    private val chimedIds = HashSet<Int>()
+    private val toneGen: ToneGenerator by lazy {
+        ToneGenerator(AudioManager.STREAM_NOTIFICATION, 90)
+    }
+
+    /**
+     * Plays a sound for a new unacknowledged alert. Critical gets a distinct,
+     * insistent emergency signal; Urgent/Routine get softer notification tones.
+     * Deduped per alert id so re-renders / polls don't replay.
+     */
+    private fun chimeForAlert(alertId: Int, priority: String) {
+        if (!chimedIds.add(alertId)) return
+        try {
+            when (priority) {
+                "Critical" -> {
+                    // Distinct emergency signal — urgent repeating tone.
+                    toneGen.startTone(ToneGenerator.TONE_CDMA_EMERGENCY_RINGBACK, 1200)
+                }
+                "Urgent" -> toneGen.startTone(ToneGenerator.TONE_PROP_BEEP2, 400)
+                else     -> toneGen.startTone(ToneGenerator.TONE_PROP_BEEP, 250)
+            }
+        } catch (_: Exception) {}
+    }
+
     // ── WebSocket ─────────────────────────────────────────────────────────────
 
     private fun connectWebSocket() {
@@ -621,7 +650,7 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                     val j = JSONObject(text)
                     val event = j.optString("event")
                     // "new_alert" = freshly created; "alert_updated" = server-side
-                    // change such as an Urgent alert auto-escalated to Critical.
+                    // change (e.g. Urgent auto-escalated to Critical).
                     if (event != "new_alert" && event != "alert_updated") return
 
                     val id = j.getInt("alert_id")
@@ -637,7 +666,10 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                         createdAt     = j.getString("created_at"),
                         acknowledged  = prior?.acknowledged ?: false,
                         ackedBy       = prior?.ackedBy,
-                        escalated     = j.optBoolean("escalated", false)
+                        escalated     = j.optBoolean("escalated", false),
+                        patientName   = j.optString("patient_name").ifEmpty { null },
+                        summary       = j.optString("summary").ifEmpty { null },
+                        emotion       = j.optString("emotion").ifEmpty { null }
                     )
                     // Ignore alerts for rooms not assigned to this nurse.
                     if (!isMyRoom(alert.roomId)) return
@@ -648,14 +680,19 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                         updateCountBadge()
                         refreshDrawerAlertCount()
                         binding.rvAlerts.scrollToPosition(0)
-                        // Announce Critical alerts (new or auto-escalated) via TTS.
+                        // Every alert makes a sound; Critical gets a distinct
+                        // emergency signal. Deduped per id via chimedIds.
+                        if (!alert.acknowledged) chimeForAlert(alert.id, alert.priority)
+                        // Speak the summary for every unacknowledged alert (TTS).
                         tts.maybeAnnounce(
                             alertId      = alert.id,
                             priority     = alert.priority,
                             roomId       = alert.roomId,
                             intent       = alert.intent,
                             escalated    = alert.escalated,
-                            acknowledged = alert.acknowledged
+                            acknowledged = alert.acknowledged,
+                            summary      = alert.summary,
+                            patientName  = alert.patientName
                         )
                     }
                 } catch (_: Exception) {}
@@ -715,7 +752,10 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 createdAt     = j.getString("created_at"),
                 acknowledged  = j.getBoolean("acknowledged"),
                 ackedBy       = j.optString("ack_by").ifEmpty { null },
-                escalated     = j.optBoolean("escalated", false)
+                escalated     = j.optBoolean("escalated", false),
+                patientName   = j.optString("patient_name").ifEmpty { null },
+                summary       = j.optString("summary").ifEmpty { null },
+                emotion       = j.optString("emotion").ifEmpty { null }
             )
         }
     }

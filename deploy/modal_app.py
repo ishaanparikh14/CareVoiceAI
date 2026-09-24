@@ -93,43 +93,56 @@ whisper_cache = modal.Volume.from_name("carevoice-whisper-cache", create_if_miss
 app = modal.App("carevoice")
 
 
-@app.function(
+# ── GPU toggle ────────────────────────────────────────────────────────────────
+# T4 GPUs give ~2-3s Whisper `medium` transcription, BUT when Modal is out of
+# free GPU capacity every request queues ("waiting to be scheduled on a GPU_T4
+# worker") and the dashboard won't even load. Set USE_GPU=False to run CPU-only:
+# the dashboard, live alerts, voice, and department forwarding are all instant,
+# and Whisper falls back to the `small` model on CPU (slower transcription, an
+# accepted tradeoff when GPUs are unavailable). Flip back to True for full speed
+# once capacity returns.
+USE_GPU = False
+
+_fn_kwargs = dict(
     image=image,
-    gpu="T4",                       # enough for Whisper medium + mBERT at 2-3s
     volumes={
         "/root/server/storage/models/intent_ml": model_volume,
         "/root/.cache/huggingface": whisper_cache,
     },
     secrets=[modal.Secret.from_name("carevoice-secrets")],
     # Stay warm for 20 min after the last request so cold starts don't happen
-    # during an active testing/demo session. Scales to zero after that so idle
-    # time is free (keeps the $30/mo credits lasting). To eliminate the very
-    # first cold start before a demo, send one warm-up request ~1 min ahead.
+    # during an active testing/demo session.
     scaledown_window=1200,
     # High timeout so long-lived WebSocket connections (nurse alerts + patient
     # audio streaming) are not killed mid-session.
     timeout=3600,
     min_containers=1,               # keep ONE warm container always running
-    max_containers=1,               # PIN to a single container.
-                                     # The live-alert broadcaster (ws.manager) and the
-                                     # alerts SQLite DB both live in per-process memory /
-                                     # local /tmp. With >1 container a patient request can
-                                     # land on a different instance than the nurse's open
-                                     # WebSocket, so the alert never reaches them. Pinning
-                                     # to one container guarantees every patient + nurse
-                                     # shares the same broadcaster and DB.
+    max_containers=1,               # PIN to a single container so the in-memory
+                                     # broadcaster + SQLite alerts DB are shared by
+                                     # every patient and nurse (cross-container
+                                     # broadcasts would otherwise be lost).
 )
+if USE_GPU:
+    _fn_kwargs["gpu"] = "T4"
+
+
+@app.function(**_fn_kwargs)
 @modal.concurrent(max_inputs=50)    # one container handles all concurrent WS + requests
 @modal.asgi_app()
 def fastapi_app():
-    """Return the existing FastAPI ASGI app, configured for cloud + GPU."""
+    """Return the existing FastAPI ASGI app, configured for cloud."""
     import os
     import sys
 
-    # Force the real (non-stub) pipeline on GPU.
+    # Real (non-stub) pipeline. Device + model size follow the GPU toggle:
+    # GPU → Whisper 'medium' on CUDA (fast); CPU → 'small' on CPU (no GPU wait).
     os.environ.setdefault("USE_STUB", "false")
-    os.environ.setdefault("WHISPER_MODEL", "medium")
-    os.environ.setdefault("WHISPER_DEVICE", "cuda")
+    if USE_GPU:
+        os.environ.setdefault("WHISPER_MODEL", "medium")
+        os.environ.setdefault("WHISPER_DEVICE", "cuda")
+    else:
+        os.environ.setdefault("WHISPER_MODEL", "small")
+        os.environ.setdefault("WHISPER_DEVICE", "cpu")
     # Alerts DB (SQLite) → writable /tmp inside the container.
     os.environ.setdefault("DB_PATH", "/tmp/carevoice.db")
 

@@ -153,6 +153,10 @@ async def ingest_audio(
     # the client hint. None for the stub pipeline.
     alert_language = getattr(result, "language", None) or lang_hint
 
+    # Resolve the patient name for the standardised "Patient X in Room Y" prefix.
+    from pg_database import get_patient_name_by_room
+    patient_name = await get_patient_name_by_room(room_id)
+
     alert_id = await insert_alert(
         db,
         room_id        = room_id,
@@ -162,6 +166,10 @@ async def ingest_audio(
         transcript     = result.transcript,
         wav_path       = str(wav_path),
         language       = alert_language,
+        patient_name   = patient_name,
+        summary        = getattr(result, "summary", None),
+        emotion        = getattr(result, "emotion", None),
+        alert_message  = getattr(result, "alert_message", None),
     )
 
     # ── 7. Build response object (needed for WS broadcast too) ────────────────
@@ -176,6 +184,10 @@ async def ingest_audio(
         acknowledged   = False,
         created_at     = utcnow(),
         language       = alert_language,
+        patient_name   = patient_name,
+        summary        = getattr(result, "summary", None),
+        emotion        = getattr(result, "emotion", None),
+        alert_message  = getattr(result, "alert_message", None),
     )
 
     # ── 8. WebSocket broadcast — only for genuine nurse alerts ───────────────
@@ -205,5 +217,7 @@ async def ingest_audio(
         distress_score = result.distress_score,
         transcript     = result.transcript,
         is_stub        = result.is_stub,
+        summary        = getattr(result, "summary", None),
+        emotion        = getattr(result, "emotion", None),
         should_alert   = result.should_alert,
     )
