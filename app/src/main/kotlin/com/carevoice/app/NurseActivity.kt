@@ -118,6 +118,14 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         loadMyRoomsThenAlerts()
         connectWebSocket()
         startPollLoop()
+
+        // Connect call signaling so the nurse can place/receive real-time calls.
+        ensureCallSignaling()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        ensureCallSignaling()
     }
 
     override fun onDestroy() {
@@ -436,12 +444,48 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     // ── RecyclerView ──────────────────────────────────────────────────────────
 
     private fun setupRecyclerView() {
-        adapter = AlertAdapter(onAck = ::ackAlert)
+        adapter = AlertAdapter(onAck = ::ackAlert, onCall = ::callPatientInRoom)
         adapter.nurseName = nurseName
         binding.rvAlerts.layoutManager = LinearLayoutManager(this)
         binding.rvAlerts.adapter = adapter
         binding.rvAlerts.setHasFixedSize(false)
     }
+
+    // ── Real-time voice call to a patient ───────────────────────────────────---
+
+    /** Maps room number → patient username, filled from /auth/patients. */
+    private val roomToPatient = mutableMapOf<String, String>()
+    private val roomToPatientName = mutableMapOf<String, String>()
+
+    private fun ensureCallSignaling() {
+        val tok = token ?: return
+        CallSession.ensureSignaling(this, serverUrl, tok)
+    }
+
+    /** Place a real-time WebRTC voice call to the patient in [roomId]. */
+    private fun callPatientInRoom(roomId: String) {
+        val patientUser = roomToPatient[roomId.trim()]
+        if (patientUser == null) {
+            android.widget.Toast.makeText(this, "No patient mapped to room $roomId", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (androidx.core.content.ContextCompat.checkSelfPermission(
+                this, android.Manifest.permission.RECORD_AUDIO
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            micPermissionForCall.launch(android.Manifest.permission.RECORD_AUDIO)
+            return
+        }
+        ensureCallSignaling()
+        val name = roomToPatientName[roomId.trim()] ?: "Room $roomId"
+        CallSession.placeCall(to = patientUser, displayName = name, roomId = roomId)
+    }
+
+    private val micPermissionForCall =
+        registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { granted ->
+            if (!granted) android.widget.Toast.makeText(
+                this, getString(R.string.snack_mic_denied), android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
 
     // ── Filter bar ────────────────────────────────────────────────────────────
 
@@ -475,12 +519,21 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 if (body != null) {
                     val arr = JSONArray(body)
                     val rooms = mutableSetOf<String>()
+                    val roomUser = mutableMapOf<String, String>()
+                    val roomName = mutableMapOf<String, String>()
                     for (i in 0 until arr.length()) {
-                        val room = arr.getJSONObject(i).optString("room_number").trim()
-                        if (room.isNotEmpty()) rooms.add(room)
+                        val obj  = arr.getJSONObject(i)
+                        val room = obj.optString("room_number").trim()
+                        if (room.isNotEmpty()) {
+                            rooms.add(room)
+                            obj.optString("username").trim().takeIf { it.isNotEmpty() }?.let { roomUser[room] = it }
+                            obj.optString("full_name").trim().takeIf { it.isNotEmpty() }?.let { roomName[room] = it }
+                        }
                     }
                     withContext(Dispatchers.Main) {
                         myRooms.clear(); myRooms.addAll(rooms)
+                        roomToPatient.clear(); roomToPatient.putAll(roomUser)
+                        roomToPatientName.clear(); roomToPatientName.putAll(roomName)
                     }
                 }
             } catch (_: Exception) { /* fail-open: myRooms stays empty → show all */ }

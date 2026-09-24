@@ -56,8 +56,13 @@ dependencies {
     // ONNX Runtime — on-device Silero VAD inference (no cloud)
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.17.0")
 
-    // OkHttp — LAN-only HTTP POST to FastAPI server
+    // OkHttp — LAN-only HTTP POST to FastAPI server + WebSocket signaling
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // WebRTC — peer-to-peer real-time voice calls over the hospital LAN.
+    // Maintained community build (Google's org.webrtc:google-webrtc is dead).
+    // Exposes the standard org.webrtc.* API. No STUN/TURN needed for LAN P2P.
+    implementation("io.github.webrtc-sdk:android:125.6422.07")
 
     // Test
     testImplementation("junit:junit:4.13.2")

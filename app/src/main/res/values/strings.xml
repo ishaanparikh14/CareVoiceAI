@@ -113,4 +113,24 @@
         <item quantity="other">%d pending alerts</item>
     </plurals>
 
+    <!-- Real-time voice call -->
+    <string name="call_voice_nurse">Voice Call Nurse</string>
+    <string name="call_patient">Call Patient</string>
+    <string name="call_status_calling">Calling…</string>
+    <string name="call_status_ringing">Incoming call</string>
+    <string name="call_status_connecting">Connecting…</string>
+    <string name="call_status_connected">Connected</string>
+    <string name="call_incoming_fmt">Incoming call from %s</string>
+    <string name="call_accept">Accept</string>
+    <string name="call_reject">Decline</string>
+    <string name="call_end">End Call</string>
+    <string name="call_mute">Mute</string>
+    <string name="call_unmute">Unmute</string>
+    <string name="call_speaker">Speaker</string>
+    <string name="call_ended">Call ended</string>
+    <string name="call_busy">User is busy</string>
+    <string name="call_offline">User is offline</string>
+    <string name="call_rejected">Call declined</string>
+    <string name="call_timeout">No answer</string>
+
 </resources>
