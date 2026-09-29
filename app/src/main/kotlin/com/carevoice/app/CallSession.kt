@@ -55,16 +55,36 @@ object CallSession {
 
     // ── Signaling lifecycle (called from the host activity on login) ───────────
 
+    @Volatile private var signalingToken: String? = null
+    @Volatile private var signalingUrl: String? = null
+
     fun ensureSignaling(context: Context, serverUrl: String, token: String) {
         appContext = context.applicationContext
+        val cleanUrl = serverUrl.trim().trimEnd('/')
+        val cleanTok = token.trim()
+
+        // If the token or server changed (e.g. the user logged out and back in,
+        // or a new login issued a fresh JWT), the old signaling client is using
+        // a STALE token and every reconnect is rejected as "invalid token".
+        // Tear it down and create a fresh one bound to the new token.
+        val tokenChanged = signalingToken != cleanTok || signalingUrl != cleanUrl
+        if (tokenChanged) {
+            try { signaling?.close() } catch (_: Exception) {}
+            signaling = null
+        }
         if (signaling?.isConnected == true) return
-        signaling = SignalingClient(serverUrl, token, signalListener).also { it.connect() }
+
+        signalingToken = cleanTok
+        signalingUrl = cleanUrl
+        signaling = SignalingClient(cleanUrl, cleanTok, signalListener).also { it.connect() }
     }
 
     fun shutdownSignaling() {
         endCall("shutdown")
         signaling?.close()
         signaling = null
+        signalingToken = null
+        signalingUrl = null
     }
 
     // ── Placing / answering calls ──────────────────────────────────────────────
@@ -178,6 +198,13 @@ object CallSession {
 
         override fun onCallAccept(callId: String, fromUser: String) { runMain {
             if (callId != this@CallSession.callId) return@runMain
+            // CRITICAL: when a patient dialled with to=null, peerUser is still
+            // null here. Capture the accepter's username so the SDP offer + ICE
+            // candidates we send next are addressed to the right peer. Without
+            // this, patient→nurse calls connect signaling but never negotiate
+            // media (nurse→patient worked only because the nurse knew the peer).
+            if (peerUser.isNullOrEmpty()) peerUser = fromUser
+            if (peerName.isNullOrEmpty()) peerName = fromUser
             cancelRingTimeout()
             state = State.CONNECTING
             startRtc(createOffer = true)   // caller sends the offer once accepted

@@ -215,6 +215,7 @@ async def signal_ws(
     `error`.  A plain-text `"ping"`/`"pong"` keepalive is also supported.
     """
     await websocket.accept()
+    logger.info("[SIGNAL] socket accepted, token_len=%d — authenticating", len(token or ""))
 
     # ── Authenticate ──────────────────────────────────────────────────────────
     try:
@@ -223,17 +224,21 @@ async def signal_ws(
         role      = payload.get("role", "")
         full_name = payload.get("full_name", username)
         user_id   = payload.get("user_id")
-    except Exception:
+    except Exception as exc:
+        logger.warning("[SIGNAL] AUTH REJECTED — invalid/expired token: %s", exc)
         await websocket.send_text(json.dumps({"event": "error", "reason": "Invalid or expired token"}))
         await websocket.close(code=4001)
         return
 
     if role not in ("patient", "nurse") or not username:
+        logger.warning("[SIGNAL] ROLE REJECTED — user=%s role=%s", username, role)
         await websocket.send_text(json.dumps({"event": "error", "reason": "Only patient/nurse may signal"}))
         await websocket.close(code=4003)
         return
 
+    logger.info("[SIGNAL] socket authenticated: user=%s role=%s — registering", username, role)
     await registry.register(username, websocket)
+    logger.info("[SIGNAL] online users now: %s", list(registry._sockets.keys()))  # noqa: SLF001
     await websocket.send_text(json.dumps({
         "event": "connected",
         "from_user": username,
@@ -266,10 +271,16 @@ async def signal_ws(
             # Resolve the routing target. Server-side identity always wins.
             target = msg.to
 
+            if msg.event in ("call_invite", "call_accept", "call_reject", "call_cancel", "call_hangup"):
+                logger.info("[SIGNAL] %s from=%s to=%s call_id=%s online=%s",
+                            msg.event, username, msg.to, msg.call_id,
+                            list(registry._sockets.keys()))  # noqa: SLF001
+
             # A patient invite may omit `to` → auto-route to attending nurse.
             if not target and msg.event == "call_invite":
                 async for conn in get_conn():
                     target = await _resolve_default_target(conn, role, user_id)
+                    logger.info("[SIGNAL] resolved default target for %s → %s", username, target)
                     break
 
             # For any mid-call frame (sdp/ice/hangup/etc.) that omits `to`, fall
@@ -297,6 +308,8 @@ async def signal_ws(
                 async for conn in get_conn():
                     allowed = await _authorized_pair(conn, role, username, user_id, target)
                     break
+                logger.info("[SIGNAL] authorize %s(%s) → %s : %s",
+                            username, role, target, "ALLOWED" if allowed else "DENIED")
                 if not allowed:
                     await websocket.send_text(json.dumps({
                         "event": "error", "call_id": msg.call_id,

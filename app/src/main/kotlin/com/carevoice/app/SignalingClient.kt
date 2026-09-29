@@ -70,13 +70,18 @@ class SignalingClient(
 
     fun connect() {
         closedByUser = false
-        val wsUrl = serverUrl.trimEnd('/')
+        // URL-encode the JWT: it can contain '-'/'_' (base64url, safe) but any
+        // stray whitespace/newline or reuse of a mangled value must not corrupt
+        // the query string. Trim first, then percent-encode.
+        val cleanToken = token.trim()
+        val encoded = java.net.URLEncoder.encode(cleanToken, "UTF-8")
+        val wsUrl = serverUrl.trim().trimEnd('/')
             .replace("http://", "ws://")
-            .replace("https://", "wss://") + "/ws/signal?token=$token"
+            .replace("https://", "wss://") + "/ws/signal?token=$encoded"
 
         val req = Request.Builder().url(wsUrl).build()
         ws = client.newWebSocket(req, socketListener)
-        Log.d(TAG, "Connecting signaling socket → $wsUrl")
+        Log.d(TAG, "Connecting signaling socket (token_len=${cleanToken.length})")
     }
 
     fun close() {
