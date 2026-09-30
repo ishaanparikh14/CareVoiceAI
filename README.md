@@ -1,6 +1,6 @@
 # CareVoice AI
 
-**Voice-driven hospital nurse-call triage.** A patient speaks a request in **English, Hindi, or Kannada** — the system transcribes it, understands what they need, judges how urgent it is, and pushes a prioritized alert to the assigned nurse's dashboard in real time. When a conversation is needed, either side can start a peer-to-peer voice call.
+**Voice-driven hospital nurse-call triage.** A patient speaks a request in **English or Hindi** — the system transcribes it, understands what they need, judges how urgent it is, and pushes a prioritized alert to the assigned nurse's dashboard in real time. When a conversation is needed, either side can start a peer-to-peer voice call.
 
 The entire AI pipeline runs on infrastructure you control (a self-hosted GPU on [Modal](https://modal.com)). No patient audio is sent to third-party AI APIs.
 
@@ -74,15 +74,13 @@ Every uploaded utterance flows through four layers in `server/pipeline.py`, `nlp
 ### Layer 1 — Speech-to-text (Whisper)
 
 - [`faster-whisper`](https://github.com/SYSTRAN/faster-whisper) running `medium` on GPU (`float16` on CUDA), falling back to `small` on CPU.
-- **Robust multilingual handling.** Whisper misreads Indic speech in known ways, so the transcriber corrects them:
-  - Urdu-script output is re-transcribed as Hindi (Devanagari).
-  - Kannada speech that Whisper emits in Devanagari triggers a second forced-Kannada pass; whichever pass is more confident *and* script-consistent wins.
+- **Robust multilingual handling.** Whisper misreads Hindi speech in known ways, so the transcriber corrects them — for example, Urdu-script output is re-transcribed as Hindi (Devanagari), and a language hint can force the intended language to avoid auto-detect ambiguity.
 
 ### Layer 2 — Intent classification (fine-tuned DistilBERT)
 
 - A fine-tuned [`distilbert-base-multilingual-cased`](https://huggingface.co/distilbert/distilbert-base-multilingual-cased) classifies the transcript into one of **9 intents**: Emergency, Pain, Medication, Food/Water, Mobility, Hygiene, Emotional Support, Information, Other.
 - The transformer produces contextual token embeddings; a classification head maps the pooled representation to the intent label — one forward pass, no external vector store.
-- A **high-precision multilingual keyword override** runs alongside the model: when the transcript clearly contains an intent's keywords, that wins over the model prediction. This fixes model inconsistency on Whisper's Hindi/Kannada spelling variants.
+- A **high-precision multilingual keyword override** runs alongside the model: when the transcript clearly contains an intent's keywords, that wins over the model prediction. This fixes model inconsistency on Whisper's Hindi spelling variants.
 - If the model can't load, the pipeline degrades gracefully to a pure keyword matcher.
 
 ### Layer 3 — NLP summary + emotional intelligence
@@ -99,7 +97,7 @@ Every uploaded utterance flows through four layers in `server/pipeline.py`, `nlp
 `priority_engine.py` maps intent → **Critical / Urgent / Routine**:
 
 - Emergency → Critical; Pain, Medication → Urgent; everything else → Routine.
-- **Safety net:** a curated list of life-threatening phrases ("can't breathe", "chest pain", …) across English/Hindi/Kannada and multiple scripts forces **Critical** regardless of the model's guess. A "call the doctor" family of phrases forces at least **Urgent**.
+- **Safety net:** a curated list of life-threatening phrases ("can't breathe", "chest pain", …) across English and Hindi and multiple scripts forces **Critical** regardless of the model's guess. A "call the doctor" family of phrases forces at least **Urgent**.
 - Unacknowledged **Urgent** alerts auto-escalate to **Critical** after a timeout so a forgotten request re-pages the nurse.
 
 > The design principle throughout: **the model provides coverage, deterministic rules provide safety.** A misclassification should never silently downgrade a life-threatening request.
@@ -308,7 +306,7 @@ The trained classifier (`intent_ml`, ~516 MB) is **not committed to git** (excee
 Set `USE_STUB=true`. Login, dashboards, alerts, WebSocket, and calls all work; only intent classification is simplified. No GPU or download needed.
 
 ### Option B — Train the real model (reproducible)
-The prepared splits are committed under `server/ml/data/prepared_ml/`. Fine-tune `distilbert-base-multilingual-cased` on the trilingual 9-intent dataset:
+The prepared splits are committed under `server/ml/data/prepared_ml/`. Fine-tune `distilbert-base-multilingual-cased` on the bilingual (English + Hindi) 9-intent dataset:
 
 ```powershell
 cd server/ml
