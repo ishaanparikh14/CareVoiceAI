@@ -14,7 +14,6 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -53,19 +52,13 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    // ONNX Runtime — on-device Silero VAD inference (no cloud)
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.17.0")
-
-    // OkHttp — LAN-only HTTP POST to FastAPI server + WebSocket signaling
+    // OkHttp — HTTP calls to the FastAPI server + WebSocket signaling/alerts
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
-    // WebRTC — peer-to-peer real-time voice calls over the hospital LAN.
+    // WebRTC — peer-to-peer real-time voice calls.
     // Maintained community build (Google's org.webrtc:google-webrtc is dead).
-    // Exposes the standard org.webrtc.* API. No STUN/TURN needed for LAN P2P.
+    // Exposes the standard org.webrtc.* API.
     implementation("io.github.webrtc-sdk:android:125.6422.07")
 
-    // Test
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+
 }

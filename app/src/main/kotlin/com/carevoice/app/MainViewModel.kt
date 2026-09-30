@@ -62,8 +62,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             try {
-                val modelPaths = ModelManager.ensureModelsReady(
-                    context    = getApplication(),
+                ModelManager.ensureModelsReady(
                     onProgress = { pct ->
                         viewModelScope.launch(Dispatchers.Main) {
                             _uiState.value = UiState.Downloading(pct)
@@ -71,11 +70,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 )
                 if (sileroVAD == null) {
-                    sileroVAD = SileroVAD(modelPaths[ModelManager.SILERO_VAD.fileName]!!)
+                    sileroVAD = SileroVAD()
                 }
                 withContext(Dispatchers.Main) { _uiState.value = UiState.ModelReady }
             } catch (e: Exception) {
-                Log.e(TAG, "Model download failed", e)
+                Log.e(TAG, "Resource preparation failed", e)
                 withContext(Dispatchers.Main) { _uiState.value = UiState.DownloadError }
             }
         }

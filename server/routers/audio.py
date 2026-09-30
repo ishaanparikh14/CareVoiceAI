@@ -167,9 +167,9 @@ async def ingest_audio(
         wav_path       = str(wav_path),
         language       = alert_language,
         patient_name   = patient_name,
-        summary        = getattr(result, "summary", None),
-        emotion        = getattr(result, "emotion", None),
-        alert_message  = getattr(result, "alert_message", None),
+        summary        = result.summary,
+        emotion        = result.emotion,
+        alert_message  = result.alert_message,
     )
 
     # ── 7. Build response object (needed for WS broadcast too) ────────────────
@@ -185,9 +185,9 @@ async def ingest_audio(
         created_at     = utcnow(),
         language       = alert_language,
         patient_name   = patient_name,
-        summary        = getattr(result, "summary", None),
-        emotion        = getattr(result, "emotion", None),
-        alert_message  = getattr(result, "alert_message", None),
+        summary        = result.summary,
+        emotion        = result.emotion,
+        alert_message  = result.alert_message,
     )
 
     # ── 8. WebSocket broadcast — only for genuine nurse alerts ───────────────
@@ -217,7 +217,7 @@ async def ingest_audio(
         distress_score = result.distress_score,
         transcript     = result.transcript,
         is_stub        = result.is_stub,
-        summary        = getattr(result, "summary", None),
-        emotion        = getattr(result, "emotion", None),
+        summary        = result.summary,
+        emotion        = result.emotion,
         should_alert   = result.should_alert,
     )

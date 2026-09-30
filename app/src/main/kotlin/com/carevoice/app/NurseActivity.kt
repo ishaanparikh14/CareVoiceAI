@@ -66,7 +66,7 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     private var pollJob: Job? = null
     private var wsReconnectJob: Job? = null
 
-    // Text-to-speech announcements for Critical alerts (en/hi/kn).
+    // Text-to-speech announcements for Critical alerts (en/hi).
     private lateinit var tts: NurseTts
     private val voicePrefs get() = getSharedPreferences(ServerUploader.PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -377,13 +377,6 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                     .putBoolean(KEY_VOICE_ON, on)
                     .putString(KEY_VOICE_LANG, code)
                     .apply()
-                if (on) tts.speakTest()   // confirm audibly + unlock the engine
-            }
-            .setNeutralButton("Test") { _, _ ->
-                // Apply current selection then speak a sample.
-                tts.enabled = true
-                tts.setLanguage(codes[spinner.selectedItemPosition])
-                tts.speakTest()
             }
             .setNegativeButton(getString(R.string.settings_cancel), null)
             .show()

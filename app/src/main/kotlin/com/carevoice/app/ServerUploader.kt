@@ -25,13 +25,12 @@ data class UploadResult(
 )
 
 /**
- * ServerUploader — posts a WAV byte array to the on-premises FastAPI server
- * over hospital LAN via HTTP multipart/form-data.
+ * ServerUploader — posts a WAV byte array to the FastAPI server via HTTP
+ * multipart/form-data.
  *
- * All traffic from this class stays on the local network; it never contacts
- * any external service.  The server URL and room ID are user-configurable via
- * Settings and persisted in SharedPreferences so they can be adjusted per ward
- * without rebuilding the app.
+ * The server URL and room ID are user-configurable via Settings and persisted
+ * in SharedPreferences, so they can point at the hosted endpoint or a per-ward
+ * LAN address without rebuilding the app.
  *
  * @param context  Application or Activity context; used only to access
  *                 SharedPreferences (no UI work performed here).
@@ -47,9 +46,8 @@ class ServerUploader(private val context: Context) {
         const val KEY_SERVER_URL = "server_url"
         const val KEY_ROOM_ID    = "room_id"
 
-        // Default: the public cloud (Modal) server so testers work from anywhere
-        // out of the box. Can be overridden in Settings (e.g. a hospital LAN IP).
-        const val DEFAULT_SERVER_URL = "https://ishaansnehalp-cs24--carevoice-fastapi-app.modal.run"
+        // Default server URL. Can be overridden in Settings (e.g. a hospital LAN IP).
+        const val DEFAULT_SERVER_URL = "https://ishaan-isp11--carevoice-fastapi-app.modal.run"
         const val DEFAULT_ROOM_ID    = "4B"
     }
 

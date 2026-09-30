@@ -104,7 +104,7 @@ object WavUtils {
         buffer.putShort(numChannels.toShort())
 
         // Bytes 24–27: Sample rate = 16 000 Hz.
-        //   Must match the rate used by AudioRecord and expected by Silero VAD /
+        //   Must match the rate used by AudioRecord and expected by
         //   faster-whisper on the server.
         buffer.putInt(sampleRate)
 

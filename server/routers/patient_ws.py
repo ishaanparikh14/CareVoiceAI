@@ -31,7 +31,9 @@ Each frame: exactly 512 × 4 = 2048 bytes, little-endian float32, values [-1, 1]
 
 import asyncio
 import logging
+import uuid
 
+import aiofiles
 import aiosqlite
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
@@ -41,6 +43,7 @@ from models import AlertResponse, WsAlertPayload
 from vad_session import VADSession, float32_to_wav
 from config import settings
 from routers.audio import get_pipeline
+from pg_database import get_patient_name_by_room
 
 logger = logging.getLogger(__name__)
 
@@ -171,14 +174,12 @@ async def patient_ws(
                 continue
 
             # Save WAV to disk
-            import uuid, aiofiles
             wav_filename = f"{room_id}_{uuid.uuid4().hex}.wav"
             wav_path     = settings.WAV_TEMP_DIR / wav_filename
             async with aiofiles.open(wav_path, "wb") as f:
                 await f.write(wav_bytes)
 
             # Resolve patient name for the standardised message prefix.
-            from pg_database import get_patient_name_by_room
             patient_name = await get_patient_name_by_room(room_id)
 
             # Insert alert into SQLite

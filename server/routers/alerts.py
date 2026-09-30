@@ -63,7 +63,7 @@ async def manual_alert(
         room_id        = room_id,
         priority       = Priority.CRITICAL.value,
         intent         = Intent.EMERGENCY.value,
-        distress_score = 1.0,
+        distress_score = 0.0,   # distress_score is deprecated; not used in display or logic
         transcript     = transcript,
         wav_path       = None,
     )
@@ -75,7 +75,7 @@ async def manual_alert(
         room_id        = room_id,
         priority       = Priority.CRITICAL,
         intent         = Intent.EMERGENCY,
-        distress_score = 1.0,
+        distress_score = 0.0,
         transcript     = transcript,
         acknowledged   = False,
         created_at     = now,

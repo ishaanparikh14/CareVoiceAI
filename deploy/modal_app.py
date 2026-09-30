@@ -101,7 +101,7 @@ app = modal.App("carevoice")
 # and Whisper falls back to the `small` model on CPU (slower transcription, an
 # accepted tradeoff when GPUs are unavailable). Flip back to True for full speed
 # once capacity returns.
-USE_GPU = False
+USE_GPU = True
 
 _fn_kwargs = dict(
     image=image,
@@ -110,8 +110,7 @@ _fn_kwargs = dict(
         "/root/.cache/huggingface": whisper_cache,
     },
     secrets=[modal.Secret.from_name("carevoice-secrets")],
-    # Stay warm for 20 min after the last request so cold starts don't happen
-    # during an active testing/demo session.
+    # Stay warm for 20 min after the last request to avoid cold starts.
     scaledown_window=1200,
     # High timeout so long-lived WebSocket connections (nurse alerts + patient
     # audio streaming) are not killed mid-session.

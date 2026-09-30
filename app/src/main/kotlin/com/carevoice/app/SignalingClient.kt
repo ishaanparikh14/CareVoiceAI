@@ -20,12 +20,14 @@ import java.util.concurrent.TimeUnit
  *
  * Follows the same OkHttp WebSocket pattern already used by NurseActivity:
  * a dedicated client with a 0-second read timeout (long-lived socket), JSON
- * `event` parsing, plain-text ping/pong keepalive, and 5s reconnect on drop.
+ * `event` parsing, plain-text ping/pong keepalive, and automatic reconnect on
+ * drop using capped exponential backoff with jitter.
  *
  * All callbacks are invoked on OkHttp's WebSocket thread; callers that touch UI
  * must post to the main thread themselves.
  *
- * @param serverUrl  Base HTTP(S) server URL, e.g. "http://192.168.0.103:8000".
+ * @param serverUrl  Base HTTP(S) server URL (public Modal deployment or a
+ *                   ward-local server, e.g. "https://host" or "http://host:8000").
  * @param token      JWT access token for the logged-in user.
  */
 class SignalingClient(
@@ -66,6 +68,16 @@ class SignalingClient(
     @Volatile private var ws: WebSocket? = null
     @Volatile private var closedByUser = false
 
+    // Reconnect backoff state. Guarded so only one reconnect thread runs at a time.
+    private val reconnectLock = Any()
+    @Volatile private var reconnectThread: Thread? = null
+    @Volatile private var reconnectAttempt = 0
+
+    companion object {
+        private const val RECONNECT_BASE_MS = 1_000L   // first retry delay
+        private const val RECONNECT_MAX_MS   = 30_000L  // cap so we never wait too long
+    }
+
     // ── Lifecycle ──────────────────────────────────────────────────────────────
 
     fun connect() {
@@ -86,6 +98,10 @@ class SignalingClient(
 
     fun close() {
         closedByUser = true
+        synchronized(reconnectLock) {
+            reconnectThread?.interrupt()
+            reconnectThread = null
+        }
         ws?.close(1000, "client closing")
         ws = null
     }
@@ -142,6 +158,7 @@ class SignalingClient(
     private val socketListener = object : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket, response: Response) {
             Log.i(TAG, "Signaling socket open")
+            reconnectAttempt = 0   // healthy connection resets backoff
             // Server sends its own {"event":"connected"}; onConnected fires on that.
         }
 
@@ -191,13 +208,29 @@ class SignalingClient(
         }
     }
 
+    /**
+     * Schedule a reconnect with capped exponential backoff plus jitter. Only one
+     * reconnect thread is ever pending; repeated failures back off (1s, 2s, 4s …
+     * up to 30s) so a flapping network never hammers the server or leaks threads.
+     */
     private fun scheduleReconnect() {
-        Thread {
-            try { Thread.sleep(5_000) } catch (_: InterruptedException) { return@Thread }
-            if (!closedByUser) {
-                Log.i(TAG, "Reconnecting signaling socket…")
-                connect()
-            }
-        }.start()
+        synchronized(reconnectLock) {
+            if (closedByUser || reconnectThread != null) return
+
+            val attempt = reconnectAttempt
+            reconnectAttempt = (reconnectAttempt + 1).coerceAtMost(10)
+            val backoff = (RECONNECT_BASE_MS shl attempt).coerceAtMost(RECONNECT_MAX_MS)
+            val jitter  = (Math.random() * 500).toLong()   // spread out reconnect storms
+            val delay   = backoff + jitter
+
+            reconnectThread = Thread {
+                try { Thread.sleep(delay) } catch (_: InterruptedException) { return@Thread }
+                synchronized(reconnectLock) { reconnectThread = null }
+                if (!closedByUser && ws == null) {
+                    Log.i(TAG, "Reconnecting signaling socket… (attempt ${attempt + 1})")
+                    connect()
+                }
+            }.apply { isDaemon = true; start() }
+        }
     }
 }

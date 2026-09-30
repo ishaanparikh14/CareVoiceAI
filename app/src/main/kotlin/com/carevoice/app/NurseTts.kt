@@ -9,9 +9,9 @@ import java.util.Locale
  * NurseTts — spoken announcements for Critical alerts on the nurse app.
  *
  * Mirrors the web dashboard behaviour: speaks a SHORT keyword summary
- * (priority + room + intent) in the nurse's chosen language (English / Hindi /
- * Kannada), once per alert. Urgent alerts that the server auto-escalates to
- * Critical are announced too (with an "escalated" prefix).
+ * (priority + room + intent) in the nurse's chosen language (English / Hindi),
+ * once per alert. Urgent alerts that the server auto-escalates to Critical are
+ * announced too (with an "escalated" prefix).
  *
  * Uses Android's built-in TextToSpeech engine. Language availability depends on
  * the device's installed TTS voices; if a language pack is missing it falls
@@ -26,7 +26,7 @@ class NurseTts(context: Context) {
     /** Whether announcements are enabled (persisted by the caller). */
     var enabled: Boolean = false
 
-    /** Announcement language: "en" | "hi" | "kn". */
+    /** Announcement language: "en" | "hi". */
     var lang: String = "en"
 
     init {
@@ -39,7 +39,6 @@ class NurseTts(context: Context) {
 
     private fun localeFor(l: String): Locale = when (l) {
         "hi" -> Locale("hi", "IN")
-        "kn" -> Locale("kn", "IN")
         else -> Locale.US
     }
 
@@ -73,11 +72,6 @@ class NurseTts(context: Context) {
         speak(sentence(roomId, intent, escalated, priority, summary, patientName))
     }
 
-    /** Speak an arbitrary phrase now (used by the "Test voice" action). */
-    fun speakTest() {
-        speak(sentence("4B", "Emergency", false, "Critical", "the patient", "the patient"))
-    }
-
     private fun speak(text: String) {
         val t = tts ?: return
         if (!ready) { Log.w(TAG, "TTS not ready — skipping"); return }
@@ -96,13 +90,6 @@ class NurseTts(context: Context) {
                     val head = if (escalated) "बढ़ा हुआ अलर्ट। " else "आपातकालीन अलर्ट। "
                     "${head}कमरा $roomId. मरीज़ को $i की ज़रूरत है। कृपया तुरंत पहुँचें।"
                 } else "कमरा $roomId. मरीज़ को $i की ज़रूरत है।"
-            }
-            "kn" -> {
-                val i = INTENT_KN[intent] ?: "ಸಹಾಯ"
-                if (critical) {
-                    val head = if (escalated) "ಉನ್ನತೀಕರಿಸಿದ ಎಚ್ಚರಿಕೆ. " else "ತುರ್ತು ಎಚ್ಚರಿಕೆ. "
-                    "${head}ಕೊಠಡಿ $roomId. ರೋಗಿಗೆ $i ಅಗತ್ಯವಿದೆ. ದಯವಿಟ್ಟು ಕೂಡಲೇ ಬನ್ನಿ."
-                } else "ಕೊಠಡಿ $roomId. ರೋಗಿಗೆ $i ಅಗತ್ಯವಿದೆ."
             }
             else -> {
                 val who = patientName ?: "the patient"
@@ -134,11 +121,6 @@ class NurseTts(context: Context) {
             "Emergency" to "आपातकाल", "Pain" to "तेज़ दर्द", "Medication" to "दवाई",
             "Food/Water" to "खाना या पानी", "Mobility" to "चलने में मदद", "Hygiene" to "साफ़-सफ़ाई",
             "Emotional Support" to "सहारा", "Information" to "जानकारी", "Other" to "मदद",
-        )
-        private val INTENT_KN = mapOf(
-            "Emergency" to "ತುರ್ತು ಪರಿಸ್ಥಿತಿ", "Pain" to "ತೀವ್ರ ನೋವು", "Medication" to "ಔಷಧಿ",
-            "Food/Water" to "ಆಹಾರ ಅಥವಾ ನೀರು", "Mobility" to "ನಡೆಯಲು ಸಹಾಯ", "Hygiene" to "ಸ್ವಚ್ಛತೆ",
-            "Emotional Support" to "ಭಾವನಾತ್ಮಕ ಬೆಂಬಲ", "Information" to "ಮಾಹಿತಿ", "Other" to "ಸಹಾಯ",
         )
     }
 }

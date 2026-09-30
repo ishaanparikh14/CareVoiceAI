@@ -18,8 +18,8 @@ import android.util.Log
  *   1. startListening() kicks off SpeechRecognizer in continuous mode.
  *   2. Every partial/final result is scanned for the trigger word.
  *   3. When "help" is detected, [onWakeWord] is called exactly once.
- *   4. The caller (ViewModel) is responsible for pausing and resuming after
- *      the recording session completes.
+ *   4. The caller (ViewModel) stops this detector while it records the
+ *      follow-up message, then starts a fresh detector afterwards.
  *   5. stop() tears it down cleanly.
  *
  * NOTE: SpeechRecognizer must be created and used on the MAIN thread only.
@@ -69,14 +69,6 @@ class WakeWordDetector(
             recognizer = null
         }
         Log.i(TAG, "Wake word detector stopped")
-    }
-
-    /** Call this after the triggered recording session finishes to resume listening. */
-    fun resume() {
-        triggered = false
-        if (active) {
-            handler.postDelayed({ startRecognition() }, 500)
-        }
     }
 
     private fun startRecognition() {

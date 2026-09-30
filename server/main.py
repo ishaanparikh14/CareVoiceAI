@@ -116,6 +116,20 @@ async def lifespan(app: FastAPI):
     logger.info("  WAV temp dir: %s",    settings.WAV_TEMP_DIR)
     logger.info("  Pipeline    : %s",    "STUB" if settings.USE_STUB else "REAL")
 
+    # Guard against unset security keys. config.py leaves these empty by
+    # default; they must be provided via SECRET_KEY / NURSE_ADMIN_KEY env vars
+    # (or a Modal secret) before deploy.
+    if not settings.SECRET_KEY:
+        logger.critical(
+            "SECRET_KEY is not set — JWT authentication will fail. "
+            "Set SECRET_KEY in your .env, environment, or Modal secret."
+        )
+    if not settings.NURSE_ADMIN_KEY:
+        logger.warning(
+            "NURSE_ADMIN_KEY is not set — nurse registration is disabled. "
+            "Set NURSE_ADMIN_KEY in your .env, environment, or Modal secret."
+        )
+
     # SQLite — alerts/transcripts
     await init_db()
 
@@ -179,11 +193,19 @@ app = FastAPI(
 
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
-# Default allows all origins so Android apps on any ward IP can reach the server.
-# Tighten CORS_ORIGINS in .env (e.g. ["http://192.168.1.0/24"]) for production.
+# Handle CORS origins configuration
+# - Empty list ([]) means allow all origins (development default)
+# - Specific list restricts to those origins (production)
+# - ["*"] explicitly allows all origins
+cors_origins = settings.CORS_ORIGINS
+if not cors_origins:  # Empty list
+    logger.warning("CORS_ORIGINS is empty. Allowing all origins for development.")
+    logger.warning("Set CORS_ORIGINS in .env for production (e.g., specific IPs or domains).")
+    cors_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins     = settings.CORS_ORIGINS,
+    allow_origins     = cors_origins,
     allow_credentials = True,
     allow_methods     = ["*"],
     allow_headers     = ["*"],
@@ -225,11 +247,6 @@ async def login_page():
 async def admin_page():
     """Serve the admin monitoring dashboard (requires admin role — JS handles guard)."""
     return FileResponse(str(_static_dir / "admin.html"))
-
-@app.get("/test", include_in_schema=False)
-async def test_page():
-    """Microphone + WebSocket diagnostic page."""
-    return FileResponse(str(_static_dir / "test_mic.html"))
 
 @app.get("/", include_in_schema=False)
 async def root():

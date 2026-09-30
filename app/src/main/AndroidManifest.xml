@@ -4,10 +4,10 @@
     <!-- Microphone access for AudioRecord -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
-    <!-- Required for model download (one-time from GitHub) and LAN POST to FastAPI -->
+    <!-- HTTPS calls to the FastAPI server + WebSocket signaling/alerts -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
-    <!-- Used to confirm Wi-Fi connectivity before attempting LAN upload -->
+    <!-- Used to confirm connectivity before attempting an upload -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
     <!-- Keeps CPU alive during background recording so the VAD loop is not throttled -->
@@ -33,9 +33,9 @@
         android:theme="@style/Theme.MaterialComponents.Light.DarkActionBar"
         android:usesCleartextTraffic="true">
         <!--
-            usesCleartextTraffic="true" is required for HTTP (not HTTPS) connections
-            to the on-premises FastAPI server on hospital LAN.
-            The server operates on plain HTTP inside the private network.
+            usesCleartextTraffic="true" is retained so the server URL can be
+            overridden (in Settings) to a plain-HTTP LAN address. The default
+            endpoint is HTTPS, so cleartext is unused in the default config.
         -->
 
         <activity
