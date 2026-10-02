@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rounded-pill background for the priority badge TextView.
+     The tint (color) is set programmatically per priority level. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="12dp"/>
+    <!-- background color overridden at runtime via setBackgroundTintList -->
+    <solid android:color="@color/colorPriorityCriticalBg"/>
+</shape>

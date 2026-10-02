@@ -1,0 +1,38 @@
+# CareVoice AI — FastAPI server dependencies
+# Install with:  pip install -r requirements.txt
+#
+# All inference runs on-premises. No cloud SDK is listed here.
+
+# ── Web framework ──────────────────────────────────────────────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.29.0        # includes websockets + uvloop on Linux
+python-multipart==0.0.9          # required for UploadFile / Form parsing
+
+# ── Databases ──────────────────────────────────────────────────────────────────
+aiosqlite==0.20.0                # async SQLite driver — alerts/transcripts
+asyncpg==0.29.0                  # async PostgreSQL driver — users/patients
+
+# ── Auth ─────────────────────────────────────────────────────────────────────--
+python-jose[cryptography]==3.3.0 # JWT sign/verify
+passlib[argon2]==1.7.4           # argon2 password hashing
+
+# ── Data validation ────────────────────────────────────────────────────────────
+pydantic==2.7.1
+pydantic-settings==2.2.1         # BaseSettings for config.py
+
+# ── Utilities ──────────────────────────────────────────────────────────────────
+python-dotenv==1.0.1             # .env file support for config overrides
+aiofiles==23.2.1                 # async file I/O for saving .wav files
+numpy==1.26.4                    # audio buffer handling (VAD/WAV encode)
+
+# ── ML pipeline (ASR + intent) ─────────────────────────────────────────────────
+# Set USE_STUB=false to activate. The intent model must be present in
+# storage/models/intent_ml/ (trained via ml/train_intent_ml.py).
+faster-whisper==1.0.3            # Whisper ASR (CTranslate2 backend)
+transformers==4.40.1             # multilingual BERT intent classifier
+torch==2.3.0                     # PyTorch backend for HuggingFace models
+
+# ── GPU acceleration (optional, for faster-whisper on CUDA) ────────────────────
+# Install these only on machines with an NVIDIA GPU + CUDA 12:
+# nvidia-cublas-cu12
+# nvidia-cudnn-cu12

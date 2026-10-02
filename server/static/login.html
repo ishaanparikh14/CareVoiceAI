@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CareVoice AI — Login</title>
+<style>
+/* ── Reset ────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a365d 0%, #2a6496 50%, #1a365d 100%);
+}
+
+/* ── Card ─────────────────────────────────────────────────────────── */
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 40px 36px 36px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.35);
+  animation: slideUp .4s ease;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Logo / title ─────────────────────────────────────────────────── */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+  justify-content: center;
+}
+.logo svg { color: #2b6cb0; }
+.logo h1  { font-size: 1.5rem; font-weight: 800; color: #1a202c; }
+.logo p   { font-size: .78rem; color: #718096; text-align: center; margin-top: 2px; }
+
+/* ── Role toggle ──────────────────────────────────────────────────── */
+.role-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 28px;
+  background: #edf2f7;
+  padding: 5px;
+  border-radius: 10px;
+}
+.role-btn {
+  padding: 10px;
+  border: none;
+  border-radius: 7px;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  color: #718096;
+}
+.role-btn.active {
+  background: white;
+  color: #2b6cb0;
+  box-shadow: 0 1px 4px rgba(0,0,0,.15);
+}
+.role-btn.active.nurse-active   { color: #2b6cb0; }
+.role-btn.active.patient-active { color: #276749; }
+.role-btn.active.admin-active   { color: #6b46c1; }
+
+/* ── Form fields ──────────────────────────────────────────────────── */
+.field { margin-bottom: 18px; }
+label {
+  display: block;
+  font-size: .82rem;
+  font-weight: 700;
+  color: #4a5568;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+input[type=text], input[type=password] {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: .95rem;
+  color: #1a202c;
+  background: #f7fafc;
+  outline: none;
+  transition: border-color .2s, background .2s;
+}
+input:focus {
+  border-color: #4299e1;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(66,153,225,.15);
+}
+
+/* ── Room hint (patient only) ─────────────────────────────────────── */
+#room-field { display: none; }
+#room-hint {
+  font-size: .76rem;
+  color: #718096;
+  margin-top: 4px;
+}
+
+/* ── Submit button ────────────────────────────────────────────────── */
+.btn-login {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s, transform .1s;
+  margin-top: 4px;
+  letter-spacing: .3px;
+}
+.btn-login:hover   { opacity: .9; }
+.btn-login:active  { transform: scale(.98); }
+.btn-login:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.btn-login.nurse   { background: #2b6cb0; color: white; }
+.btn-login.patient { background: #276749; color: white; }
+.btn-login.admin   { background: #6b46c1; color: white; }
+
+/* ── Error banner ─────────────────────────────────────────────────── */
+#error-msg {
+  display: none;
+  background: #fff5f5;
+  border: 1px solid #fc8181;
+  color: #c53030;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: .85rem;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* ── Credentials hint — removed ──────────────────────────────────── */
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- Logo -->
+  <div class="logo">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+      <line x1="12" y1="19" x2="12" y2="22"/>
+      <line x1="8"  y1="22" x2="16" y2="22"/>
+    </svg>
+    <div>
+      <h1>CareVoice AI</h1>
+      <p>Smart Patient Request System</p>
+    </div>
+  </div>
+
+  <!-- Role toggle -->
+  <div class="role-toggle">
+    <button class="role-btn active nurse-active" id="btn-nurse" onclick="setRole('nurse')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      Nurse
+    </button>
+    <button class="role-btn" id="btn-patient" onclick="setRole('patient')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      Patient
+    </button>
+    <button class="role-btn" id="btn-admin" onclick="setRole('admin')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.5"><circle cx="12" cy="12" r="3"/>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+      </svg>
+      Admin
+    </button>
+  </div>
+
+  <!-- Error -->
+  <div id="error-msg"></div>
+
+  <!-- Form -->
+  <form id="login-form" onsubmit="doLogin(event)">
+
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="username" autocomplete="username"
+             placeholder="e.g. nurse_anna" required/>
+    </div>
+
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="password" autocomplete="current-password"
+             placeholder="••••••••" required/>
+    </div>
+
+    <!-- Room number — shown only for Patient role -->
+    <div class="field" id="room-field">
+      <label>Room Number</label>
+      <input type="text" id="room-number" placeholder="e.g. 4B"
+             pattern="[0-9]{1,3}[A-Za-z]?" title="Room number like 4B or 12C"/>
+      <p id="room-hint">
+        Enter the room number printed on your bedside card.<br>
+        It will be auto-filled from your account if left blank.
+      </p>
+    </div>
+
+    <button class="btn-login nurse" id="login-btn" type="submit">
+      Sign In as Nurse
+    </button>
+
+  </form>
+
+
+</div><!-- /card -->
+
+<script>
+const BASE = window.location.origin;
+let currentRole = 'nurse';
+
+// ── Role toggle ────────────────────────────────────────────────────────────
+function setRole(role) {
+  currentRole = role;
+
+  ['nurse', 'patient', 'admin'].forEach(r => {
+    const btn = document.getElementById(`btn-${r}`);
+    btn.classList.toggle('active',        role === r);
+    btn.classList.toggle(`${r}-active`,   role === r);
+  });
+
+  document.getElementById('room-field').style.display =
+    role === 'patient' ? 'block' : 'none';
+
+  const btn = document.getElementById('login-btn');
+  const labels = { nurse: 'Sign In as Nurse', patient: 'Sign In as Patient', admin: 'Sign In as Admin' };
+  btn.textContent = labels[role];
+  btn.className   = `btn-login ${role}`;
+
+  document.getElementById('username').placeholder =
+    role === 'nurse'   ? 'e.g. nurse_anna'   :
+    role === 'patient' ? 'e.g. patient_raj'  :
+                         'e.g. admin';
+  hideError();
+}
+
+// ── Login ──────────────────────────────────────────────────────────────────
+async function doLogin(e) {
+  e.preventDefault();
+  hideError();
+
+  const username  = document.getElementById('username').value.trim();
+  const password  = document.getElementById('password').value;
+  const roomInput = document.getElementById('room-number').value.trim();
+
+  const btn = document.getElementById('login-btn');
+  btn.disabled    = true;
+  btn.textContent = 'Signing in…';
+
+  try {
+    const body = new URLSearchParams({ username, password });
+    const res  = await fetch(`${BASE}/auth/login`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      showError(data.detail ?? 'Login failed. Please try again.');
+      return;
+    }
+
+    // Verify role matches selected tab
+    if (data.role !== currentRole) {
+      showError(
+        `This account is a "${data.role}" account. ` +
+        `Please select the correct role tab.`
+      );
+      return;
+    }
+
+    // Persist session
+    localStorage.setItem('cv_token',     data.access_token);
+    localStorage.setItem('cv_role',      data.role);
+    localStorage.setItem('cv_full_name', data.full_name);
+    localStorage.setItem('cv_user_id',   data.user_id);
+
+    const room = data.room_number ?? roomInput ?? '';
+    localStorage.setItem('cv_room', room);
+    if (data.ward) localStorage.setItem('cv_ward', data.ward);
+
+    // Route by role
+    if (data.role === 'admin') {
+      window.location.href = '/admin';
+    } else {
+      window.location.href = '/dashboard';
+    }
+
+  } catch (err) {
+    showError('Network error — is the server running?');
+  } finally {
+    btn.disabled    = false;
+    const labels = { nurse: 'Sign In as Nurse', patient: 'Sign In as Patient', admin: 'Sign In as Admin' };
+    btn.textContent = labels[currentRole];
+  }
+}
+
+// ── Error helpers ──────────────────────────────────────────────────────────
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent   = msg;
+  el.style.display = 'block';
+}
+function hideError() {
+  document.getElementById('error-msg').style.display = 'none';
+}
+
+// ── Already logged in? Skip login ──────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const token = localStorage.getItem('cv_token');
+  if (token) {
+    fetch(`${BASE}/auth/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).then(r => {
+      if (r.ok) return r.json();
+      else { localStorage.clear(); }
+    }).then(me => {
+      if (!me) return;
+      window.location.href = me.role === 'admin' ? '/admin' : '/dashboard';
+    }).catch(() => {});
+  }
+});
+</script>
+</body>
+</html>

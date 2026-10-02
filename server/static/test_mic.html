@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title>Mic Test</title>
+<style>
+body { font-family: sans-serif; padding: 40px; background: #f0f4f8; }
+button { padding: 16px 32px; font-size: 1.1rem; background: #3182ce; color: white; border: none; border-radius: 8px; cursor: pointer; margin: 8px; }
+#log { margin-top: 20px; background: #1a202c; color: #68d391; padding: 16px; border-radius: 8px; font-family: monospace; font-size: .9rem; min-height: 200px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h2>CareVoice — Microphone + WebSocket Diagnostic</h2>
+<p>Open browser DevTools Console (F12) alongside this page.</p>
+
+<button onclick="testMic()">1. Test Microphone</button>
+<button onclick="testWs()">2. Test WebSocket</button>
+<button onclick="testAuth()">3. Test Login + Full Flow</button>
+
+<div id="log">Ready — click a button above...\n</div>
+
+<script>
+function log(msg, color) {
+  const el = document.getElementById('log');
+  const line = document.createElement('span');
+  line.style.color = color || '#68d391';
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n`;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+  console.log(msg);
+}
+
+// ── 1. Test Microphone ────────────────────────────────────────────────────
+async function testMic() {
+  log('Requesting microphone access...', '#90cdf4');
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    log('✓ Microphone access GRANTED', '#68d391');
+    log(`  Tracks: ${stream.getTracks().map(t => t.label || t.kind).join(', ')}`, '#a0aec0');
+    stream.getTracks().forEach(t => t.stop());
+    log('  (mic released)', '#a0aec0');
+  } catch(e) {
+    log(`✗ Microphone FAILED: ${e.name} — ${e.message}`, '#fc8181');
+    if (e.name === 'NotAllowedError') {
+      log('  → Click the 🔒 padlock in address bar → Microphone → Allow → refresh', '#fbd38d');
+    } else if (e.name === 'NotFoundError') {
+      log('  → No microphone found. Connect one and retry.', '#fbd38d');
+    }
+  }
+}
+
+// ── 2. Test WebSocket ─────────────────────────────────────────────────────
+function testWs() {
+  const token = localStorage.getItem('cv_token');
+  if (!token) { log('✗ No JWT in localStorage — please log in at /login first', '#fc8181'); return; }
+
+  const room = localStorage.getItem('cv_room') || '4B';
+  log(`Connecting WebSocket with room=${room}...`, '#90cdf4');
+
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const url = `${proto}://${location.host}/ws/patient?token=${encodeURIComponent(token)}&room_id=${encodeURIComponent(room)}`;
+  log(`  URL: ${url}`, '#a0aec0');
+
+  const ws = new WebSocket(url);
+  ws.onopen  = ()    => { log('✓ WebSocket connected!', '#68d391'); ws.close(1000); };
+  ws.onmessage = e   => log(`  Server says: ${e.data}`, '#90cdf4');
+  ws.onerror = ()    => log('✗ WebSocket connection FAILED', '#fc8181');
+  ws.onclose = (evt) => log(`  Closed: code=${evt.code} reason="${evt.reason}"`, '#a0aec0');
+}
+
+// ── 3. Full login + patient flow test ─────────────────────────────────────
+async function testAuth() {
+  log('Testing full auth flow...', '#90cdf4');
+
+  // Login
+  try {
+    const r = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'username=patient_raj&password=pass123'
+    });
+    const d = await r.json();
+    if (r.ok) {
+      log(`✓ Login OK: role=${d.role} room=${d.room_number} name=${d.full_name}`, '#68d391');
+      localStorage.setItem('cv_token',     d.access_token);
+      localStorage.setItem('cv_role',      d.role);
+      localStorage.setItem('cv_full_name', d.full_name);
+      localStorage.setItem('cv_room',      d.room_number || '4B');
+    } else {
+      log(`✗ Login failed: ${d.detail}`, '#fc8181');
+      return;
+    }
+  } catch(e) {
+    log(`✗ Login request failed: ${e.message}`, '#fc8181');
+    return;
+  }
+
+  // /auth/me
+  try {
+    const token = localStorage.getItem('cv_token');
+    const r = await fetch('/auth/me', { headers: { Authorization: `Bearer ${token}` } });
+    const d = await r.json();
+    if (r.ok) log(`✓ /auth/me OK: room=${d.room_number} diagnosis=${d.diagnosis}`, '#68d391');
+    else log(`✗ /auth/me failed: ${d.detail}`, '#fc8181');
+  } catch(e) {
+    log(`✗ /auth/me request failed: ${e.message}`, '#fc8181');
+  }
+
+  log('Done. Now click "2. Test WebSocket" to test the WS connection.', '#fbd38d');
+}
+
+// Auto-check what's in localStorage on load
+window.addEventListener('DOMContentLoaded', () => {
+  const token = localStorage.getItem('cv_token');
+  const role  = localStorage.getItem('cv_role');
+  const room  = localStorage.getItem('cv_room');
+  if (token) log(`localStorage: role=${role} room=${room} token=${token.substring(0,20)}...`, '#a0aec0');
+  else       log('localStorage: no token found (not logged in)', '#fbd38d');
+
+  // Check if getUserMedia is available at all
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    log('getUserMedia API: available ✓', '#a0aec0');
+  } else {
+    log('getUserMedia API: NOT AVAILABLE ✗ — browser may be blocking it (not HTTPS?)', '#fc8181');
+  }
+});
+</script>
+</body>
+</html>

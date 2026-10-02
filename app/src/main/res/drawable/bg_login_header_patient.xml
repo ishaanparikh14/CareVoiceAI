@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Indigo → Violet gradient for patient login header -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:startColor="#4F46E5"
+        android:endColor="#7C3AED"
+        android:angle="135"
+        android:type="linear" />
+</shape>

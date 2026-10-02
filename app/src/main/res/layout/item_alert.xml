@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_alert.xml — single alert card in the nurse dashboard RecyclerView.
+
+    Visual structure:
+    ┌─────────────────────────────────────────────────────┐
+    │ [CRITICAL]  Room 4B                    14:32         │
+    │ Pain                                     02:47       │  <- Urgent countdown to escalation
+    │ "I need help, my leg hurts badly"                    │
+    │                                    [ACK] [ATTENDED]  │
+    └─────────────────────────────────────────────────────┘
+
+    An escalated alert (Urgent → Critical, unattended 5+ minutes) shows the
+    [CRITICAL ESCALATION] badge, an "Unattended for 5 minutes" second line
+    instead of the intent, and only the MARK ATTENDED button (no ACK, no
+    countdown — see AlertAdapter.kt).
+-->
+
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardAlert"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="12dp"
+    android:layout_marginVertical="6dp"
+    app:cardCornerRadius="10dp"
+    app:cardElevation="3dp"
+    app:cardBackgroundColor="@color/colorCardBackground">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="14dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="10dp">
+
+        <!-- Priority badge — coloured pill (CRITICAL / URGENT / ROUTINE) -->
+        <TextView
+            android:id="@+id/tvPriority"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="3dp"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="@color/colorPriorityCritical"
+            android:background="@drawable/bg_priority_badge"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"/>
+
+        <!-- Room ID — bold, prominent -->
+        <TextView
+            android:id="@+id/tvRoom"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/colorText"
+            app:layout_constraintTop_toTopOf="@id/tvPriority"
+            app:layout_constraintBottom_toBottomOf="@id/tvPriority"
+            app:layout_constraintStart_toEndOf="@id/tvPriority"
+            app:layout_constraintEnd_toStartOf="@id/tvTime"/>
+
+        <!-- Timestamp — right-aligned -->
+        <TextView
+            android:id="@+id/tvTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="@color/colorTextSecondary"
+            app:layout_constraintTop_toTopOf="@id/tvPriority"
+            app:layout_constraintBottom_toBottomOf="@id/tvPriority"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Intent label + distress score, second row -->
+        <!-- Patient response timer: runs from alert creation until ATTEND.
+        ACK and escalation do not stop or reset this timer. -->
+        <TextView
+            android:id="@+id/tvIntent"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="13sp"
+            android:textColor="@color/colorTextSecondary"
+            app:layout_constraintTop_toBottomOf="@id/tvPriority"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/tvDistress"/>
+
+        <TextView
+            android:id="@+id/tvDistress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/colorTextSecondary"
+            app:layout_constraintTop_toBottomOf="@id/tvTime"
+            app:layout_constraintEnd_toEndOf="parent"/>
+        <!--
+            NOTE: this view is repurposed as the Urgent→Critical escalation
+            countdown (server-authoritative escalation_deadline, shown as
+            mm:ss). Its original purpose — displaying the raw distress score
+            — was removed from the product; keeping the id `tvDistress`
+            avoids an unrelated rename across the codebase. Hidden whenever
+            the alert isn't an active (non-escalated, non-attended) Urgent
+            alert with a deadline.
+        -->
+
+        <!-- Transcript — italic, up to 2 lines -->
+        <TextView
+            android:id="@+id/tvTranscript"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textSize="14sp"
+            android:textColor="@color/colorText"
+            android:fontFamily="sans-serif"
+            android:maxLines="2"
+            android:ellipsize="end"
+            app:layout_constraintTop_toBottomOf="@id/tvIntent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!--
+            Action row — replaces the old single ACK-button/label pair.
+            Left: stacked status labels (ACK'd / Attended).
+            Right: ACK button (Urgent only, pre-attend) + MARK ATTENDED
+            button (any unattended Urgent/Critical/Escalated alert).
+            ACK and ATTEND are deliberately separate actions — see
+            AlertAdapter.kt / escalation_manager.py for why.
+        -->
+        <LinearLayout
+            android:id="@+id/actionRow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            app:layout_constraintTop_toBottomOf="@id/tvTranscript"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <!-- "ACK: <nurse>" — shown once acknowledged -->
+                <TextView
+                    android:id="@+id/tvAckedBy"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="12sp"
+                    android:textColor="@color/colorAcknowledged"
+                    android:visibility="gone"/>
+
+                <!-- "Attended: <nurse>" — shown once MARK ATTENDED is pressed -->
+                <TextView
+                    android:id="@+id/tvAttendedBy"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorAttended"
+                    android:visibility="gone"/>
+            </LinearLayout>
+
+            <!-- ACK button — Urgent alerts only; ACK does NOT mean attended -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAck"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:text="@string/nurse_ack"
+                android:textSize="12sp"
+                android:paddingHorizontal="12dp"
+                app:strokeColor="@color/colorPrimary"
+                android:visibility="gone"/>
+
+            <!-- MARK ATTENDED — the only action that stops auto-escalation -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAttend"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="@string/nurse_attend"
+                android:textSize="12sp"
+                android:paddingHorizontal="12dp"
+                android:backgroundTint="@color/colorAttendButton"
+                android:visibility="gone"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/voiceActionRow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal"
+            android:gravity="end"
+            app:layout_constraintTop_toBottomOf="@id/actionRow"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnHearSummary"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="HEAR SUMMARY"
+                android:textSize="11sp"
+                android:paddingHorizontal="8dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnVoiceReply"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginStart="6dp"
+                android:text="VOICE REPLY"
+                android:textSize="11sp"
+                android:paddingHorizontal="8dp"/>
+            
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPlayPatientVoice"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginStart="6dp"
+                android:text="@string/nurse_play_patient_voice"
+                android:textSize="11sp"
+                android:paddingHorizontal="8dp"/>
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>
+

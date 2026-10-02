@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Main actions -->
+    <group android:id="@+id/groupMain">
+        <item
+            android:id="@+id/nav_profile"
+            android:icon="@android:drawable/ic_menu_myplaces"
+            android:title="@string/drawer_profile" />
+
+        <item
+            android:id="@+id/nav_settings"
+            android:icon="@android:drawable/ic_menu_preferences"
+            android:title="@string/drawer_settings" />
+
+        <item
+            android:id="@+id/nav_language"
+            android:icon="@android:drawable/ic_menu_set_as"
+            android:title="@string/drawer_language" />
+    </group>
+
+    <!-- Account -->
+    <group android:id="@+id/groupAccount">
+        <item
+            android:id="@+id/nav_logout"
+            android:icon="@android:drawable/ic_menu_close_clear_cancel"
+            android:title="@string/drawer_logout" />
+    </group>
+
+</menu>
