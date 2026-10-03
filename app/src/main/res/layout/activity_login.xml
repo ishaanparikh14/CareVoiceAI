@@ -16,9 +16,24 @@
         <View
             android:id="@+id/viewHeaderBg"
             android:layout_width="0dp"
-            android:layout_height="260dp"
+            android:layout_height="290dp"
             android:background="@drawable/bg_login_header_patient"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Logo badge -->
+        <ImageView
+            android:id="@+id/ivLogo"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="28dp"
+            android:layout_marginTop="40dp"
+            android:background="@drawable/bg_icon_tile"
+            android:backgroundTint="@color/cv_white_20"
+            android:importantForAccessibility="no"
+            android:padding="10dp"
+            android:src="@drawable/ic_cv_heart"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -27,16 +42,17 @@
             android:id="@+id/tvAppLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
-            android:layout_marginTop="52dp"
+            android:layout_marginStart="12dp"
+            android:fontFamily="sans-serif-medium"
             android:text="@string/app_name"
             android:textColor="#FFFFFF"
-            android:alpha="0.75"
-            android:textSize="11sp"
-            android:letterSpacing="0.18"
+            android:alpha="0.9"
+            android:textSize="13sp"
+            android:letterSpacing="0.14"
             android:textAllCaps="true"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintStart_toEndOf="@id/ivLogo"
+            app:layout_constraintTop_toTopOf="@id/ivLogo"
+            app:layout_constraintBottom_toBottomOf="@id/ivLogo" />
 
         <!-- Main title -->
         <TextView
@@ -45,15 +61,15 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="28dp"
             android:layout_marginEnd="28dp"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="18dp"
+            android:fontFamily="sans-serif-medium"
             android:text="@string/login_title_patient"
             android:textColor="#FFFFFF"
             android:textSize="32sp"
-            android:textStyle="bold"
             android:lineSpacingMultiplier="1.1"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvAppLabel" />
+            app:layout_constraintTop_toBottomOf="@id/ivLogo" />
 
         <!-- Subtitle -->
         <TextView
@@ -121,15 +137,16 @@
         </com.google.android.material.chip.ChipGroup>
 
         <!-- ── White card ─────────────────────────────────────────────── -->
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardForm"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
             android:layout_marginEnd="20dp"
             android:layout_marginTop="-36dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="12dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="8dp"
+            app:strokeWidth="0dp"
             app:cardBackgroundColor="@color/colorLoginCard"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -158,12 +175,10 @@
                 <!-- Username -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilUsername"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.CareVoice.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/login_hint_username"
-                    app:hintTextColor="@color/colorLoginFieldHint"
-                    app:boxStrokeColor="@color/colorLoginFieldStroke">
+                    android:hint="@string/login_hint_username">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etUsername"
@@ -177,14 +192,12 @@
                 <!-- Password -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilPassword"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.CareVoice.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
                     android:hint="@string/login_hint_password"
-                    app:endIconMode="password_toggle"
-                    app:hintTextColor="@color/colorLoginFieldHint"
-                    app:boxStrokeColor="@color/colorLoginFieldStroke">
+                    app:endIconMode="password_toggle">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etPassword"
@@ -198,14 +211,12 @@
                 <!-- Server URL (nurse only) -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilServerUrl"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.CareVoice.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
                     android:hint="@string/login_server_hint"
-                    android:visibility="gone"
-                    app:hintTextColor="@color/colorLoginFieldHint"
-                    app:boxStrokeColor="@color/colorLoginFieldStroke">
+                    android:visibility="gone">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etServerUrl"
@@ -217,16 +228,14 @@
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Sign in button -->
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnLogin"
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
+                    android:layout_height="56dp"
                     android:layout_marginTop="26dp"
                     android:text="@string/login_btn"
-                    android:textStyle="bold"
-                    android:textSize="15sp"
-                    android:textColor="#FFFFFF"
-                    app:cornerRadius="12dp" />
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF" />
 
                 <!-- Loading spinner (overlays button) -->
                 <ProgressBar
@@ -251,7 +260,7 @@
                     android:textStyle="bold" />
 
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- Bottom breathing room -->
         <View

@@ -57,25 +57,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun ensureModelReady() {
         val current = _uiState.value
-        if (current is UiState.Downloading || current == UiState.ModelReady) return
-        _uiState.value = UiState.Downloading(0)
+        if (current == UiState.ModelReady) return
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Main) {
             try {
-                ModelManager.ensureModelsReady(
-                    onProgress = { pct ->
-                        viewModelScope.launch(Dispatchers.Main) {
-                            _uiState.value = UiState.Downloading(pct)
-                        }
-                    }
-                )
+                // Energy-based VAD needs no downloaded model, so preparation is
+                // instant — go straight to ready without a fake progress phase.
                 if (sileroVAD == null) {
                     sileroVAD = SileroVAD()
                 }
-                withContext(Dispatchers.Main) { _uiState.value = UiState.ModelReady }
+                _uiState.value = UiState.ModelReady
             } catch (e: Exception) {
                 Log.e(TAG, "Resource preparation failed", e)
-                withContext(Dispatchers.Main) { _uiState.value = UiState.DownloadError }
+                _uiState.value = UiState.DownloadError
             }
         }
     }

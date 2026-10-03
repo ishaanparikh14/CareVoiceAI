@@ -23,7 +23,8 @@ import java.time.format.DateTimeFormatter
  */
 class AlertAdapter(
     private val onAck: (alertId: Int, nurseName: String) -> Unit,
-    private val onCall: (roomId: String) -> Unit = {}
+    private val onCall: (roomId: String) -> Unit = {},
+    private val onVoiceNotes: (roomId: String, alertId: Int) -> Unit = { _, _ -> }
 ) : ListAdapter<AlertModel, AlertAdapter.ViewHolder>(DIFF) {
 
     // Nurse name injected by NurseActivity after login
@@ -41,6 +42,9 @@ class AlertAdapter(
             b.tvPriority.setTextColor(ContextCompat.getColor(b.root.context, labelColor))
             b.tvPriority.backgroundTintList = ColorStateList.valueOf(
                 ContextCompat.getColor(b.root.context, bgColor)
+            )
+            b.viewPriorityStrip.backgroundTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(b.root.context, labelColor)
             )
 
             // ── Room + time ───────────────────────────────────────────────────
@@ -73,6 +77,9 @@ class AlertAdapter(
 
             // ── Call patient ──────────────────────────────────────────────────
             b.btnCall.setOnClickListener { onCall(alert.roomId) }
+
+            // ── Voice notes (long-press the card) ─────────────────────────────
+            b.root.setOnLongClickListener { onVoiceNotes(alert.roomId, alert.id); true }
 
             // ── ACK state ─────────────────────────────────────────────────────
             if (alert.acknowledged) {

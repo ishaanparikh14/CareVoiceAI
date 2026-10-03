@@ -1,86 +1,126 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:background="@drawable/bg_call_gradient"
     android:gravity="center_horizontal"
-    android:background="@color/colorLoginTitle"
+    android:orientation="vertical"
     android:padding="24dp">
 
-    <View
+    <Space
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_weight="1" />
+
+    <FrameLayout
+        android:layout_width="168dp"
+        android:layout_height="168dp"
+        android:background="@drawable/bg_avatar_large">
+
+        <ImageView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_cv_person" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/tvPeerName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
         android:text="—"
-        android:textColor="#FFFFFF"
-        android:textSize="30sp"
-        android:textStyle="bold" />
+        android:textColor="@android:color/white"
+        android:textSize="30sp" />
 
     <TextView
         android:id="@+id/tvCallStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:text="@string/call_status_calling"
-        android:textColor="#B0BEC5"
+        android:textColor="@color/cv_text_muted"
         android:textSize="16sp" />
 
     <TextView
         android:id="@+id/tvDuration"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="10dp"
+        android:fontFamily="sans-serif-medium"
         android:text="00:00"
-        android:textColor="#80CBC4"
-        android:textSize="18sp"
+        android:textColor="@color/cv_call_accent"
+        android:textSize="20sp"
         android:visibility="invisible" />
 
-    <View
+    <Space
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_weight="1" />
 
+    <!-- Mute + speaker tiles -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginBottom="24dp">
+        android:layout_marginBottom="28dp"
+        android:orientation="horizontal">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnMute"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
+            style="@style/Widget.CareVoice.Button.Round"
+            android:layout_width="104dp"
+            android:layout_height="96dp"
+            android:layout_marginEnd="20dp"
             android:text="@string/call_mute"
-            android:textColor="#FFFFFF"
-            app:strokeColor="#FFFFFF"
-            xmlns:app="http://schemas.android.com/apk/res-auto" />
+            android:textColor="@android:color/white"
+            android:textSize="13sp"
+            app:backgroundTint="@color/cv_white_12"
+            app:cornerRadius="24dp"
+            app:icon="@drawable/ic_vn_mic"
+            app:iconGravity="top"
+            app:iconPadding="6dp"
+            app:iconSize="28dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSpeaker"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/Widget.CareVoice.Button.Round"
+            android:layout_width="104dp"
+            android:layout_height="96dp"
             android:text="@string/call_speaker"
-            android:textColor="#FFFFFF"
-            app:strokeColor="#FFFFFF"
-            xmlns:app="http://schemas.android.com/apk/res-auto" />
+            android:textColor="@android:color/white"
+            android:textSize="13sp"
+            app:backgroundTint="@color/cv_white_12"
+            app:cornerRadius="24dp"
+            app:icon="@drawable/ic_cv_volume"
+            app:iconGravity="top"
+            app:iconPadding="6dp"
+            app:iconSize="28dp" />
     </LinearLayout>
 
+    <!-- End call -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnEndCall"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginBottom="32dp"
-        android:text="@string/call_end"
-        android:backgroundTint="@color/colorStop"
-        android:textColor="#FFFFFF" />
+        style="@style/Widget.CareVoice.Button.Round"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:contentDescription="@string/call_end"
+        app:backgroundTint="@color/cv_danger"
+        app:cornerRadius="40dp"
+        app:icon="@drawable/ic_cv_call_end"
+        app:iconGravity="textStart"
+        app:iconSize="34dp" />
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:importantForAccessibility="no"
+        android:text="@string/call_end"
+        android:textColor="@color/cv_text_muted"
+        android:textSize="13sp" />
 </LinearLayout>

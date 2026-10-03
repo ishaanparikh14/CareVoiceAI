@@ -24,13 +24,12 @@
         <!-- Back button -->
         <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="44dp"
-            android:background="@android:color/transparent"
-            android:src="@android:drawable/ic_menu_revert"
-            android:tint="#FFFFFF"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="28dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_cv_back"
             android:contentDescription="Back"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -42,11 +41,11 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="28dp"
             android:layout_marginEnd="28dp"
-            android:layout_marginTop="50dp"
+            android:layout_marginTop="16dp"
+            android:fontFamily="sans-serif-medium"
             android:text="@string/register_title_patient"
             android:textColor="#FFFFFF"
             android:textSize="28sp"
-            android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/btnBack" />
@@ -66,15 +65,16 @@
             app:layout_constraintTop_toBottomOf="@id/tvRegisterTitle" />
 
         <!-- ── White card ─────────────────────────────────────────────── -->
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardForm"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
             android:layout_marginEnd="20dp"
             android:layout_marginTop="-24dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="12dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="8dp"
+            app:strokeWidth="0dp"
             app:cardBackgroundColor="@color/colorLoginCard"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -93,12 +93,10 @@
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilUsername"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.CareVoice.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/register_hint_username"
-                    app:hintTextColor="@color/colorLoginFieldHint"
-                    app:boxStrokeColor="@color/colorLoginFieldStroke">
+                    android:hint="@string/register_hint_username">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etUsername"
                         android:layout_width="match_parent"
@@ -110,14 +108,12 @@
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilPassword"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.CareVoice.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:hint="@string/register_hint_password"
-                    app:endIconMode="password_toggle"
-                    app:hintTextColor="@color/colorLoginFieldHint"
-                    app:boxStrokeColor="@color/colorLoginFieldStroke">
+                    app:endIconMode="password_toggle">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etPassword"
                         android:layout_width="match_parent"
@@ -129,13 +125,11 @@
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilFullName"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.CareVoice.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:hint="@string/register_hint_full_name"
-                    app:hintTextColor="@color/colorLoginFieldHint"
-                    app:boxStrokeColor="@color/colorLoginFieldStroke">
+                    android:hint="@string/register_hint_full_name">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etFullName"
                         android:layout_width="match_parent"
@@ -149,13 +143,11 @@
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilRoom"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.CareVoice.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:hint="@string/register_hint_room"
-                    app:hintTextColor="@color/colorLoginFieldHint"
-                    app:boxStrokeColor="@color/colorLoginFieldStroke">
+                    android:hint="@string/register_hint_room">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etRoom"
                         android:layout_width="match_parent"
@@ -167,13 +159,11 @@
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilAge"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.CareVoice.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:hint="@string/register_hint_age"
-                    app:hintTextColor="@color/colorLoginFieldHint"
-                    app:boxStrokeColor="@color/colorLoginFieldStroke">
+                    android:hint="@string/register_hint_age">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etAge"
                         android:layout_width="match_parent"
@@ -185,13 +175,11 @@
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilDiagnosis"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.CareVoice.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:hint="@string/register_hint_diagnosis"
-                    app:hintTextColor="@color/colorLoginFieldHint"
-                    app:boxStrokeColor="@color/colorLoginFieldStroke">
+                    android:hint="@string/register_hint_diagnosis">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etDiagnosis"
                         android:layout_width="match_parent"
@@ -203,13 +191,11 @@
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilAttending"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.CareVoice.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:hint="@string/register_hint_attending"
-                    app:hintTextColor="@color/colorLoginFieldHint"
-                    app:boxStrokeColor="@color/colorLoginFieldStroke">
+                    android:hint="@string/register_hint_attending">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etAttending"
                         android:layout_width="match_parent"
@@ -223,14 +209,12 @@
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilWard"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.CareVoice.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:hint="@string/register_hint_ward"
-                    android:visibility="gone"
-                    app:hintTextColor="@color/colorLoginFieldHint"
-                    app:boxStrokeColor="@color/colorLoginFieldStroke">
+                    android:visibility="gone">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etWard"
                         android:layout_width="match_parent"
@@ -242,15 +226,13 @@
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilAdminKey"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.CareVoice.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:hint="@string/register_hint_admin_key"
                     android:visibility="gone"
-                    app:endIconMode="password_toggle"
-                    app:hintTextColor="@color/colorLoginFieldHint"
-                    app:boxStrokeColor="@color/colorLoginFieldStroke">
+                    app:endIconMode="password_toggle">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etAdminKey"
                         android:layout_width="match_parent"
@@ -264,13 +246,11 @@
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilServerUrl"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.CareVoice.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:hint="@string/login_server_hint"
-                    app:hintTextColor="@color/colorLoginFieldHint"
-                    app:boxStrokeColor="@color/colorLoginFieldStroke">
+                    android:hint="@string/login_server_hint">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etServerUrl"
                         android:layout_width="match_parent"
@@ -282,16 +262,14 @@
 
                 <!-- ── Create account button ─────────────────────────── -->
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnRegister"
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
+                    android:layout_height="56dp"
                     android:layout_marginTop="24dp"
                     android:text="@string/register_btn"
-                    android:textStyle="bold"
-                    android:textSize="15sp"
-                    android:textColor="#FFFFFF"
-                    app:cornerRadius="12dp" />
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF" />
 
                 <ProgressBar
                     android:id="@+id/pbRegister"
@@ -315,7 +293,7 @@
                     android:textStyle="bold" />
 
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
         <View
             android:layout_width="0dp"

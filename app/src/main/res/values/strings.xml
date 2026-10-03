@@ -101,6 +101,45 @@
     <string name="nurse_ack_success">Alert acknowledged</string>
     <string name="nurse_ack_failed">Could not acknowledge — try again</string>
 
+    <!-- Voice notes (bidirectional nurse ↔ patient) -->
+    <string name="vn_received">Received voice notes</string>
+    <string name="vn_received_room">Voice notes — Room %1$s</string>
+    <string name="vn_send">Send voice note</string>
+    <string name="vn_send_to">Send to</string>
+    <string name="vn_to_your_nurse">Your nurse (Room %1$s)</string>
+    <string name="vn_loading_rooms">Loading your rooms…</string>
+    <string name="vn_no_rooms">No rooms are assigned to you yet.</string>
+    <string name="vn_language">I am speaking in</string>
+    <string name="vn_lang_english">English</string>
+    <string name="vn_lang_hindi">हिंदी (Hindi)</string>
+    <string name="vn_record">Start recording</string>
+    <string name="vn_stop">Stop</string>
+    <string name="vn_tap_to_record">Tap the microphone and speak. Up to 30 seconds.</string>
+    <string name="vn_recording">Recording… tap the button again to stop.</string>
+    <string name="vn_recorded">Recorded. Play it back, then send or discard.</string>
+    <string name="vn_preview">Play back</string>
+    <string name="vn_discard">Discard</string>
+    <string name="vn_send_btn">Send voice note</string>
+    <string name="vn_sending">Sending voice note…</string>
+    <string name="vn_sent">Voice note sent</string>
+    <string name="vn_failed">Upload failed. Try again.</string>
+    <string name="vn_no_audio">No audio was recorded. Try again.</string>
+    <string name="vn_mic_denied">Microphone permission is required to record a voice note.</string>
+    <string name="vn_none">No voice notes received yet.</string>
+    <string name="vn_header_room">Room %1$s · %2$s</string>
+    <string name="vn_from_patient">Patient</string>
+    <string name="vn_from_nurse">Nurse</string>
+    <string name="vn_no_transcript">(No transcript available)</string>
+    <string name="vn_play_voice">Play voice</string>
+    <string name="vn_play_failed">Could not play this voice note.</string>
+    <string name="vn_reply">Reply</string>
+    <string name="vn_translate_to_hi">Translate to Hindi</string>
+    <string name="vn_translate_to_en">Translate to English</string>
+    <string name="vn_translating">Translating…</string>
+    <string name="vn_listen_translation">Listen to translation</string>
+    <string name="vn_translate_first_use">Translating on this phone. The first time downloads a language pack.</string>
+    <string name="vn_translate_failed">Translation failed. Check your internet connection for the one-time language download.</string>
+
     <!-- Plurals used in the nurse sidebar alert count -->
     <!-- Profile edit dialog -->
     <string name="profile_username_placeholder">@</string>
@@ -112,6 +151,23 @@
         <item quantity="one">%d pending alert</item>
         <item quantity="other">%d pending alerts</item>
     </plurals>
+
+    <!-- Patient home -->
+    <string name="home_greeting">Hello,</string>
+    <string name="home_subtitle">How can we help you today?</string>
+    <string name="home_status_label">Status</string>
+    <string name="home_sos_caption">Tap for urgent help, or just say “Help”.</string>
+    <string name="home_quick_actions">Quick actions</string>
+    <string name="home_send_note_sub">Record a message</string>
+    <string name="home_inbox_sub">Replies from your nurse</string>
+    <string name="btn_stop_recording">Stop recording</string>
+
+    <!-- Nurse dashboard header -->
+    <string name="nurse_station_label">Nurse station</string>
+    <string name="nurse_greeting">Good to see you,</string>
+    <string name="nurse_stat_pending">Pending</string>
+    <string name="nurse_stat_critical">Critical</string>
+    <string name="nurse_stat_rooms">My rooms</string>
 
     <!-- Real-time voice call -->
     <string name="call_voice_nurse">Voice Call Nurse</string>

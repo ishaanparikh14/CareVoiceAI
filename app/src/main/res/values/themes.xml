@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ── App theme ────────────────────────────────────────────────────────
+         One theme for every screen: brand colours, rounded shapes, and
+         consistent buttons / inputs / cards. -->
+    <style name="Theme.CareVoice" parent="Theme.MaterialComponents.Light.DarkActionBar">
+        <item name="colorPrimary">@color/colorLoginPatientAccent</item>
+        <item name="colorPrimaryVariant">@color/cv_patient_dark</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorSecondary">@color/colorLoginNurseAccent</item>
+        <item name="colorSecondaryVariant">@color/cv_nurse_dark</item>
+        <item name="colorOnSecondary">@android:color/white</item>
+        <item name="colorSurface">@android:color/white</item>
+        <item name="colorError">@color/cv_danger</item>
+        <item name="android:colorBackground">@color/colorLoginScreenBg</item>
+        <item name="android:windowBackground">@color/colorLoginScreenBg</item>
+        <item name="android:textColorPrimary">@color/colorText</item>
+        <item name="android:textColorSecondary">@color/colorTextSecondary</item>
+        <item name="android:statusBarColor">@color/cv_patient_dark</item>
+
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.CareVoice.Small</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.CareVoice.Medium</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.CareVoice.Large</item>
+
+        <item name="materialButtonStyle">@style/Widget.CareVoice.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.CareVoice.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.CareVoice.Button.Text</item>
+        <item name="textInputStyle">@style/Widget.CareVoice.TextInputLayout</item>
+        <item name="materialCardViewStyle">@style/Widget.CareVoice.Card</item>
+        <item name="alertDialogTheme">@style/ThemeOverlay.CareVoice.Dialog</item>
+    </style>
+
+    <!-- Screens that draw their own header (login, register, patient home). -->
+    <style name="Theme.CareVoice.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <!-- Nurse dashboard: teal brand. -->
+    <style name="Theme.CareVoice.Nurse.NoActionBar" parent="Theme.CareVoice.NoActionBar">
+        <item name="colorPrimary">@color/colorLoginNurseAccent</item>
+        <item name="colorPrimaryVariant">@color/cv_nurse_dark</item>
+        <item name="android:statusBarColor">@color/cv_nurse_dark</item>
+    </style>
+
+    <!-- In-call + incoming-call screens: dark, immersive. -->
+    <style name="Theme.CareVoice.Call" parent="Theme.CareVoice.NoActionBar">
+        <item name="android:statusBarColor">@color/cv_call_bg_start</item>
+        <item name="android:navigationBarColor">@color/cv_call_bg_end</item>
+    </style>
+
+    <!-- Rounded dialogs for every AlertDialog in the app. -->
+    <style name="ThemeOverlay.CareVoice.Dialog" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/bg_dialog_rounded</item>
+        <item name="colorPrimary">@color/colorLoginPatientAccent</item>
+        <item name="android:textColorPrimary">@color/colorText</item>
+    </style>
+
+    <!-- ── Shapes ────────────────────────────────────────────────────────── -->
+    <style name="ShapeAppearance.CareVoice.Small" parent="ShapeAppearance.MaterialComponents.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">14dp</item>
+    </style>
+    <style name="ShapeAppearance.CareVoice.Medium" parent="ShapeAppearance.MaterialComponents.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">18dp</item>
+    </style>
+    <style name="ShapeAppearance.CareVoice.Large" parent="ShapeAppearance.MaterialComponents.LargeComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
+    </style>
+    <style name="ShapeAppearance.CareVoice.NavItem" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <!-- ── Buttons ───────────────────────────────────────────────────────── -->
+    <style name="Widget.CareVoice.Button" parent="Widget.MaterialComponents.Button">
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="cornerRadius">14dp</item>
+    </style>
+
+    <style name="Widget.CareVoice.Button.Outlined" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="cornerRadius">14dp</item>
+        <item name="strokeWidth">1.5dp</item>
+    </style>
+
+    <style name="Widget.CareVoice.Button.Text" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <!-- Filter pills on the nurse dashboard; colours are applied in code. -->
+    <style name="Widget.CareVoice.Button.Pill" parent="Widget.MaterialComponents.Button.UnelevatedButton">
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:paddingStart">18dp</item>
+        <item name="android:paddingEnd">18dp</item>
+        <item name="cornerRadius">20dp</item>
+    </style>
+
+    <!-- Round icon-only buttons (call controls). Text is left empty. -->
+    <style name="Widget.CareVoice.Button.Round" parent="Widget.MaterialComponents.Button.UnelevatedButton">
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:padding">0dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">0dp</item>
+        <item name="iconSize">32dp</item>
+        <item name="iconTint">@android:color/white</item>
+    </style>
+
+    <!-- ── Inputs + cards ────────────────────────────────────────────────── -->
+    <style name="Widget.CareVoice.TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusTopStart">14dp</item>
+        <item name="boxCornerRadiusTopEnd">14dp</item>
+        <item name="boxCornerRadiusBottomStart">14dp</item>
+        <item name="boxCornerRadiusBottomEnd">14dp</item>
+        <item name="boxStrokeColor">@color/cv_input_stroke</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="boxBackgroundColor">@android:color/white</item>
+        <item name="hintTextColor">?attr/colorPrimary</item>
+    </style>
+
+    <style name="Widget.CareVoice.Card" parent="Widget.MaterialComponents.CardView">
+        <item name="cardCornerRadius">18dp</item>
+        <item name="cardElevation">0dp</item>
+        <item name="cardBackgroundColor">@android:color/white</item>
+        <item name="strokeColor">@color/cv_outline</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+
+    <style name="TextAppearance.CareVoice.NavItem" parent="TextAppearance.MaterialComponents.Subtitle2">
+        <item name="android:textSize">15sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <!-- Small rounded label used for room / status pills. -->
+    <style name="CareVoice.Pill" parent="">
+        <item name="android:background">@drawable/bg_pill</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:paddingTop">5dp</item>
+        <item name="android:paddingBottom">5dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+</resources>

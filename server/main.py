@@ -39,6 +39,7 @@ from routers import auth_router
 from routers import patient_ws as patient_ws_router
 from routers import admin as admin_router
 from routers import signal as signal_router
+from routers import voice_notes as voice_notes_router
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -220,6 +221,7 @@ app.include_router(ws_router.router)           # WS   /ws/nurse
 app.include_router(auth_router.router)         # POST /auth/login, GET /auth/me, GET /auth/patients
 app.include_router(patient_ws_router.router)   # WS   /ws/patient  (always-on VAD streaming)
 app.include_router(signal_router.router)       # WS   /ws/signal   (WebRTC call signaling relay)
+app.include_router(voice_notes_router.router)  # POST /voice-notes, GET /voice-notes/latest, /{id}/audio
 
 # ── Static pages (registered BEFORE admin API router so /admin exact match ──
 # serves the HTML page while /admin/stats etc. route into the API)

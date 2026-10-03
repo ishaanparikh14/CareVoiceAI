@@ -52,6 +52,9 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
+    // ML Kit — on-device English ↔ Hindi translation of voice-note transcripts
+    implementation("com.google.mlkit:translate:17.0.3")
+
     // OkHttp — HTTP calls to the FastAPI server + WebSocket signaling/alerts
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 

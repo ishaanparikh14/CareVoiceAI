@@ -1,43 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:background="@drawable/bg_incoming_gradient"
     android:gravity="center_horizontal"
-    android:background="@color/colorLoginNurseAccent"
+    android:orientation="vertical"
     android:padding="24dp">
 
-    <View
+    <Space
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_weight="1" />
 
     <TextView
+        style="@style/CareVoice.Pill"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/call_status_ringing"
-        android:textColor="#E0F2F1"
-        android:textSize="16sp" />
+        android:textColor="@android:color/white"
+        android:textSize="13sp" />
+
+    <FrameLayout
+        android:layout_width="168dp"
+        android:layout_height="168dp"
+        android:layout_marginTop="28dp"
+        android:background="@drawable/bg_avatar_large">
+
+        <ImageView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_cv_person" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/tvCallerName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="24dp"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
         android:text="—"
-        android:textColor="#FFFFFF"
-        android:textSize="30sp"
-        android:textStyle="bold" />
+        android:textColor="@android:color/white"
+        android:textSize="30sp" />
 
     <TextView
         android:id="@+id/tvCallerRoom"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textColor="#B2DFDB"
-        android:textSize="15sp" />
+        android:layout_marginTop="6dp"
+        android:textColor="@color/cv_white_80"
+        android:textSize="16sp" />
 
-    <View
+    <Space
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_weight="1" />
@@ -45,29 +62,63 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginBottom="40dp">
+        android:layout_marginBottom="32dp"
+        android:orientation="horizontal">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnReject"
+        <LinearLayout
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="60dp"
-            android:layout_marginEnd="12dp"
-            android:text="@string/call_reject"
-            android:backgroundTint="@color/colorStop"
-            android:textColor="#FFFFFF" />
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnAccept"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnReject"
+                style="@style/Widget.CareVoice.Button.Round"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:contentDescription="@string/call_reject"
+                app:backgroundTint="@color/cv_danger"
+                app:cornerRadius="40dp"
+                app:icon="@drawable/ic_cv_call_end"
+                app:iconSize="34dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:importantForAccessibility="no"
+                android:text="@string/call_reject"
+                android:textColor="@android:color/white"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="60dp"
-            android:layout_marginStart="12dp"
-            android:text="@string/call_accept"
-            android:backgroundTint="@color/colorAccent"
-            android:textColor="#FFFFFF" />
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAccept"
+                style="@style/Widget.CareVoice.Button.Round"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:contentDescription="@string/call_accept"
+                app:backgroundTint="@color/cv_success"
+                app:cornerRadius="40dp"
+                app:icon="@drawable/ic_cv_phone"
+                app:iconSize="34dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:importantForAccessibility="no"
+                android:text="@string/call_accept"
+                android:textColor="@android:color/white"
+                android:textSize="14sp" />
+        </LinearLayout>
     </LinearLayout>
-
 </LinearLayout>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Hindi (hi) overrides for the voice-note feature. Every other string falls back
+  to the default values/strings.xml. Keys MUST match the default locale.
+-->
+<resources>
+    <string name="app_name">CareVoice AI</string>
+
+    <!-- Patient home -->
+    <string name="home_greeting">नमस्ते,</string>
+    <string name="home_subtitle">आज हम आपकी कैसे मदद करें?</string>
+    <string name="home_status_label">स्थिति</string>
+    <string name="home_sos_caption">तुरंत मदद के लिए दबाएं, या बस “मदद” बोलें।</string>
+    <string name="home_quick_actions">त्वरित विकल्प</string>
+    <string name="home_send_note_sub">संदेश रिकॉर्ड करें</string>
+    <string name="home_inbox_sub">नर्स के जवाब</string>
+    <string name="btn_stop_recording">रिकॉर्डिंग रोकें</string>
+    <string name="nurse_station_label">नर्स स्टेशन</string>
+    <string name="nurse_greeting">आपका स्वागत है,</string>
+    <string name="nurse_stat_pending">लंबित</string>
+    <string name="nurse_stat_critical">गंभीर</string>
+    <string name="nurse_stat_rooms">मेरे कमरे</string>
+
+    <!-- Voice notes -->
+    <string name="vn_received">प्राप्त वॉइस नोट्स</string>
+    <string name="vn_received_room">वॉइस नोट्स — कमरा %1$s</string>
+    <string name="vn_send">वॉइस नोट भेजें</string>
+    <string name="vn_send_to">किसे भेजें</string>
+    <string name="vn_to_your_nurse">आपकी नर्स (कमरा %1$s)</string>
+    <string name="vn_loading_rooms">आपके कमरे लोड हो रहे हैं…</string>
+    <string name="vn_no_rooms">आपको अभी कोई कमरा नहीं सौंपा गया है।</string>
+    <string name="vn_language">मैं इस भाषा में बोल रहा/रही हूँ</string>
+    <string name="vn_lang_english">English</string>
+    <string name="vn_lang_hindi">हिंदी (Hindi)</string>
+    <string name="vn_record">रिकॉर्डिंग शुरू करें</string>
+    <string name="vn_stop">रोकें</string>
+    <string name="vn_tap_to_record">माइक्रोफोन दबाएं और बोलें। अधिकतम 30 सेकंड।</string>
+    <string name="vn_recording">रिकॉर्डिंग… रोकने के लिए बटन फिर दबाएं।</string>
+    <string name="vn_recorded">रिकॉर्ड हो गया। सुनें, फिर भेजें या हटाएं।</string>
+    <string name="vn_preview">सुनें</string>
+    <string name="vn_discard">हटाएं</string>
+    <string name="vn_send_btn">वॉइस नोट भेजें</string>
+    <string name="vn_sending">वॉइस नोट भेजा जा रहा है…</string>
+    <string name="vn_sent">वॉइस नोट भेजा गया</string>
+    <string name="vn_failed">अपलोड विफल। फिर कोशिश करें।</string>
+    <string name="vn_no_audio">कोई ऑडियो रिकॉर्ड नहीं हुआ। फिर कोशिश करें।</string>
+    <string name="vn_mic_denied">वॉइस नोट रिकॉर्ड करने के लिए माइक्रोफोन की अनुमति जरूरी है।</string>
+    <string name="vn_none">अभी तक कोई वॉइस नोट नहीं मिला।</string>
+    <string name="vn_header_room">कमरा %1$s · %2$s</string>
+    <string name="vn_from_patient">मरीज</string>
+    <string name="vn_from_nurse">नर्स</string>
+    <string name="vn_no_transcript">(कोई ट्रांसक्रिप्ट उपलब्ध नहीं)</string>
+    <string name="vn_play_voice">आवाज़ सुनें</string>
+    <string name="vn_play_failed">यह वॉइस नोट चलाया नहीं जा सका।</string>
+    <string name="vn_reply">जवाब दें</string>
+    <string name="vn_translate_to_hi">हिंदी में अनुवाद करें</string>
+    <string name="vn_translate_to_en">अंग्रेज़ी में अनुवाद करें</string>
+    <string name="vn_translating">अनुवाद हो रहा है…</string>
+    <string name="vn_listen_translation">अनुवाद सुनें</string>
+    <string name="vn_translate_first_use">इस फ़ोन पर अनुवाद हो रहा है। पहली बार भाषा पैक डाउनलोड होगा।</string>
+    <string name="vn_translate_failed">अनुवाद विफल। एक बार के भाषा डाउनलोड के लिए इंटरनेट जांचें।</string>
+</resources>

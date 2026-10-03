@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         val patientName = UserSession.getFullName(this) ?: "Patient"
         val roomNumber  = UserSession.getRoomNumber(this) ?: "—"
-        binding.tvAppTitle.text = "CareVoice AI | $patientName (Room $roomNumber)"
+        showHeader(patientName, roomNumber)
 
         setupDrawer()
         populateDrawerHeader()
@@ -138,10 +138,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         binding.drawerLayout.closeDrawer(GravityCompat.START)
         return when (item.itemId) {
-            R.id.nav_profile  -> { showProfileDialog(); true }
-            R.id.nav_settings -> { showSettingsDialog(); true }
-            R.id.nav_logout   -> { doLogout(); true }
-            else              -> false
+            R.id.nav_profile     -> { showProfileDialog(); true }
+            R.id.nav_vn_received -> { ReceivedVoiceNotesActivity.open(this); true }
+            R.id.nav_vn_send     -> { SendVoiceNoteActivity.open(this); true }
+            R.id.nav_settings    -> { showSettingsDialog(); true }
+            R.id.nav_logout      -> { doLogout(); true }
+            else                 -> false
         }
     }
 
@@ -216,7 +218,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                         // Refresh drawer + title
                         populateDrawerHeader()
-                        binding.tvAppTitle.text = "CareVoice AI | $updatedName (Room ${updatedRoom ?: "—"})"
+                        showHeader(updatedName, updatedRoom ?: "—")
 
                         // Also update ServerUploader room pref
                         if (!updatedRoom.isNullOrEmpty()) {
@@ -295,6 +297,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         binding.btnStop.setOnClickListener { viewModel.stopListening() }
         // Voice Call = real-time WebRTC call to the patient's attending nurse.
         binding.btnVoiceCall.setOnClickListener { startVoiceCall() }
+
+        // Quick-action tiles
+        binding.cardSendNote.setOnClickListener { SendVoiceNoteActivity.open(this) }
+        binding.cardInbox.setOnClickListener { ReceivedVoiceNotesActivity.open(this) }
+    }
+
+    /** Header greeting (patient name) and the room pill. */
+    private fun showHeader(name: String, room: String) {
+        binding.tvAppTitle.text = name
+        binding.tvRoomPill.text = getString(R.string.drawer_room_fmt, room)
     }
 
     // ── Real-time voice call ────────────────────────────────────────────────---
@@ -359,7 +371,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 checkMicPermissionAndStartListening()
             }
             is MainViewModel.UiState.WakeWordListening -> {
-                binding.tvStatus.text          = "🎙 Say \"Help\" to call the nurse"
+                binding.tvStatus.text          = "Say \"Help\" to call the nurse"
                 binding.btnCallNurse.isEnabled = true
                 binding.btnStop.isEnabled      = false
                 setDownloadUiVisible(false)
@@ -367,38 +379,38 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
             is MainViewModel.UiState.Listening -> {
                 // Energy-VAD fallback path
-                binding.tvStatus.text          = "👂 Listening..."
+                binding.tvStatus.text          = "Listening…"
                 binding.btnCallNurse.isEnabled = true
                 binding.btnStop.isEnabled      = false
                 setDownloadUiVisible(false)
                 updateDrawerStatus(true)
             }
             is MainViewModel.UiState.Triggered -> {
-                binding.tvStatus.text          = "🔴 Recording your message..."
+                binding.tvStatus.text          = "Recording your message…"
                 binding.btnCallNurse.isEnabled = true
                 binding.btnStop.isEnabled      = true
                 updateDrawerStatus(true)
             }
             is MainViewModel.UiState.ManualRecording -> {
-                binding.tvStatus.text          = "🔴 Recording... speak your message"
+                binding.tvStatus.text          = "Recording… speak your message"
                 binding.btnCallNurse.isEnabled = false
                 binding.btnStop.isEnabled      = true
                 updateDrawerStatus(true)
             }
             is MainViewModel.UiState.SpeechDetected -> {
-                binding.tvStatus.text          = "📤 Sending..."
+                binding.tvStatus.text          = "Sending to your nurse…"
                 binding.btnCallNurse.isEnabled = true
                 binding.btnStop.isEnabled      = false
                 updateDrawerStatus(true)
             }
             is MainViewModel.UiState.Sent -> {
-                binding.tvStatus.text          = "✓ Nurse has been notified"
+                binding.tvStatus.text          = "Your nurse has been notified"
                 binding.btnCallNurse.isEnabled = true
                 binding.btnStop.isEnabled      = false
                 updateDrawerStatus(false)
             }
             is MainViewModel.UiState.Ignored -> {
-                binding.tvStatus.text          = "🎙 Say \"Help\" to call the nurse"
+                binding.tvStatus.text          = "Say \"Help\" to call the nurse"
                 binding.btnCallNurse.isEnabled = true
                 binding.btnStop.isEnabled      = false
                 updateDrawerStatus(false)
@@ -411,12 +423,21 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 showDownloadErrorSnackbar()
             }
             is MainViewModel.UiState.UploadError -> {
-                binding.tvStatus.text          = "⚠ Could not reach server"
+                binding.tvStatus.text          = "Could not reach the server"
                 binding.btnCallNurse.isEnabled = true
                 binding.btnStop.isEnabled      = false
                 Toast.makeText(this, "Upload failed — will retry", Toast.LENGTH_SHORT).show()
             }
         }
+        // The Stop button only appears while a message is being recorded,
+        // and the status icon turns red so recording is obvious at a glance.
+        val recording = binding.btnStop.isEnabled
+        binding.btnStop.visibility = if (recording) View.VISIBLE else View.GONE
+        val accent = getColor(if (recording) R.color.cv_danger else R.color.colorLoginPatientAccent)
+        val tile = getColor(if (recording) R.color.cv_danger_bg else R.color.cv_primary_soft)
+        binding.ivStatusIcon.setImageResource(if (recording) R.drawable.ic_vn_stop else R.drawable.ic_vn_mic)
+        binding.ivStatusIcon.imageTintList = android.content.res.ColorStateList.valueOf(accent)
+        binding.ivStatusIcon.backgroundTintList = android.content.res.ColorStateList.valueOf(tile)
     }
 
     private fun setDownloadUiVisible(visible: Boolean) {

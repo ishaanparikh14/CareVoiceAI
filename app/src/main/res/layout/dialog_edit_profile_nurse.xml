@@ -46,15 +46,11 @@
     <!-- Full name field -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilFullName"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        style="@style/Widget.CareVoice.TextInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp"
         android:hint="@string/profile_hint_full_name"
-        app:boxCornerRadiusTopStart="8dp"
-        app:boxCornerRadiusTopEnd="8dp"
-        app:boxCornerRadiusBottomStart="8dp"
-        app:boxCornerRadiusBottomEnd="8dp"
         app:boxStrokeColor="#0F766E"
         app:hintTextColor="#0F766E">
 
@@ -69,15 +65,11 @@
     <!-- Ward field -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilWard"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        style="@style/Widget.CareVoice.TextInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"
         android:hint="@string/profile_hint_ward"
-        app:boxCornerRadiusTopStart="8dp"
-        app:boxCornerRadiusTopEnd="8dp"
-        app:boxCornerRadiusBottomStart="8dp"
-        app:boxCornerRadiusBottomEnd="8dp"
         app:boxStrokeColor="#0F766E"
         app:hintTextColor="#0F766E">
 

@@ -75,6 +75,8 @@ image = (
             "storage/carevoice.db",
             "storage/wav_temp/**",
             "storage/models/**",          # model comes from the Volume, not the image
+            "storage/voice_notes",        # voice-note audio lives on its own Volume
+            "storage/voice_notes/**",
             "**/__pycache__/**",
             "ml/**",                       # training scripts not needed at runtime
         ],
@@ -89,6 +91,10 @@ model_volume = modal.Volume.from_name("carevoice-models", create_if_missing=True
 # Whisper weights cache — persist so `medium` downloads only on the first run,
 # not on every cold start.
 whisper_cache = modal.Volume.from_name("carevoice-whisper-cache", create_if_missing=True)
+
+# Voice-note recordings (the sender's original audio). Persisted so a note can
+# still be played back after the container restarts or is redeployed.
+voice_notes_volume = modal.Volume.from_name("carevoice-voice-notes", create_if_missing=True)
 
 app = modal.App("carevoice")
 
@@ -108,6 +114,7 @@ _fn_kwargs = dict(
     volumes={
         "/root/server/storage/models/intent_ml": model_volume,
         "/root/.cache/huggingface": whisper_cache,
+        "/root/server/storage/voice_notes": voice_notes_volume,
     },
     secrets=[modal.Secret.from_name("carevoice-secrets")],
     # Stay warm for 20 min after the last request to avoid cold starts.

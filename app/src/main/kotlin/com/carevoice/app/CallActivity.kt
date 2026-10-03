@@ -43,10 +43,13 @@ class CallActivity : AppCompatActivity(), CallSession.UiListener {
             muted = !muted
             CallSession.setMuted(muted)
             binding.btnMute.text = getString(if (muted) R.string.call_unmute else R.string.call_mute)
+            binding.btnMute.setIconResource(if (muted) R.drawable.ic_cv_mic_off else R.drawable.ic_vn_mic)
+            highlight(binding.btnMute, muted)
         }
         binding.btnSpeaker.setOnClickListener {
             speakerOn = !speakerOn
             CallSession.setSpeaker(speakerOn)
+            highlight(binding.btnSpeaker, speakerOn)
         }
         binding.btnEndCall.setOnClickListener { CallSession.endCall("hangup") }
 
@@ -91,6 +94,16 @@ class CallActivity : AppCompatActivity(), CallSession.UiListener {
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
             finish()
         }
+    }
+
+    /** Active control tiles turn solid white with dark content; inactive stay translucent. */
+    private fun highlight(button: com.google.android.material.button.MaterialButton, active: Boolean) {
+        val fg = if (active) getColor(R.color.cv_call_bg_start) else android.graphics.Color.WHITE
+        button.backgroundTintList = android.content.res.ColorStateList.valueOf(
+            if (active) android.graphics.Color.WHITE else getColor(R.color.cv_white_12)
+        )
+        button.setTextColor(fg)
+        button.iconTint = android.content.res.ColorStateList.valueOf(fg)
     }
 
     private fun setStatus(res: Int, showDuration: Boolean) {

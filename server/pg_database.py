@@ -119,6 +119,24 @@ CREATE TABLE IF NOT EXISTS rooms (
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Bidirectional nurse/patient voice notes attached to a room (and optionally an
+-- alert). The audio file itself lives on disk under STORAGE_DIR/voice_notes;
+-- this table stores the metadata plus the Whisper transcript (original_text).
+CREATE TABLE IF NOT EXISTS voice_notes (
+    id             SERIAL PRIMARY KEY,
+    room_id        TEXT NOT NULL,
+    alert_id       INT,
+    sender_user_id INT  REFERENCES users(id) ON DELETE SET NULL,
+    sender_role    TEXT NOT NULL,            -- 'nurse' | 'patient'
+    sender_name    TEXT NOT NULL,
+    filename       TEXT NOT NULL,            -- file on disk under STORAGE_DIR/voice_notes
+    mime_type      TEXT NOT NULL DEFAULT 'audio/wav',
+    duration_ms    INT  NOT NULL DEFAULT 0,
+    language       TEXT NOT NULL DEFAULT 'en',  -- 'en' | 'hi'
+    original_text  TEXT,                      -- Whisper transcript of the note
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Index for fast login lookup
 CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
 -- Index for room-number lookups from patient app
@@ -127,6 +145,8 @@ CREATE INDEX IF NOT EXISTS idx_patients_room  ON patients (room_number);
 CREATE INDEX IF NOT EXISTS idx_patients_user  ON patients (user_id);
 -- Index for room lookups
 CREATE INDEX IF NOT EXISTS idx_rooms_number    ON rooms (room_number);
+-- Index for listing a room's voice notes newest-first
+CREATE INDEX IF NOT EXISTS idx_voice_notes_room ON voice_notes (room_id, created_at DESC);
 """
 
 
@@ -756,3 +776,57 @@ async def get_room_status_summary(conn: asyncpg.Connection) -> list[asyncpg.Reco
     return await conn.fetch(
         "SELECT status, COUNT(*) AS count FROM rooms GROUP BY status ORDER BY count DESC"
     )
+
+
+# ── Voice-note helpers ────────────────────────────────────────────────────────
+
+async def create_voice_note(
+    conn:           asyncpg.Connection,
+    *,
+    room_id:        str,
+    alert_id:       int | None,
+    sender_user_id: int | None,
+    sender_role:    str,
+    sender_name:    str,
+    filename:       str,
+    mime_type:      str,
+    duration_ms:    int,
+    language:       str,
+    original_text:  str | None,
+) -> int:
+    """Insert a voice-note metadata row and return its new id."""
+    return int(await conn.fetchval(
+        """
+        INSERT INTO voice_notes
+            (room_id, alert_id, sender_user_id, sender_role, sender_name,
+             filename, mime_type, duration_ms, language, original_text, created_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, NOW())
+        RETURNING id
+        """,
+        room_id, alert_id, sender_user_id, sender_role, sender_name,
+        filename, mime_type, duration_ms, language, original_text,
+    ))
+
+
+async def get_voice_notes(
+    conn: asyncpg.Connection, room_id: str, limit: int = 20
+) -> list[asyncpg.Record]:
+    """Return the most recent voice notes for a room, newest first."""
+    return await conn.fetch(
+        """
+        SELECT id, room_id, alert_id, sender_role, sender_name, created_at,
+               duration_ms, language, filename, mime_type, original_text
+        FROM voice_notes
+        WHERE room_id = $1
+        ORDER BY created_at DESC
+        LIMIT $2
+        """,
+        room_id, limit,
+    )
+
+
+async def get_voice_note(
+    conn: asyncpg.Connection, note_id: int
+) -> asyncpg.Record | None:
+    """Return a single voice-note row by id, or None."""
+    return await conn.fetchrow("SELECT * FROM voice_notes WHERE id = $1", note_id)

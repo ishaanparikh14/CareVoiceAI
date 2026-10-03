@@ -152,12 +152,16 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         supportActionBar?.apply {
             setDisplayShowTitleEnabled(false)
             setDisplayHomeAsUpEnabled(true)
-            setHomeAsUpIndicator(android.R.drawable.ic_menu_sort_by_size)
+            setHomeAsUpIndicator(R.drawable.ic_cv_menu)
         }
 
         binding.tvNurseName.text  = nurseName
-        binding.tvAlertCount.text = "0 pending"
+        binding.tvAlertCount.text = "Loading requests…"
         binding.tvWsStatus.text   = getString(R.string.nurse_ws_disconnected)
+
+        // Quick-action tiles
+        binding.cardVnReceived.setOnClickListener { ReceivedVoiceNotesActivity.open(this) }
+        binding.cardVnSend.setOnClickListener { SendVoiceNoteActivity.open(this) }
     }
 
     // Toolbar hamburger tap
@@ -228,11 +232,13 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         binding.drawerLayout.closeDrawer(GravityCompat.START)
         return when (item.itemId) {
-            R.id.nav_profile  -> { showProfileDialog(); true }
-            R.id.nav_voice    -> { showVoiceDialog(); true }
-            R.id.nav_settings -> { showSettingsDialog(); true }
-            R.id.nav_logout   -> { doLogout(); true }
-            else              -> false
+            R.id.nav_profile    -> { showProfileDialog(); true }
+            R.id.nav_voice      -> { showVoiceDialog(); true }
+            R.id.nav_vn_received -> { ReceivedVoiceNotesActivity.open(this); true }
+            R.id.nav_vn_send    -> { SendVoiceNoteActivity.open(this); true }
+            R.id.nav_settings   -> { showSettingsDialog(); true }
+            R.id.nav_logout     -> { doLogout(); true }
+            else                -> false
         }
     }
 
@@ -437,7 +443,7 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     // ── RecyclerView ──────────────────────────────────────────────────────────
 
     private fun setupRecyclerView() {
-        adapter = AlertAdapter(onAck = ::ackAlert, onCall = ::callPatientInRoom)
+        adapter = AlertAdapter(onAck = ::ackAlert, onCall = ::callPatientInRoom, onVoiceNotes = ::openVoiceNotes)
         adapter.nurseName = nurseName
         binding.rvAlerts.layoutManager = LinearLayoutManager(this)
         binding.rvAlerts.adapter = adapter
@@ -453,6 +459,18 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     private fun ensureCallSignaling() {
         val tok = token ?: return
         CallSession.ensureSignaling(this, serverUrl, tok)
+    }
+
+    /** Long-press an alert card: open that room's voice notes or reply to it. */
+    private fun openVoiceNotes(roomId: String, alertId: Int) {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.vn_header_room, roomId, roomToPatientName[roomId.trim()] ?: ""))
+            .setItems(arrayOf(getString(R.string.vn_received), getString(R.string.vn_send))) { _, which ->
+                if (which == 0) ReceivedVoiceNotesActivity.open(this, roomId)
+                else SendVoiceNoteActivity.open(this, roomId, alertId)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     /** Place a real-time WebRTC voice call to the patient in [roomId]. */
@@ -494,8 +512,18 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     }
 
     private fun updateFilterButtons() {
-        binding.btnFilterAll.isEnabled     = showUnackedOnly
-        binding.btnFilterPending.isEnabled = !showUnackedOnly
+        styleFilterPill(binding.btnFilterAll, selected = !showUnackedOnly)
+        styleFilterPill(binding.btnFilterPending, selected = showUnackedOnly)
+    }
+
+    /** Selected pill: solid teal with white text. Unselected: white with grey text. */
+    private fun styleFilterPill(button: com.google.android.material.button.MaterialButton, selected: Boolean) {
+        val teal = getColor(R.color.colorLoginNurseAccent)
+        button.backgroundTintList = android.content.res.ColorStateList.valueOf(
+            if (selected) teal else android.graphics.Color.WHITE
+        )
+        button.setTextColor(if (selected) android.graphics.Color.WHITE else getColor(R.color.colorTextSecondary))
+        button.isSelected = selected
     }
 
     // ── Assigned rooms ────────────────────────────────────────────────────────
@@ -525,6 +553,7 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                     }
                     withContext(Dispatchers.Main) {
                         myRooms.clear(); myRooms.addAll(rooms)
+                        binding.tvStatRooms.text = myRooms.size.toString()
                         roomToPatient.clear(); roomToPatient.putAll(roomUser)
                         roomToPatientName.clear(); roomToPatientName.putAll(roomName)
                     }
@@ -600,8 +629,12 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     }
 
     private fun updateCountBadge() {
-        val n = allAlerts.count { !it.acknowledged }
-        binding.tvAlertCount.text = if (n > 0) "$n pending" else "All clear ✓"
+        val pending = allAlerts.filter { !it.acknowledged }
+        val n = pending.size
+        binding.tvAlertCount.text = if (n > 0) "$n requests need attention" else "All clear — no pending requests"
+        binding.tvStatPending.text = n.toString()
+        binding.tvStatCritical.text = pending.count { it.priority == "Critical" }.toString()
+        binding.tvStatRooms.text = myRooms.size.toString()
     }
 
     // ── ACK ───────────────────────────────────────────────────────────────────

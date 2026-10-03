@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Patient "Call Nurse" button: solid red, faded while disabled. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="#66DC2626" android:state_enabled="false" />
+    <item android:color="@color/cv_danger" />
+</selector>

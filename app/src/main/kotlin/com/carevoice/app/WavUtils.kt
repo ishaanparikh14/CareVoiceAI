@@ -157,4 +157,50 @@ object WavUtils {
 
         return buffer.array()
     }
+
+    /**
+     * Wraps already-encoded 16-bit little-endian mono PCM [pcmBytes] in a
+     * standard 44-byte RIFF/WAVE header. Used by [VoiceNoteRecorder], which
+     * captures AudioRecord output directly as Int16 PCM bytes.
+     *
+     * @param pcmBytes    Signed 16-bit little-endian PCM payload (mono).
+     * @param sampleRate  Samples per second (16 000 Hz).
+     * @return            Complete WAV file as a ByteArray, ready to POST.
+     */
+    fun pcm16ToWav(pcmBytes: ByteArray, sampleRate: Int = 16_000): ByteArray {
+        val numChannels    = 1
+        val bitsPerSample  = 16
+        val bytesPerSample = bitsPerSample / 8
+        val pcmDataSize    = pcmBytes.size
+        val riffChunkSize  = 36 + pcmDataSize
+        val byteRate       = sampleRate * numChannels * bytesPerSample
+        val blockAlign     = numChannels * bytesPerSample
+
+        val buffer = ByteBuffer
+            .allocate(44 + pcmDataSize)
+            .order(ByteOrder.LITTLE_ENDIAN)
+
+        buffer.put('R'.code.toByte()); buffer.put('I'.code.toByte())
+        buffer.put('F'.code.toByte()); buffer.put('F'.code.toByte())
+        buffer.putInt(riffChunkSize)
+        buffer.put('W'.code.toByte()); buffer.put('A'.code.toByte())
+        buffer.put('V'.code.toByte()); buffer.put('E'.code.toByte())
+
+        buffer.put('f'.code.toByte()); buffer.put('m'.code.toByte())
+        buffer.put('t'.code.toByte()); buffer.put(' '.code.toByte())
+        buffer.putInt(16)
+        buffer.putShort(1)
+        buffer.putShort(numChannels.toShort())
+        buffer.putInt(sampleRate)
+        buffer.putInt(byteRate)
+        buffer.putShort(blockAlign.toShort())
+        buffer.putShort(bitsPerSample.toShort())
+
+        buffer.put('d'.code.toByte()); buffer.put('a'.code.toByte())
+        buffer.put('t'.code.toByte()); buffer.put('a'.code.toByte())
+        buffer.putInt(pcmDataSize)
+        buffer.put(pcmBytes)
+
+        return buffer.array()
+    }
 }
