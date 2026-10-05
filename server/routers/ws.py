@@ -51,21 +51,61 @@ class ConnectionManager:
 
     def __init__(self) -> None:
         self._connections: Set[WebSocket] = set()
+        # username -> set of that nurse's live sockets (a nurse may have the
+        # phone and a dashboard open at once). Enables targeted delivery.
+        self._by_nurse: dict[str, Set[WebSocket]] = {}
+        self._nurse_of: dict[WebSocket, str] = {}
 
-    async def connect(self, ws: WebSocket) -> None:
+    async def connect(self, ws: WebSocket, nurse: str | None = None) -> None:
         await ws.accept()
         self._connections.add(ws)
+        if nurse:
+            self._by_nurse.setdefault(nurse, set()).add(ws)
+            self._nurse_of[ws] = nurse
         logger.info(
-            "Nurse WebSocket connected. Active connections: %d",
-            len(self._connections),
+            "Nurse WebSocket connected (nurse=%s). Active connections: %d",
+            nurse or "?", len(self._connections),
         )
 
     def disconnect(self, ws: WebSocket) -> None:
         self._connections.discard(ws)
+        nurse = self._nurse_of.pop(ws, None)
+        if nurse:
+            socks = self._by_nurse.get(nurse)
+            if socks:
+                socks.discard(ws)
+                if not socks:
+                    self._by_nurse.pop(nurse, None)
         logger.info(
             "Nurse WebSocket disconnected. Active connections: %d",
             len(self._connections),
         )
+
+    def is_online(self, nurse: str) -> bool:
+        """True if the nurse has at least one live socket."""
+        return bool(self._by_nurse.get(nurse))
+
+    @property
+    def online_nurses(self) -> set[str]:
+        return set(self._by_nurse.keys())
+
+    async def send_to_nurse(self, nurse: str, message: str) -> bool:
+        """Deliver a message to all of one nurse's sockets. Returns True if at
+        least one delivery succeeded."""
+        socks = list(self._by_nurse.get(nurse, set()))
+        if not socks:
+            return False
+        results = await asyncio.gather(
+            *[ws.send_text(message) for ws in socks],
+            return_exceptions=True,
+        )
+        ok = False
+        for ws, result in zip(socks, results):
+            if isinstance(result, Exception):
+                self.disconnect(ws)
+            else:
+                ok = True
+        return ok
 
     async def broadcast(self, message: str) -> None:
         """
@@ -91,7 +131,7 @@ class ConnectionManager:
                 stale.append(ws)
 
         for ws in stale:
-            self._connections.discard(ws)
+            self.disconnect(ws)
 
     @property
     def active_count(self) -> int:
@@ -123,7 +163,7 @@ async def nurse_ws(
       • "ping" every WS_KEEPALIVE_SECONDS to prevent idle disconnection.
       • {"event": "connected", "nurse_id": "..."} immediately on connect.
     """
-    await manager.connect(websocket)
+    await manager.connect(websocket, nurse=nurse_id if nurse_id != "unknown" else None)
     logger.info("Nurse '%s' connected via WebSocket", nurse_id)
 
     # Send an immediate welcome frame so the client knows the connection is live.

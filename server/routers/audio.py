@@ -190,13 +190,22 @@ async def ingest_audio(
         alert_message  = result.alert_message,
     )
 
-    # ── 8. WebSocket broadcast — only for genuine nurse alerts ───────────────
+    # ── 8. Route to the next available assigned nurse (fallback: broadcast) ──
     if result.should_alert:
-        if _ws_broadcast is not None:
-            payload = WsAlertPayload.from_alert_response(alert_resp)
-            await _ws_broadcast(payload.model_dump_json())
-        else:
-            logger.warning("WebSocket broadcaster not set — skipping push for alert %d", alert_id)
+        payload = WsAlertPayload.from_alert_response(alert_resp)
+        try:
+            from routing import route_alert
+            routed_to, fell_back = await route_alert(
+                db, room_id=room_id, alert_id=alert_id,
+                payload_json=payload.model_dump_json(),
+            )
+            logger.info(
+                "Alert %d routed_to=%s fell_back=%s", alert_id, routed_to, fell_back
+            )
+        except Exception:
+            logger.exception("Scheduler routing failed for alert %d — broadcasting", alert_id)
+            if _ws_broadcast is not None:
+                await _ws_broadcast(payload.model_dump_json())
     else:
         logger.info(
             "Alert %d suppressed (intent=%s) — general speech, nurses not paged",

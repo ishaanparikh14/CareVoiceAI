@@ -147,6 +147,20 @@ CREATE INDEX IF NOT EXISTS idx_patients_user  ON patients (user_id);
 CREATE INDEX IF NOT EXISTS idx_rooms_number    ON rooms (room_number);
 -- Index for listing a room's voice notes newest-first
 CREATE INDEX IF NOT EXISTS idx_voice_notes_room ON voice_notes (room_id, created_at DESC);
+
+-- Many-to-many patient↔nurse assignment for scheduling/failover alert routing.
+-- A patient (identified by room_number, matching how alerts are keyed) may have
+-- several nurses. priority_order 0 = primary (kept in sync with patients.attending
+-- for back-compat); lower numbers are tried first by the scheduler.
+CREATE TABLE IF NOT EXISTS patient_nurses (
+    id             SERIAL PRIMARY KEY,
+    room_number    TEXT NOT NULL,
+    nurse_username TEXT NOT NULL,
+    priority_order INT  NOT NULL DEFAULT 0,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (room_number, nurse_username)
+);
+CREATE INDEX IF NOT EXISTS idx_patient_nurses_room ON patient_nurses (room_number, priority_order);
 """
 
 
@@ -210,6 +224,10 @@ async def init_pg_db() -> None:
         # Sync the rooms table with any room_numbers referenced by patients.
         # This runs every startup so newly-admitted rooms always appear.
         await _sync_rooms(conn)
+
+        # Backfill the many-to-many patient_nurses table from attending, and
+        # seed the canonical multi-nurse scenario for scheduling/failover.
+        await _sync_patient_nurses(conn)
 
 
 async def _migrate_approval_status(conn: asyncpg.Connection) -> None:
@@ -730,8 +748,12 @@ async def update_room(
 async def assign_patient_nurse(
     conn: asyncpg.Connection, patient_id: int, nurse_username: str | None
 ) -> asyncpg.Record | None:
-    """Set the attending nurse for a patient (by patient id). None = unassign."""
-    return await conn.fetchrow(
+    """Set the PRIMARY attending nurse for a patient (by patient id).
+
+    None = unassign the primary. Also keeps the many-to-many patient_nurses
+    table in sync: the primary is stored at priority_order 0 for that room.
+    """
+    row = await conn.fetchrow(
         """
         UPDATE patients
         SET attending = $1
@@ -740,6 +762,141 @@ async def assign_patient_nurse(
         """,
         nurse_username, patient_id,
     )
+    if row is not None:
+        room = row["room_number"]
+        # Remove any existing priority-0 (primary) rows for this room.
+        await conn.execute(
+            "DELETE FROM patient_nurses WHERE room_number = $1 AND priority_order = 0",
+            room,
+        )
+        if nurse_username:
+            # Insert/upgrade the new primary at priority 0.
+            await conn.execute(
+                """
+                INSERT INTO patient_nurses (room_number, nurse_username, priority_order)
+                VALUES ($1, $2, 0)
+                ON CONFLICT (room_number, nurse_username)
+                DO UPDATE SET priority_order = 0
+                """,
+                room, nurse_username,
+            )
+    return row
+
+
+async def add_patient_nurse(
+    conn: asyncpg.Connection,
+    room_number: str,
+    nurse_username: str,
+    priority_order: int | None = None,
+) -> None:
+    """Assign an ADDITIONAL (backup) nurse to a room's patient.
+
+    If priority_order is None, append after the current lowest priority.
+    """
+    if priority_order is None:
+        current_max = await conn.fetchval(
+            "SELECT COALESCE(MAX(priority_order), -1) FROM patient_nurses WHERE room_number = $1",
+            room_number,
+        )
+        priority_order = int(current_max) + 1
+    await conn.execute(
+        """
+        INSERT INTO patient_nurses (room_number, nurse_username, priority_order)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (room_number, nurse_username)
+        DO UPDATE SET priority_order = EXCLUDED.priority_order
+        """,
+        room_number, nurse_username, priority_order,
+    )
+
+
+async def remove_patient_nurse(
+    conn: asyncpg.Connection, room_number: str, nurse_username: str
+) -> None:
+    """Unassign a nurse from a room's patient (many-to-many)."""
+    await conn.execute(
+        "DELETE FROM patient_nurses WHERE room_number = $1 AND nurse_username = $2",
+        room_number, nurse_username,
+    )
+
+
+async def get_nurses_for_room(conn: asyncpg.Connection, room_number: str) -> list[str]:
+    """Return the room's assigned nurse usernames in priority order (primary first).
+
+    Falls back to patients.attending if no patient_nurses rows exist yet, so the
+    scheduler keeps working for rooms assigned the old single-nurse way.
+    """
+    rows = await conn.fetch(
+        """
+        SELECT nurse_username
+        FROM patient_nurses
+        WHERE room_number = $1
+        ORDER BY priority_order ASC, nurse_username ASC
+        """,
+        room_number,
+    )
+    if rows:
+        return [r["nurse_username"] for r in rows]
+    # Back-compat fallback: the single attending nurse for an active patient.
+    att = await conn.fetchval(
+        """
+        SELECT attending FROM patients
+        WHERE room_number = $1 AND is_discharged = FALSE AND attending IS NOT NULL
+        ORDER BY admitted_at DESC
+        LIMIT 1
+        """,
+        room_number,
+    )
+    return [att] if att else []
+
+
+async def _sync_patient_nurses(conn: asyncpg.Connection) -> None:
+    """Backfill patient_nurses from attending, and seed the canonical
+    multi-nurse scheduling scenario on first run (idempotent).
+
+    Canonical scenario (so the live system matches the simulation):
+      • Room 4B (patient_raj): nurse_anna (primary), nurse_ben (backup)
+      • Room 4C (patient_sara): nurse_anna (primary), nurse_carol (backup)
+    So nurse_anna covers BOTH 4B and 4C. If anna is busy with 4B, a 4C alert
+    fails over to her backup on 4C (nurse_carol).
+    """
+    # 1. Backfill: every active patient with an attending gets a priority-0 row.
+    await conn.execute(
+        """
+        INSERT INTO patient_nurses (room_number, nurse_username, priority_order)
+        SELECT p.room_number, p.attending, 0
+        FROM patients p
+        WHERE p.is_discharged = FALSE AND p.attending IS NOT NULL
+        ON CONFLICT (room_number, nurse_username) DO NOTHING
+        """
+    )
+
+    # 2. Seed backup nurses for the canonical scenario — only if those rooms
+    #    exist and the backup isn't already assigned. Safe to run every startup.
+    scenario = [
+        # (room, backup_nurse, priority)
+        ("4B", "nurse_ben",   1),
+        ("4C", "nurse_carol", 1),
+    ]
+    for room, backup, prio in scenario:
+        room_exists = await conn.fetchval(
+            "SELECT 1 FROM patients WHERE room_number = $1 AND is_discharged = FALSE LIMIT 1",
+            room,
+        )
+        nurse_exists = await conn.fetchval(
+            "SELECT 1 FROM users WHERE username = $1 AND role = 'nurse' LIMIT 1",
+            backup,
+        )
+        if room_exists and nurse_exists:
+            await conn.execute(
+                """
+                INSERT INTO patient_nurses (room_number, nurse_username, priority_order)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (room_number, nurse_username) DO NOTHING
+                """,
+                room, backup, prio,
+            )
+    logger.info("patient_nurses synced (backfill + canonical scenario seed)")
 
 
 async def set_patient_discharge(

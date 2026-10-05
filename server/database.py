@@ -52,7 +52,9 @@ CREATE TABLE IF NOT EXISTS alerts (
     patient_name   TEXT,                        -- looked up from patients table (nullable)
     summary        TEXT,                        -- NLP request summary ("wants water")
     emotion        TEXT,                        -- calm|anxious|distressed|panicked
-    alert_message  TEXT                         -- standardised message w/ prefix + summary
+    alert_message  TEXT,                        -- standardised message w/ prefix + summary
+    routed_to      TEXT,                        -- nurse username this alert was routed to (scheduler)
+    fell_back      INTEGER NOT NULL DEFAULT 0   -- 1 if no assigned nurse free -> broadcast fallback
 );
 
 -- Index used by GET /alerts/latest (ordered by created_at DESC, unACK'd first)
@@ -72,6 +74,8 @@ _MIGRATIONS = [
     "ALTER TABLE alerts ADD COLUMN summary TEXT",
     "ALTER TABLE alerts ADD COLUMN emotion TEXT",
     "ALTER TABLE alerts ADD COLUMN alert_message TEXT",
+    "ALTER TABLE alerts ADD COLUMN routed_to TEXT",
+    "ALTER TABLE alerts ADD COLUMN fell_back INTEGER NOT NULL DEFAULT 0",
 ]
 
 
@@ -229,6 +233,46 @@ async def acknowledge_alert(
     else:
         logger.warning("ACK failed: alert %d not found or already acknowledged", alert_id)
     return updated
+
+
+async def get_active_alert_counts_by_nurse(
+    db: aiosqlite.Connection,
+) -> dict[str, int]:
+    """Return {nurse_username: count} of unacknowledged alerts currently routed
+    to each nurse (ack_by is set at routing time, cleared is never — we count
+    rows that were routed to a nurse but not yet acknowledged).
+
+    Used by the scheduler's load-balancing tiebreak and the busy definition
+    ("holding an unacknowledged alert").
+    """
+    query = """
+        SELECT routed_to AS nurse, COUNT(*) AS n
+        FROM alerts
+        WHERE acknowledged = 0 AND routed_to IS NOT NULL
+        GROUP BY routed_to
+    """
+    try:
+        async with db.execute(query) as cursor:
+            rows = await cursor.fetchall()
+    except Exception:
+        # routed_to column may not exist on a very old DB; treat as empty.
+        return {}
+    return {row["nurse"]: row["n"] for row in rows if row["nurse"]}
+
+
+async def set_alert_routed_to(
+    db: aiosqlite.Connection, alert_id: int, nurse_username: str | None, fell_back: bool
+) -> None:
+    """Record which nurse an alert was routed to (and whether it fell back to
+    broadcast). Used for busy detection and audit."""
+    try:
+        await db.execute(
+            "UPDATE alerts SET routed_to = ?, fell_back = ? WHERE id = ?",
+            (nurse_username, 1 if fell_back else 0, alert_id),
+        )
+        await db.commit()
+    except Exception as exc:
+        logger.warning("Could not set routed_to for alert %d: %s", alert_id, exc)
 
 
 async def get_stale_unacked_urgent(

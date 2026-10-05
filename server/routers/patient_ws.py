@@ -182,7 +182,7 @@ async def patient_ws(
             # Resolve patient name for the standardised message prefix.
             patient_name = await get_patient_name_by_room(room_id)
 
-            # Insert alert into SQLite
+            # Insert alert into SQLite + route to the next available nurse.
             async with aiosqlite.connect(settings.DB_PATH) as db:
                 db.row_factory = aiosqlite.Row
                 alert_id = await insert_alert(
@@ -201,14 +201,13 @@ async def patient_ws(
                 )
                 await db.commit()
 
-            logger.info(
-                "Alert created via WS: id=%d room=%s priority=%s intent=%s emotion=%s",
-                alert_id, room_id, result.priority.value, result.intent.value,
-                getattr(result, "emotion", None),
-            )
+                logger.info(
+                    "Alert created via WS: id=%d room=%s priority=%s intent=%s emotion=%s",
+                    alert_id, room_id, result.priority.value, result.intent.value,
+                    getattr(result, "emotion", None),
+                )
 
-            # Broadcast to nurses
-            if _nurse_broadcast is not None:
+                # Route to the next available assigned nurse (fallback: broadcast).
                 alert_resp = AlertResponse(
                     id             = alert_id,
                     room_id        = room_id,
@@ -226,7 +225,17 @@ async def patient_ws(
                     alert_message  = getattr(result, "alert_message", None),
                 )
                 payload_json = WsAlertPayload.from_alert_response(alert_resp).model_dump_json()
-                await _nurse_broadcast(payload_json)
+                try:
+                    from routing import route_alert
+                    routed_to, fell_back = await route_alert(
+                        db, room_id=room_id, alert_id=alert_id, payload_json=payload_json,
+                    )
+                    logger.info("WS alert %d routed_to=%s fell_back=%s",
+                                alert_id, routed_to, fell_back)
+                except Exception:
+                    logger.exception("Scheduler routing failed for WS alert %d — broadcasting", alert_id)
+                    if _nurse_broadcast is not None:
+                        await _nurse_broadcast(payload_json)
 
             # Confirm to patient
             await websocket.send_json({
