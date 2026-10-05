@@ -54,7 +54,9 @@ CREATE TABLE IF NOT EXISTS alerts (
     emotion        TEXT,                        -- calm|anxious|distressed|panicked
     alert_message  TEXT,                        -- standardised message w/ prefix + summary
     routed_to      TEXT,                        -- nurse username this alert was routed to (scheduler)
-    fell_back      INTEGER NOT NULL DEFAULT 0   -- 1 if no assigned nurse free -> broadcast fallback
+    fell_back      INTEGER NOT NULL DEFAULT 0,  -- 1 if no assigned nurse free -> broadcast fallback
+    routed_at      TEXT,                        -- ISO-8601 UTC when last routed to a nurse (for reroute timeout)
+    reroute_count  INTEGER NOT NULL DEFAULT 0   -- how many times auto-rerouted / manually redirected
 );
 
 -- Index used by GET /alerts/latest (ordered by created_at DESC, unACK'd first)
@@ -76,6 +78,8 @@ _MIGRATIONS = [
     "ALTER TABLE alerts ADD COLUMN alert_message TEXT",
     "ALTER TABLE alerts ADD COLUMN routed_to TEXT",
     "ALTER TABLE alerts ADD COLUMN fell_back INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE alerts ADD COLUMN routed_at TEXT",
+    "ALTER TABLE alerts ADD COLUMN reroute_count INTEGER NOT NULL DEFAULT 0",
 ]
 
 
@@ -264,15 +268,73 @@ async def set_alert_routed_to(
     db: aiosqlite.Connection, alert_id: int, nurse_username: str | None, fell_back: bool
 ) -> None:
     """Record which nurse an alert was routed to (and whether it fell back to
-    broadcast). Used for busy detection and audit."""
+    broadcast), stamping routed_at = now. Used for busy detection, the reroute
+    timeout, and audit."""
     try:
         await db.execute(
-            "UPDATE alerts SET routed_to = ?, fell_back = ? WHERE id = ?",
-            (nurse_username, 1 if fell_back else 0, alert_id),
+            "UPDATE alerts SET routed_to = ?, fell_back = ?, routed_at = ? WHERE id = ?",
+            (nurse_username, 1 if fell_back else 0, utcnow(), alert_id),
         )
         await db.commit()
     except Exception as exc:
         logger.warning("Could not set routed_to for alert %d: %s", alert_id, exc)
+
+
+async def record_reroute(
+    db: aiosqlite.Connection, alert_id: int, nurse_username: str | None, fell_back: bool
+) -> None:
+    """Like set_alert_routed_to but also increments reroute_count — used when an
+    alert is auto-rerouted (no ack in time) or manually redirected."""
+    try:
+        await db.execute(
+            """
+            UPDATE alerts
+            SET routed_to = ?, fell_back = ?, routed_at = ?, reroute_count = reroute_count + 1
+            WHERE id = ?
+            """,
+            (nurse_username, 1 if fell_back else 0, utcnow(), alert_id),
+        )
+        await db.commit()
+    except Exception as exc:
+        logger.warning("Could not record reroute for alert %d: %s", alert_id, exc)
+
+
+async def get_stale_routed_unacked(
+    db: aiosqlite.Connection, *, older_than_seconds: int, max_reroutes: int = 5
+) -> list[dict]:
+    """Return alerts that were routed to a SPECIFIC nurse, are still unacked, and
+    whose routed_at is older than the timeout — candidates for auto-reroute.
+
+    Skips alerts that already fell back to broadcast (routed_to is NULL) and
+    those that have been rerouted too many times (give up -> they remain
+    broadcast-visible via /alerts/latest)."""
+    cutoff = datetime.now(timezone.utc).timestamp() - older_than_seconds
+    query = """
+        SELECT * FROM alerts
+        WHERE acknowledged = 0
+          AND routed_to IS NOT NULL
+          AND fell_back = 0
+          AND reroute_count < ?
+        ORDER BY created_at ASC
+    """
+    try:
+        async with db.execute(query, (max_reroutes,)) as cursor:
+            rows = await cursor.fetchall()
+    except Exception:
+        return []
+    stale: list[dict] = []
+    for row in rows:
+        d = dict(row)
+        ra = d.get("routed_at")
+        if not ra:
+            continue
+        try:
+            ts = datetime.fromisoformat(ra.replace("Z", "+00:00")).timestamp()
+        except Exception:
+            continue
+        if ts <= cutoff:
+            stale.append(d)
+    return stale
 
 
 async def get_stale_unacked_urgent(

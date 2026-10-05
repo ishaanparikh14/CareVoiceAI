@@ -61,6 +61,15 @@ class Settings(BaseSettings):
     # How often the escalation loop scans for stale alerts.
     ESCALATE_CHECK_INTERVAL_SECONDS: int = 20
 
+    # ── Auto-reroute (scheduling failover) ────────────────────────────────────
+    # An alert routed to a specific nurse that is not acknowledged within this
+    # many seconds is automatically rerouted to the NEXT available nurse
+    # assigned to that patient (the busy/unavailable one is skipped). Set 0 to
+    # disable auto-reroute. Independent of the Urgent→Critical escalation above.
+    REROUTE_UNACKED_AFTER_SECONDS: int = 30
+    # How often the reroute loop scans for stale routed alerts.
+    REROUTE_CHECK_INTERVAL_SECONDS: int = 10
+
     # ── CORS ──────────────────────────────────────────────────────────────────
     # Restrict to specific origins in production for security.
     # Defaults to empty list, which the server interprets as ["*"] (allow all)

@@ -74,6 +74,27 @@ def test_load_balanced_tiebreak_in_group():
     assert d.chosen == "b"
 
 
+def test_reroute_excludes_previous_nurse():
+    # Auto-reroute models the no-ack nurse by removing them from the assigned
+    # list before calling the scheduler. Here 'a' got the alert but didn't ack;
+    # even though 'a' is now "available", excluding them routes to 'b'.
+    assigned = ["a", "b"]
+    prev = "a"
+    filtered = [n for n in assigned if n != prev]
+    states = {"a": _st("a"), "b": _st("b")}
+    d = choose_nurse(filtered, states)
+    assert d.chosen == "b" and d.fell_back is False
+
+
+def test_reroute_all_others_busy_falls_back():
+    # Previous nurse excluded, everyone else busy -> broadcast fallback.
+    assigned = ["a", "b"]
+    filtered = [n for n in assigned if n != "a"]
+    states = {"a": _st("a"), "b": _st("b", busy=True)}
+    d = choose_nurse(filtered, states)
+    assert d.chosen is None and d.fell_back is True
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     passed = 0

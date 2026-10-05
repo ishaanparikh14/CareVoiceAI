@@ -16,7 +16,9 @@ import logging
 
 import aiosqlite
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
 
+from auth import CurrentUser
 from database import (
     acknowledge_alert,
     get_alert_by_id,
@@ -198,3 +200,103 @@ async def ack_alert(
         ack_by       = body.ack_by,
         ack_at       = now,
     )
+
+
+# ── POST /alerts/{alert_id}/redirect ──────────────────────────────────────────
+# Intermediary / dispatcher override: a charge nurse or admin manually sends a
+# specific alert to a specific nurse, bypassing the automatic scheduler.
+
+class RedirectRequest(BaseModel):
+    target_nurse: str = Field(..., description="Username of the nurse to receive this alert")
+
+
+class RedirectResponse(BaseModel):
+    alert_id:     int
+    delivered:    bool
+    target_nurse: str
+    message:      str
+
+
+@router.post(
+    "/{alert_id}/redirect",
+    response_model=RedirectResponse,
+    summary="Dispatcher: manually redirect an alert to a specific nurse",
+    description=(
+        "Lets an intermediary (admin or any nurse acting as dispatcher) override "
+        "the automatic scheduler and send this alert to a chosen nurse. If that "
+        "nurse is offline, the alert is broadcast to all nurses as a fallback."
+    ),
+)
+async def redirect_alert_endpoint(
+    alert_id:     int,
+    body:         RedirectRequest,
+    current_user: CurrentUser,
+    db:           aiosqlite.Connection = Depends(get_db),
+):
+    # Only an admin or a nurse may act as the intermediary/dispatcher.
+    if current_user["role"] not in ("admin", "nurse"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Only a nurse or admin can redirect alerts")
+
+    row = await get_alert_by_id(db, alert_id)
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Alert {alert_id} not found")
+    if row["acknowledged"]:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail=f"Alert {alert_id} is already acknowledged — nothing to redirect")
+
+    target = body.target_nurse.strip()
+    if not target:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail="target_nurse must not be empty")
+
+    # Validate the target is a real, approved nurse.
+    from pg_database import get_conn, get_user_by_username
+    async for conn in get_conn():
+        target_user = await get_user_by_username(conn, target)
+        break
+    if target_user is None or target_user["role"] != "nurse":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"'{target}' is not a nurse")
+
+    from models import WsAlertPayload
+    payload_json = WsAlertPayload.from_alert_response(
+        AlertResponse.from_db_row(row), event="alert_updated"
+    ).model_dump_json()
+
+    from routing import redirect_alert
+    delivered, message = await redirect_alert(
+        db, alert_id=alert_id, target_nurse=target, payload_json=payload_json,
+    )
+    logger.info("Alert %d redirected by %s (%s) -> %s delivered=%s",
+                alert_id, current_user["username"], current_user["role"], target, delivered)
+
+    return RedirectResponse(
+        alert_id=alert_id, delivered=delivered, target_nurse=target, message=message,
+    )
+
+
+# ── POST /alerts/busy ─────────────────────────────────────────────────────────
+# A nurse marks themselves available/unavailable; the scheduler skips busy nurses.
+
+class BusyRequest(BaseModel):
+    busy: bool = Field(..., description="True = mark me unavailable, False = available")
+
+
+@router.post(
+    "/busy",
+    summary="Nurse: toggle manual busy/available state",
+    description="A nurse marks themselves unavailable so the scheduler routes to someone else.",
+)
+async def set_busy(
+    body:         BusyRequest,
+    current_user: CurrentUser,
+):
+    if current_user["role"] != "nurse":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Only a nurse can set busy state")
+    from routing import set_manual_busy
+    set_manual_busy(current_user["username"], body.busy)
+    logger.info("Nurse %s manual busy=%s", current_user["username"], body.busy)
+    return {"username": current_user["username"], "busy": body.busy}
