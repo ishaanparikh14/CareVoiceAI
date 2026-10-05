@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 evaluate_intent_ml.py — evaluate the multilingual DistilBERT on the held-out
-test set, reporting OVERALL accuracy and PER-LANGUAGE accuracy (en / hi / kn).
+test set, reporting OVERALL accuracy and PER-LANGUAGE accuracy (en / hi / kn / de).
 """
 
 import sys
@@ -47,7 +47,7 @@ def main():
     lines.append(f"OVERALL test accuracy: {overall:.4f}  (n={len(df)})")
     lines.append("")
     lines.append("Per-language accuracy:")
-    for lang in ["en", "hi", "kn"]:
+    for lang in ["en", "hi", "kn", "de"]:
         sub = df[df["lang"] == lang]
         if len(sub) == 0:
             continue
