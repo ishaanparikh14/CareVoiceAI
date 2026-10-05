@@ -60,7 +60,7 @@ class PipelineResult(BaseModel):
         default=0.0, ge=0.0, le=1.0, description="Deprecated — no longer used; kept for schema compat"
     )
     priority:       Priority = Field(..., description="Computed priority level")
-    language:       str | None = Field(default=None, description="Detected/forced language: en|hi|kn")
+    language:       str | None = Field(default=None, description="Detected/forced language: en|hi|kn|de")
 
     # ── NLP layer (summary + emotional intelligence) ──────────────────────────
     summary:        str | None = Field(default=None, description="NLP request summary, e.g. 'wants water'")
@@ -115,7 +115,7 @@ class AlertResponse(BaseModel):
     ack_by:         str | None = None
     created_at:     str        = Field(..., description="ISO-8601 UTC creation time")
     ack_at:         str | None = None
-    language:       str | None = Field(default=None, description="Detected/forced language: en|hi|kn")
+    language:       str | None = Field(default=None, description="Detected/forced language: en|hi|kn|de")
     escalated:      bool       = Field(default=False, description="True if auto-escalated Urgent→Critical")
     # ── NLP (summary + emotional intelligence) ────────────────────────────────
     patient_name:   str | None = None

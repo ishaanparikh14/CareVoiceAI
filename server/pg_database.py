@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS voice_notes (
     filename       TEXT NOT NULL,            -- file on disk under STORAGE_DIR/voice_notes
     mime_type      TEXT NOT NULL DEFAULT 'audio/wav',
     duration_ms    INT  NOT NULL DEFAULT 0,
-    language       TEXT NOT NULL DEFAULT 'en',  -- 'en' | 'hi'
+    language       TEXT NOT NULL DEFAULT 'en',  -- 'en' | 'hi' | 'de'
     original_text  TEXT,                      -- Whisper transcript of the note
     created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
