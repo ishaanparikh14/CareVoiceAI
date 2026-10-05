@@ -112,6 +112,7 @@
     <string name="vn_language">I am speaking in</string>
     <string name="vn_lang_english">English</string>
     <string name="vn_lang_hindi">हिंदी (Hindi)</string>
+    <string name="vn_lang_german">Deutsch (German)</string>
     <string name="vn_record">Start recording</string>
     <string name="vn_stop">Stop</string>
     <string name="vn_tap_to_record">Tap the microphone and speak. Up to 30 seconds.</string>
@@ -135,6 +136,7 @@
     <string name="vn_reply">Reply</string>
     <string name="vn_translate_to_hi">Translate to Hindi</string>
     <string name="vn_translate_to_en">Translate to English</string>
+    <string name="vn_translate_to_de">Translate to German</string>
     <string name="vn_translating">Translating…</string>
     <string name="vn_listen_translation">Listen to translation</string>
     <string name="vn_translate_first_use">Translating on this phone. The first time downloads a language pack.</string>

@@ -15,6 +15,7 @@ import java.time.format.DateTimeFormatter
 /** Card list for received voice notes: play the original voice, translate, reply. */
 class VoiceNoteAdapter(
     private val showRoom: Boolean,
+    private val viewerLang: String,
     private val onPlay: (VoiceNote) -> Unit,
     private val onTranslate: (VoiceNote) -> Unit,
     private val onReply: (VoiceNote) -> Unit,
@@ -40,7 +41,13 @@ class VoiceNoteAdapter(
             b.tvHeader.text = if (showRoom) ctx.getString(R.string.vn_header_room, note.roomId, sender) else sender
 
             val role = ctx.getString(if (note.senderRole == "nurse") R.string.vn_from_nurse else R.string.vn_from_patient)
-            val lang = ctx.getString(if (note.language == "hi") R.string.vn_lang_hindi else R.string.vn_lang_english)
+            val lang = ctx.getString(
+                when (note.language) {
+                    "hi" -> R.string.vn_lang_hindi
+                    "de" -> R.string.vn_lang_german
+                    else -> R.string.vn_lang_english
+                }
+            )
             b.tvMeta.text = listOf(role, lang, formatDuration(note.durationMs), formatTime(note.createdAt))
                 .filter { it.isNotBlank() }
                 .joinToString("  ·  ")
@@ -59,9 +66,9 @@ class VoiceNoteAdapter(
             b.btnPlay.icon = ContextCompat.getDrawable(ctx, if (playing) R.drawable.ic_vn_stop else R.drawable.ic_vn_play)
             b.btnPlay.setOnClickListener { onPlay(note) }
 
-            // Translation
+            // Translation — into the viewer's chosen language (Decision B).
             val translated = translations[note.id]
-            val target = NoteTranslator.targetFor(note.language)
+            val target = NoteTranslator.targetFor(note.language, viewerLang)
             b.tvTranslation.visibility = if (translated != null) View.VISIBLE else View.GONE
             b.tvTranslation.text = translated.orEmpty()
             b.btnTranslate.isEnabled = transcript.isNotEmpty() && note.id !in translating
@@ -70,6 +77,7 @@ class VoiceNoteAdapter(
                     note.id in translating -> R.string.vn_translating
                     translated != null     -> R.string.vn_listen_translation
                     target == "hi"         -> R.string.vn_translate_to_hi
+                    target == "de"         -> R.string.vn_translate_to_de
                     else                   -> R.string.vn_translate_to_en
                 }
             )

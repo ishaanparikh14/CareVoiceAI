@@ -26,7 +26,7 @@ class NurseTts(context: Context) {
     /** Whether announcements are enabled (persisted by the caller). */
     var enabled: Boolean = false
 
-    /** Announcement language: "en" | "hi". */
+    /** Announcement language: "en" | "hi" | "de". */
     var lang: String = "en"
 
     init {
@@ -39,6 +39,7 @@ class NurseTts(context: Context) {
 
     private fun localeFor(l: String): Locale = when (l) {
         "hi" -> Locale("hi", "IN")
+        "de" -> Locale.GERMAN
         else -> Locale.US
     }
 
@@ -91,6 +92,13 @@ class NurseTts(context: Context) {
                     "${head}कमरा $roomId. मरीज़ को $i की ज़रूरत है। कृपया तुरंत पहुँचें।"
                 } else "कमरा $roomId. मरीज़ को $i की ज़रूरत है।"
             }
+            "de" -> {
+                val i = INTENT_DE[intent] ?: "Hilfe"
+                if (critical) {
+                    val head = if (escalated) "Eskalierter Notfall. " else "Notfall. "
+                    "${head}Zimmer $roomId. Der Patient braucht $i. Bitte kommen Sie sofort."
+                } else "Zimmer $roomId. Der Patient braucht $i."
+            }
             else -> {
                 val who = patientName ?: "the patient"
                 val what = summary ?: "needs ${INTENT_EN[intent] ?: "assistance"}"
@@ -121,6 +129,11 @@ class NurseTts(context: Context) {
             "Emergency" to "आपातकाल", "Pain" to "तेज़ दर्द", "Medication" to "दवाई",
             "Food/Water" to "खाना या पानी", "Mobility" to "चलने में मदद", "Hygiene" to "साफ़-सफ़ाई",
             "Emotional Support" to "सहारा", "Information" to "जानकारी", "Other" to "मदद",
+        )
+        private val INTENT_DE = mapOf(
+            "Emergency" to "einen Notfall", "Pain" to "starke Schmerzen", "Medication" to "Medikamente",
+            "Food/Water" to "Essen oder Wasser", "Mobility" to "Hilfe bei der Bewegung", "Hygiene" to "Hilfe bei der Hygiene",
+            "Emotional Support" to "seelische Unterstützung", "Information" to "Informationen", "Other" to "Hilfe",
         )
     }
 }

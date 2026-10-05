@@ -51,6 +51,12 @@ class ReceivedVoiceNotesActivity : AppCompatActivity() {
     private val isNurse get() = role == "nurse"
     private val roomFilter by lazy { intent.getStringExtra(EXTRA_ROOM) }
 
+    /** The viewer's preferred language (shared with the voice-note recorder). */
+    private val viewerLang: String by lazy {
+        getSharedPreferences(ServerUploader.PREFS_NAME, Context.MODE_PRIVATE)
+            .getString("voice_note_lang", "en") ?: "en"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityVoiceNotesReceivedBinding.inflate(layoutInflater)
@@ -63,6 +69,7 @@ class ReceivedVoiceNotesActivity : AppCompatActivity() {
         tts = TtsManager(this)
         adapter = VoiceNoteAdapter(
             showRoom = isNurse,
+            viewerLang = viewerLang,
             onPlay = ::togglePlay,
             onTranslate = ::translate,
             onReply = { note -> SendVoiceNoteActivity.open(this, note.roomId, note.alertId) },
@@ -184,7 +191,7 @@ class ReceivedVoiceNotesActivity : AppCompatActivity() {
     // ── Translation ───────────────────────────────────────────────────────────
 
     private fun translate(note: VoiceNote) {
-        val target = NoteTranslator.targetFor(note.language)
+        val target = NoteTranslator.targetFor(note.language, viewerLang)
         adapter.translations[note.id]?.let { done ->
             tts.speakVoiceNote(done, target, note.id)   // "Listen to translation"
             return
