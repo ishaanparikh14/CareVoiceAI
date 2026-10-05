@@ -36,10 +36,13 @@
     <!-- Login screen -->
     <string name="login_tab_patient">Patient</string>
     <string name="login_tab_nurse">Nurse</string>
+    <string name="login_tab_admin">Admin</string>
     <string name="login_title_patient">Patient Login</string>
     <string name="login_title_nurse">Nurse Login</string>
+    <string name="login_title_admin">Admin Login</string>
     <string name="login_subtitle_patient">CareVoice AI Nurse-Call System</string>
     <string name="login_subtitle_nurse">CareVoice AI Nurse Station</string>
+    <string name="login_subtitle_admin">CareVoice AI Dispatch Console</string>
     <string name="login_hint_username">Username</string>
     <string name="login_hint_password">Password</string>
     <string name="login_btn">Sign In</string>

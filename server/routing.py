@@ -36,25 +36,61 @@ def set_manual_busy(nurse: str, busy: bool) -> None:
         MANUAL_BUSY.discard(nurse)
 
 
+def nurse_is_busy(nurse: str, active_counts: dict[str, int]) -> bool:
+    """Single source of truth for 'busy': on a call, holding an unacked alert,
+    or manually marked unavailable. Used by BOTH the scheduler and the admin
+    dispatch board so free/occupied always agree."""
+    from routers.signal import registry as signal_registry
+    on_call = signal_registry.is_busy(nurse)
+    holding = active_counts.get(nurse, 0) > 0
+    manual  = nurse in MANUAL_BUSY
+    return on_call or holding or manual
+
+
+def nurse_is_online(nurse: str) -> bool:
+    """Online if present in EITHER the nurse-alert WS manager or the signaling
+    registry (a nurse may hold one socket but not the other)."""
+    from routers import ws as ws_router
+    from routers.signal import registry as signal_registry
+    return ws_router.manager.is_online(nurse) or signal_registry.is_online(nurse)
+
+
+async def nurse_availability(db) -> list[dict]:
+    """Return availability for every approved nurse, for the admin dispatch
+    board. Shape: [{username, full_name, online, busy, active_alerts}]."""
+    from pg_database import get_conn, get_approved_nurse_usernames
+    from database import get_active_alert_counts_by_nurse
+
+    active_counts = await get_active_alert_counts_by_nurse(db)
+    nurses: list[dict] = []
+    async for conn in get_conn():
+        rows = await get_approved_nurse_usernames(conn)
+        break
+    for r in rows:
+        u = r["username"]
+        nurses.append({
+            "username": u,
+            "full_name": r["full_name"],
+            "online": nurse_is_online(u),
+            "busy": nurse_is_busy(u, active_counts),
+            "active_alerts": active_counts.get(u, 0),
+        })
+    return nurses
+
+
 async def _gather_states(db, assigned: list[str]) -> dict[str, NurseState]:
     """Build the availability snapshot for a list of nurses from the live
     signaling registry, nurse WS manager, unacked-alert counts, and MANUAL_BUSY.
     """
-    from routers import ws as ws_router
-    from routers.signal import registry as signal_registry
     from database import get_active_alert_counts_by_nurse
 
     active_counts = await get_active_alert_counts_by_nurse(db)
-    manager = ws_router.manager
     states: dict[str, NurseState] = {}
     for nurse in assigned:
-        on_call = signal_registry.is_busy(nurse)
-        holding = active_counts.get(nurse, 0) > 0
-        manual  = nurse in MANUAL_BUSY
         states[nurse] = NurseState(
             username=nurse,
-            online=manager.is_online(nurse),
-            busy=on_call or holding or manual,
+            online=nurse_is_online(nurse),
+            busy=nurse_is_busy(nurse, active_counts),
             active_alerts=active_counts.get(nurse, 0),
         )
     return states

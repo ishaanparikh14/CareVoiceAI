@@ -78,6 +78,50 @@ async def admin_stats(
     }
 
 
+# ── GET /admin/dispatch-board ─────────────────────────────────────────────────
+# Live view for the admin dispatcher: which nurses are free/occupied + the
+# current unacknowledged alerts and where each was routed. The Android admin
+# app polls this and uses POST /alerts/{id}/redirect to reassign.
+
+@router.get("/dispatch-board", summary="Dispatcher board: nurse availability + pending alerts")
+async def dispatch_board(
+    _admin: AdminUser,
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    from routing import nurse_availability
+
+    nurses = await nurse_availability(db)
+
+    # Pending (unacknowledged) alerts, newest first.
+    query = """
+        SELECT id, room_id, patient_name, priority, intent, summary,
+               created_at, routed_to, fell_back, reroute_count
+        FROM alerts
+        WHERE acknowledged = 0
+        ORDER BY created_at DESC
+        LIMIT 100
+    """
+    async with db.execute(query) as cur:
+        rows = await cur.fetchall()
+    alerts = [
+        {
+            "id":            r["id"],
+            "room_id":       r["room_id"],
+            "patient_name":  r["patient_name"],
+            "priority":      r["priority"],
+            "intent":        r["intent"],
+            "summary":       r["summary"],
+            "created_at":    r["created_at"],
+            "routed_to":     r["routed_to"],
+            "fell_back":     bool(r["fell_back"]),
+            "reroute_count": r["reroute_count"],
+        }
+        for r in rows
+    ]
+
+    return {"nurses": nurses, "pending_alerts": alerts}
+
+
 # ── GET /admin/nurses ─────────────────────────────────────────────────────────
 
 @router.get("/nurses", summary="All nurses")

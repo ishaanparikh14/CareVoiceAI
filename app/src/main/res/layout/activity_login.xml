@@ -134,6 +134,22 @@
                 app:checkedIconVisible="false"
                 app:chipMinHeight="36dp" />
 
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipAdmin"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/login_tab_admin"
+                android:textColor="#1A1A1A"
+                android:textStyle="bold"
+                android:textSize="13sp"
+                android:checked="false"
+                app:chipBackgroundColor="@color/chip_bg_selector"
+                app:chipStrokeColor="@android:color/transparent"
+                app:chipStrokeWidth="0dp"
+                app:checkedIconVisible="false"
+                app:chipMinHeight="36dp" />
+
         </com.google.android.material.chip.ChipGroup>
 
         <!-- ── White card ─────────────────────────────────────────────── -->

@@ -24,7 +24,7 @@ class LoginActivity : AppCompatActivity() {
     // Tracks which role the user has selected in the chip group
     private var selectedRole: Role = Role.PATIENT
 
-    private enum class Role { PATIENT, NURSE }
+    private enum class Role { PATIENT, NURSE, ADMIN }
 
     // ── Colors resolved once from resources ───────────────────────────────────
     private val patientAccent by lazy { getColor(R.color.colorLoginPatientAccent) }
@@ -33,6 +33,14 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Fire a non-blocking auto-update check against the saved server URL.
+        runCatching {
+            val prefs0 = getSharedPreferences(ServerUploader.PREFS_NAME, Context.MODE_PRIVATE)
+            val url = prefs0.getString(ServerUploader.KEY_SERVER_URL, ServerUploader.DEFAULT_SERVER_URL)
+                ?: ServerUploader.DEFAULT_SERVER_URL
+            AppUpdater(this).checkForUpdate(url)
+        }
 
         // If a valid session already exists, skip straight to the right screen
         if (UserSession.isLoggedIn(this)) {
@@ -78,18 +86,23 @@ class LoginActivity : AppCompatActivity() {
         binding.chipNurse.setOnCheckedChangeListener { _, checked ->
             if (checked) applyRole(Role.NURSE)
         }
+        binding.chipAdmin.setOnCheckedChangeListener { _, checked ->
+            if (checked) applyRole(Role.ADMIN)
+        }
         applyRole(Role.PATIENT)
     }
 
     private fun applyRole(role: Role) {
         selectedRole = role
 
-        val isNurse = role == Role.NURSE
-        val targetColor = if (isNurse) nurseAccent else patientAccent
+        val isPatient = role == Role.PATIENT
+        // Nurse and Admin share the staff accent / header and show the server field.
+        val isStaff = role == Role.NURSE || role == Role.ADMIN
+        val targetColor = if (isStaff) nurseAccent else patientAccent
 
         // Swap gradient drawable on header
         binding.viewHeaderBg.setBackgroundResource(
-            if (isNurse) R.drawable.bg_login_header_nurse
+            if (isStaff) R.drawable.bg_login_header_nurse
             else R.drawable.bg_login_header_patient
         )
 
@@ -99,15 +112,30 @@ class LoginActivity : AppCompatActivity() {
 
         // Update title and subtitle
         binding.tvLoginTitle.text = getString(
-            if (isNurse) R.string.login_title_nurse else R.string.login_title_patient
+            when (role) {
+                Role.NURSE   -> R.string.login_title_nurse
+                Role.ADMIN   -> R.string.login_title_admin
+                else         -> R.string.login_title_patient
+            }
         )
         binding.tvLoginSub.text = getString(
-            if (isNurse) R.string.login_subtitle_nurse else R.string.login_subtitle_patient
+            when (role) {
+                Role.NURSE   -> R.string.login_subtitle_nurse
+                Role.ADMIN   -> R.string.login_subtitle_admin
+                else         -> R.string.login_subtitle_patient
+            }
         )
-        binding.tvRoleLabel.text = if (isNurse) "Sign in as Nurse" else "Sign in as Patient"
+        binding.tvRoleLabel.text = when (role) {
+            Role.NURSE -> "Sign in as Nurse"
+            Role.ADMIN -> "Sign in as Admin"
+            else       -> "Sign in as Patient"
+        }
 
-        // Show server URL field only for nurses (patients use the saved URL silently)
-        binding.tilServerUrl.visibility = if (isNurse) View.VISIBLE else View.GONE
+        // Show server URL field for staff (nurse/admin); patients use saved URL silently
+        binding.tilServerUrl.visibility = if (isStaff) View.VISIBLE else View.GONE
+
+        // Register link only makes sense for patient/nurse self-registration
+        binding.tvRegister.visibility = if (isPatient || role == Role.NURSE) View.VISIBLE else View.GONE
 
         // Register link color tracks the active role accent
         binding.tvRegister.setTextColor(targetColor)
@@ -125,8 +153,9 @@ class LoginActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences(ServerUploader.PREFS_NAME, Context.MODE_PRIVATE)
 
-        // Nurses can override the server URL directly on the login screen
-        val serverUrl: String = if (selectedRole == Role.NURSE) {
+        // Staff (nurse/admin) can override the server URL directly on the login screen
+        val isStaff = selectedRole == Role.NURSE || selectedRole == Role.ADMIN
+        val serverUrl: String = if (isStaff) {
             val typed = binding.etServerUrl.text.toString().trim().trimEnd('/')
             if (typed.isNotEmpty()) {
                 prefs.edit().putString(ServerUploader.KEY_SERVER_URL, typed).apply()
@@ -163,13 +192,15 @@ class LoginActivity : AppCompatActivity() {
                         val json     = JSONObject(body)
                         val roleStr  = json.getString("role")
 
-                        // Hard role enforcement — nurse credentials cannot log in as patient and vice versa
-                        val expectedRole = if (selectedRole == Role.NURSE) "nurse" else "patient"
+                        // Hard role enforcement — the chosen tab must match the account's role.
+                        val expectedRole = when (selectedRole) {
+                            Role.NURSE -> "nurse"
+                            Role.ADMIN -> "admin"
+                            else       -> "patient"
+                        }
                         if (roleStr != expectedRole) {
-                            val msg = if (selectedRole == Role.NURSE)
-                                "These are patient credentials. Switch to Patient to continue."
-                            else
-                                "These are nurse credentials. Switch to Nurse to continue."
+                            val msg = "These credentials are for a different role. " +
+                                "Switch to the matching tab (${roleStr}) to continue."
                             Toast.makeText(this@LoginActivity, msg, Toast.LENGTH_LONG).show()
                             return@withContext
                         }
@@ -225,7 +256,11 @@ class LoginActivity : AppCompatActivity() {
     // ── Navigation ────────────────────────────────────────────────────────────
 
     private fun navigateByRole(role: String?) {
-        val dest = if (role == "nurse") NurseActivity::class.java else MainActivity::class.java
+        val dest = when (role) {
+            "nurse" -> NurseActivity::class.java
+            "admin" -> AdminActivity::class.java
+            else    -> MainActivity::class.java
+        }
         startActivity(Intent(this, dest).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         })

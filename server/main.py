@@ -295,6 +295,35 @@ async def root():
     """Root redirects to login."""
     return FileResponse(str(_static_dir / "login.html"))
 
+
+@app.get("/app/version", tags=["App Update"], summary="Latest Android app version manifest")
+async def app_version():
+    """Return the latest published Android build so installed apps can self-update.
+
+    Reads static/app_version.json if present; otherwise returns a safe default
+    that matches the shipped build (so the app never thinks an update exists
+    when one hasn't been published).
+    """
+    import json
+    manifest = _static_dir / "app_version.json"
+    if manifest.exists():
+        try:
+            data = json.loads(manifest.read_text(encoding="utf-8"))
+            return JSONResponse(data, headers=_NO_CACHE)
+        except Exception as exc:
+            logger.warning("Bad app_version.json: %s", exc)
+    # Default: no update beyond the baseline build.
+    return JSONResponse(
+        {
+            "versionCode": 1,
+            "versionName": "1.0",
+            "apkUrl": "/static/carevoice-latest.apk",
+            "changelog": "",
+            "mandatory": False,
+        },
+        headers=_NO_CACHE,
+    )
+
 app.include_router(admin_router.router)        # GET  /admin/*     (admin monitoring — requires admin role)
 
 
