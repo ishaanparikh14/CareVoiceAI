@@ -163,6 +163,34 @@
         <item name="android:letterSpacing">0</item>
     </style>
 
+    <!-- Admin header stat tiles -->
+    <style name="AdminStatTile">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_margin">4dp</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/bg_pill</item>
+        <item name="android:backgroundTint">@color/cv_white_12</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">10dp</item>
+    </style>
+    <style name="AdminStatValue">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:text">0</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="AdminStatLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/cv_white_80</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+
     <!-- Small rounded label used for room / status pills. -->
     <style name="CareVoice.Pill" parent="">
         <item name="android:background">@drawable/bg_pill</item>

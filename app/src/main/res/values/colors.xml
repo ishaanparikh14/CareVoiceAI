@@ -70,8 +70,16 @@
     <color name="colorAcknowledgedBg">#F1F5F9</color>
     <color name="colorNurseHeader">#0F766E</color>
 
-    <!-- Admin console: matches the website admin page's dark top bar -->
-    <color name="cv_admin">#1A1D27</color>
-    <color name="cv_admin_dark">#1A1D27</color>
+    <!-- Admin dispatch console -->
+    <color name="cv_admin">#334155</color>          <!-- slate-700 -->
+    <color name="cv_admin_dark">#1E293B</color>     <!-- slate-800 -->
+    <color name="cv_free">#16A34A</color>
+    <color name="cv_free_bg">#DCFCE7</color>
+    <color name="cv_busy">#DC2626</color>
+    <color name="cv_busy_bg">#FEE2E2</color>
+    <color name="cv_break">#D97706</color>
+    <color name="cv_break_bg">#FEF3C7</color>
+    <color name="cv_offline">#64748B</color>
+    <color name="cv_offline_bg">#F1F5F9</color>
 
 </resources>

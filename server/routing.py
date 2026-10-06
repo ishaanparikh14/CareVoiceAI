@@ -2,31 +2,43 @@
 routing.py — connect the pure scheduler (scheduling.py) to the live system.
 
 Both alert entry points (HTTP POST /audio/ingest and the patient WebSocket)
-call `route_alert` instead of broadcasting to all nurses. This gathers the
-current state — who is assigned to the room, who is online, who is busy, and
-how many unacked alerts each holds — asks the scheduler for the next available
-nurse, delivers to that nurse, and falls back to a full broadcast when nobody
-assigned is free (so an alert is never silently dropped).
+call `route_alert`. It categorises the request, finds the right nurse, and
+escalates when needed:
 
-Busy definition (agreed)
-------------------------
-A nurse is BUSY if ANY of:
-  • they are on an active WebRTC call (signaling registry `is_busy`), or
-  • they are holding an unacknowledged alert already routed to them, or
-  • they have set a manual busy flag (MANUAL_BUSY set below).
+  1. Categorise: the request's priority (Critical/Urgent/Routine) + the
+     patient's acuity (ESI 1–5) give a `required_competency` (e.g. a medication
+     request needs `medication_qualified`; a Critical / high-acuity request
+     needs `icu_certified`) and whether it is `time_critical`.
+  2. Match: among the patient's assigned nurses (priority order), pick the first
+     who HAS the competency, is on the floor (not off-duty, and not on-break for
+     time-critical work), and is online + not busy.
+  3. Escalate on no-ack (reroute loop in main.py): primary → paired secondary →
+     department supervisor → broadcast. A request is never silently dropped.
+
+Busy = on a call (signaling registry) OR holding an unacked alert OR manually
+marked busy. Live status (available / in_patient_room / on_break / off_duty)
+and competencies come from the users table; see pg_database.
 """
 
 import logging
 
 import aiosqlite
 
-from scheduling import NurseState, choose_nurse
+from scheduling import (
+    NurseState,
+    choose_nurse,
+    choose_supervisor,
+)
 
 logger = logging.getLogger(__name__)
 
 # Manual busy toggle: usernames a nurse (or admin) marked unavailable.
-# In-memory, single-process — mirrors the other registries in this app.
 MANUAL_BUSY: set[str] = set()
+
+# Intent → competency a nurse must have to take that request.
+_INTENT_COMPETENCY = {
+    "Medication": "medication_qualified",
+}
 
 
 def set_manual_busy(nurse: str, busy: bool) -> None:
@@ -36,10 +48,20 @@ def set_manual_busy(nurse: str, busy: bool) -> None:
         MANUAL_BUSY.discard(nurse)
 
 
+def required_competency_for(intent: str | None, priority: str | None, acuity: int | None) -> str | None:
+    """Skill a nurse MUST have for this request. High acuity / critical work
+    needs an ICU-certified nurse; medication needs a medication-qualified one."""
+    if (acuity is not None and acuity <= 2) or priority == "Critical" or intent == "Emergency":
+        return "icu_certified"
+    return _INTENT_COMPETENCY.get(intent or "")
+
+
+def is_time_critical(priority: str | None, acuity: int | None) -> bool:
+    return priority == "Critical" or (acuity is not None and acuity <= 2)
+
+
 def nurse_is_busy(nurse: str, active_counts: dict[str, int]) -> bool:
-    """Single source of truth for 'busy': on a call, holding an unacked alert,
-    or manually marked unavailable. Used by BOTH the scheduler and the admin
-    dispatch board so free/occupied always agree."""
+    """Single source of truth for 'busy', shared by scheduler + admin board."""
     from routers.signal import registry as signal_registry
     on_call = signal_registry.is_busy(nurse)
     holding = active_counts.get(nurse, 0) > 0
@@ -48,27 +70,26 @@ def nurse_is_busy(nurse: str, active_counts: dict[str, int]) -> bool:
 
 
 def nurse_is_online(nurse: str) -> bool:
-    """Online if present in EITHER the nurse-alert WS manager or the signaling
-    registry (a nurse may hold one socket but not the other)."""
+    """Online if present in EITHER the nurse-alert WS or the signaling registry."""
     from routers import ws as ws_router
     from routers.signal import registry as signal_registry
     return ws_router.manager.is_online(nurse) or signal_registry.is_online(nurse)
 
 
 async def nurse_availability(db) -> list[dict]:
-    """Return availability for every approved nurse, for the admin dispatch
-    board. Shape: [{username, full_name, online, busy, active_alerts}]."""
-    from pg_database import get_conn, get_approved_nurse_usernames
+    """Per-nurse availability for the admin dispatch board, including live
+    status and competencies."""
+    from pg_database import get_conn, get_nurse_routing_map
     from database import get_active_alert_counts_by_nurse
+    from routers.signal import registry as signal_registry
 
     active_counts = await get_active_alert_counts_by_nurse(db)
-    nurses: list[dict] = []
     async for conn in get_conn():
-        rows = await get_approved_nurse_usernames(conn)
+        routing_map = await get_nurse_routing_map(conn)
         break
-    from routers.signal import registry as signal_registry
-    for r in rows:
-        u = r["username"]
+
+    nurses: list[dict] = []
+    for u, info in sorted(routing_map.items(), key=lambda kv: kv[1]["full_name"]):
         held = active_counts.get(u, 0)
         reasons = []
         if signal_registry.is_busy(u):
@@ -79,40 +100,39 @@ async def nurse_availability(db) -> list[dict]:
             reasons.append("Marked busy")
         nurses.append({
             "username": u,
-            "full_name": r["full_name"],
-            "ward": r["ward"],
+            "full_name": info["full_name"],
+            "ward": info["ward"],
             "online": nurse_is_online(u),
             "busy": nurse_is_busy(u, active_counts),
             "manual_busy": u in MANUAL_BUSY,
             "busy_reason": " · ".join(reasons),
             "active_alerts": held,
+            "status": info["status"],
+            "competencies": sorted(info["competencies"]),
+            "is_supervisor": info["is_supervisor"],
         })
     return nurses
 
 
-async def _gather_states(db, assigned: list[str]) -> dict[str, NurseState]:
-    """Build the availability snapshot for a list of nurses from the live
-    signaling registry, nurse WS manager, unacked-alert counts, and MANUAL_BUSY.
-    """
+async def _gather_states(db, usernames: list[str], routing_map: dict) -> dict[str, NurseState]:
+    """Build NurseState snapshots merging the DB routing map (competencies,
+    status, supervisor) with live online/busy signals."""
     from database import get_active_alert_counts_by_nurse
-
     active_counts = await get_active_alert_counts_by_nurse(db)
+
     states: dict[str, NurseState] = {}
-    for nurse in assigned:
+    for nurse in usernames:
+        info = routing_map.get(nurse, {})
         states[nurse] = NurseState(
             username=nurse,
             online=nurse_is_online(nurse),
             busy=nurse_is_busy(nurse, active_counts),
             active_alerts=active_counts.get(nurse, 0),
+            status=info.get("status", "available"),
+            competencies=frozenset(info.get("competencies", set())),
+            is_supervisor=info.get("is_supervisor", False),
         )
     return states
-
-
-async def _assigned_nurses(room_id: str) -> list[str]:
-    from pg_database import get_conn, get_nurses_for_room
-    async for conn in get_conn():
-        return await get_nurses_for_room(conn, room_id)
-    return []
 
 
 async def route_alert(
@@ -123,46 +143,71 @@ async def route_alert(
     payload_json: str,
     exclude: set[str] | None = None,
     is_reroute: bool = False,
+    allow_supervisor: bool = True,
 ) -> tuple[str | None, bool]:
-    """Route an alert to the next available assigned nurse, or broadcast.
-
-    `exclude` drops nurses from consideration (used by reroute to skip the nurse
-    who didn't ack). `is_reroute` records it as a reroute (increments the count).
-
-    Returns (routed_to_username_or_None, fell_back). Delivery side effects
-    (sending over WebSocket, recording routed_to/at) happen here.
+    """Route an alert to the best assigned nurse; escalate to a supervisor; else
+    broadcast. Returns (routed_to_or_None, fell_back). Side effects (WS send,
+    recording routed_to/at) happen here.
     """
     from routers import ws as ws_router
-    from database import set_alert_routed_to, record_reroute
+    from database import set_alert_routed_to, record_reroute, get_alert_by_id
+    from pg_database import (
+        get_conn, get_nurses_for_room, get_nurse_routing_map,
+        get_supervisor_usernames, get_patient_acuity_by_room, get_ward_for_room,
+    )
 
     exclude = exclude or set()
 
-    # 1. Who is assigned to this room, in priority order (minus excluded)?
-    assigned = [n for n in await _assigned_nurses(room_id) if n not in exclude]
+    # Categorise the request from the stored alert row + patient acuity.
+    row = await get_alert_by_id(db, alert_id)
+    intent = row.get("intent") if row else None
+    priority = row.get("priority") if row else None
 
-    # 2. Snapshot availability.
-    states = await _gather_states(db, assigned)
+    async for conn in get_conn():
+        assigned_all = await get_nurses_for_room(conn, room_id)
+        routing_map = await get_nurse_routing_map(conn)
+        acuity = await get_patient_acuity_by_room(conn, room_id)
+        ward = await get_ward_for_room(conn, room_id)
+        supervisors = await get_supervisor_usernames(conn, ward)
+        break
 
-    # 3. Ask the pure scheduler.
-    decision = choose_nurse(assigned, states)
+    required = required_competency_for(intent, priority, acuity)
+    time_critical = is_time_critical(priority, acuity)
+
+    assigned = [n for n in assigned_all if n not in exclude]
+    # Supervisors are a separate escalation pool (exclude any already assigned
+    # so a supervisor who is also the primary isn't double-counted).
+    sup_pool = [s for s in supervisors if s not in exclude and s not in assigned]
+
+    states = await _gather_states(db, list(set(assigned) | set(sup_pool)), routing_map)
+
+    decision = choose_nurse(
+        assigned, states,
+        required_competency=required, time_critical=time_critical,
+    )
+    via = "assigned"
+    if decision.chosen is None and allow_supervisor and sup_pool:
+        decision = choose_supervisor(
+            sup_pool, states,
+            required_competency=required, time_critical=time_critical,
+        )
+        via = "supervisor"
+
     logger.info(
-        "[ROUTE%s] alert=%d room=%s assigned=%s exclude=%s -> %s",
-        "/reroute" if is_reroute else "", alert_id, room_id, assigned,
-        sorted(exclude), decision.reason,
+        "[ROUTE%s] alert=%d room=%s intent=%s prio=%s esi=%s req=%s tc=%s "
+        "assigned=%s sup=%s -> %s (%s)",
+        "/reroute" if is_reroute else "", alert_id, room_id, intent, priority,
+        acuity, required, time_critical, assigned, sup_pool, decision.chosen, via,
     )
 
     record = record_reroute if is_reroute else set_alert_routed_to
     manager = ws_router.manager
 
-    # 4. Deliver.
     delivered = False
     if decision.chosen is not None:
         delivered = await manager.send_to_nurse(decision.chosen, payload_json)
         if not delivered:
-            logger.warning(
-                "[ROUTE] delivery to %s failed after selection — broadcasting",
-                decision.chosen,
-            )
+            logger.warning("[ROUTE] delivery to %s failed — broadcasting", decision.chosen)
 
     if decision.chosen is None or not delivered:
         await manager.broadcast(payload_json)
@@ -180,12 +225,8 @@ async def redirect_alert(
     target_nurse: str,
     payload_json: str,
 ) -> tuple[bool, str]:
-    """Intermediary/dispatcher override: deliver an alert to a SPECIFIC nurse,
-    bypassing the scheduler. Returns (delivered, message).
-
-    If the target nurse has no live socket, we still record the redirect and
-    broadcast as a fallback so the alert is not lost.
-    """
+    """Dispatcher override: deliver to a SPECIFIC nurse, bypassing the scheduler.
+    Falls back to broadcast if that nurse is offline."""
     from routers import ws as ws_router
     from database import record_reroute
 
@@ -196,31 +237,38 @@ async def redirect_alert(
         logger.info("[REDIRECT] alert=%d manually sent to %s", alert_id, target_nurse)
         return True, f"Alert {alert_id} redirected to {target_nurse}"
 
-    # Target offline — broadcast so it is not lost, but still record intent.
     await manager.broadcast(payload_json)
     await record_reroute(db, alert_id, None, True)
-    logger.warning(
-        "[REDIRECT] target %s offline for alert=%d — broadcast fallback",
-        target_nurse, alert_id,
-    )
+    logger.warning("[REDIRECT] target %s offline for alert=%d — broadcast", target_nurse, alert_id)
     return False, f"{target_nurse} is offline; alert {alert_id} broadcast to all nurses instead"
 
 
 async def reroute_stale(db: aiosqlite.Connection, *, older_than_seconds: int) -> int:
-    """Find alerts routed to a specific nurse that remain unacked past the
-    timeout and reroute each to the NEXT available nurse (excluding the one who
-    didn't ack). Returns the number of alerts rerouted. Called by the background
-    loop in main.py.
+    """Reroute unacked, already-routed alerts down the escalation chain:
+    primary → secondary → … → supervisor → broadcast. We walk DOWN the assigned
+    priority list by excluding everyone already given a chance (derived from
+    reroute_count), so a request never ping-pongs back to a nurse who passed.
     """
     from database import get_stale_routed_unacked, get_alert_by_id
     from models import AlertResponse, WsAlertPayload
+    from pg_database import get_conn, get_nurses_for_room
 
     stale = await get_stale_routed_unacked(db, older_than_seconds=older_than_seconds)
     rerouted = 0
     for row in stale:
         alert_id = row["id"]
         prev_nurse = row.get("routed_to")
-        # Rebuild the push payload from the stored row.
+        count = row.get("reroute_count") or 0
+
+        # Nurses already given a chance: the first (count+1) in priority order,
+        # plus whoever currently holds it. Excluding them walks strictly down.
+        async for conn in get_conn():
+            assigned = await get_nurses_for_room(conn, row["room_id"])
+            break
+        tried = set(assigned[: count + 1])
+        if prev_nurse:
+            tried.add(prev_nurse)
+
         fresh = await get_alert_by_id(db, alert_id) or row
         payload_json = WsAlertPayload.from_alert_response(
             AlertResponse.from_db_row(fresh), event="alert_updated"
@@ -231,12 +279,13 @@ async def reroute_stale(db: aiosqlite.Connection, *, older_than_seconds: int) ->
             room_id=row["room_id"],
             alert_id=alert_id,
             payload_json=payload_json,
-            exclude={prev_nurse} if prev_nurse else set(),
+            exclude=tried,
             is_reroute=True,
+            allow_supervisor=True,
         )
         logger.info(
-            "[REROUTE] alert=%d was %s (no ack) -> %s fell_back=%s",
-            alert_id, prev_nurse, chosen, fell_back,
+            "[REROUTE] alert=%d prev=%s tried=%s -> %s fell_back=%s",
+            alert_id, prev_nurse, sorted(tried), chosen, fell_back,
         )
         rerouted += 1
     return rerouted

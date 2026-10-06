@@ -94,6 +94,10 @@ CREATE TABLE IF NOT EXISTS users (
     is_active       BOOLEAN NOT NULL DEFAULT TRUE,
     approval_status TEXT NOT NULL DEFAULT 'approved'
                     CHECK (approval_status IN ('pending','approved','rejected')),
+    -- Routing attributes (nurses): skills, live status, supervisor flag.
+    competencies    TEXT NOT NULL DEFAULT '',            -- comma-separated skills
+    status          TEXT NOT NULL DEFAULT 'available',   -- available|in_patient_room|on_break|off_duty
+    is_supervisor   BOOLEAN NOT NULL DEFAULT FALSE,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -105,6 +109,7 @@ CREATE TABLE IF NOT EXISTS patients (
     age           INT,
     diagnosis     TEXT,
     attending     TEXT,
+    acuity        INT,                                   -- ESI 1 (most acute) – 5
     admitted_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     is_discharged BOOLEAN NOT NULL DEFAULT FALSE
 );
@@ -209,6 +214,9 @@ async def init_pg_db() -> None:
         # Migrate: add approval_status column to older databases.
         await _migrate_approval_status(conn)
 
+        # Migrate: add routing columns (competencies/status/supervisor/acuity).
+        await _migrate_routing_columns(conn)
+
         # Ensure at least one admin exists regardless of seed state
         admin_count = await conn.fetchval("SELECT COUNT(*) FROM users WHERE role='admin'")
         if admin_count == 0:
@@ -303,6 +311,44 @@ async def _migrate_role_constraint(conn: asyncpg.Connection) -> None:
                 "CHECK (role IN ('nurse','patient','admin'))"
             )
             logger.info("Migrated users.role CHECK constraint to include 'admin'")
+
+
+async def _migrate_routing_columns(conn: asyncpg.Connection) -> None:
+    """Add competency/status/supervisor/acuity columns to legacy DBs (idempotent),
+    then seed sensible demo values for the sample staff/patients so the routing
+    features are visible without manual data entry."""
+    await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS competencies TEXT NOT NULL DEFAULT ''")
+    await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'available'")
+    await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_supervisor BOOLEAN NOT NULL DEFAULT FALSE")
+    await conn.execute("ALTER TABLE patients ADD COLUMN IF NOT EXISTS acuity INT")
+
+    # Demo competencies / supervisor so the scheme is visible out of the box.
+    # Only applied where still at defaults (won't clobber real edits).
+    demo = [
+        # username,       competencies,                              supervisor
+        ("nurse_anna",  "icu_certified,iv_start,medication_qualified", True),
+        ("nurse_ben",   "iv_start,medication_qualified",              False),
+        ("nurse_carol", "medication_qualified",                       False),
+    ]
+    for username, comps, supervisor in demo:
+        await conn.execute(
+            """
+            UPDATE users
+            SET competencies = $2,
+                is_supervisor = $3
+            WHERE username = $1 AND role = 'nurse' AND competencies = ''
+            """,
+            username, comps, supervisor,
+        )
+
+    # Demo acuity (ESI) for seeded patients where unset.
+    acuity = [("4B", 2), ("4C", 3), ("5A", 1), ("5B", 4), ("6A", 3)]
+    for room, esi in acuity:
+        await conn.execute(
+            "UPDATE patients SET acuity = $2 WHERE room_number = $1 AND acuity IS NULL",
+            room, esi,
+        )
+    logger.info("Routing columns ensured (competencies/status/supervisor/acuity)")
 
 
 async def _seed_admins(conn: asyncpg.Connection) -> None:
@@ -915,14 +961,118 @@ async def set_patient_discharge(
 
 
 async def get_approved_nurse_usernames(conn: asyncpg.Connection) -> list[asyncpg.Record]:
-    """Return approved, active nurses for populating assignment dropdowns."""
+    """Return approved, active nurses with their routing attributes."""
     return await conn.fetch(
         """
-        SELECT username, full_name, ward
+        SELECT username, full_name, ward, competencies, status, is_supervisor
         FROM users
         WHERE role = 'nurse' AND is_active = TRUE AND approval_status = 'approved'
         ORDER BY full_name
         """
+    )
+
+
+# ── Routing attribute helpers ─────────────────────────────────────────────────
+
+_VALID_STATUS = {"available", "in_patient_room", "on_break", "off_duty"}
+
+
+async def set_nurse_status(conn: asyncpg.Connection, username: str, status: str) -> bool:
+    """Set a nurse's live status. Returns False for an unknown status value."""
+    if status not in _VALID_STATUS:
+        return False
+    res = await conn.execute(
+        "UPDATE users SET status = $2 WHERE username = $1 AND role = 'nurse'",
+        username, status,
+    )
+    return res.endswith("1")
+
+
+async def set_nurse_competencies(conn: asyncpg.Connection, username: str, competencies: str) -> bool:
+    """Set a nurse's competency list (comma-separated skill tokens)."""
+    cleaned = ",".join(
+        t.strip().lower().replace(" ", "_") for t in competencies.split(",") if t.strip()
+    )
+    res = await conn.execute(
+        "UPDATE users SET competencies = $2 WHERE username = $1 AND role = 'nurse'",
+        username, cleaned,
+    )
+    return res.endswith("1")
+
+
+async def set_nurse_supervisor(conn: asyncpg.Connection, username: str, is_supervisor: bool) -> bool:
+    res = await conn.execute(
+        "UPDATE users SET is_supervisor = $2 WHERE username = $1 AND role = 'nurse'",
+        username, is_supervisor,
+    )
+    return res.endswith("1")
+
+
+async def set_patient_acuity(conn: asyncpg.Connection, room_number: str, acuity: int | None) -> None:
+    """Set the ESI acuity (1–5) for the active patient in a room."""
+    await conn.execute(
+        """
+        UPDATE patients SET acuity = $2
+        WHERE room_number = $1 AND is_discharged = FALSE
+        """,
+        room_number, acuity,
+    )
+
+
+async def get_nurse_routing_map(conn: asyncpg.Connection) -> dict[str, dict]:
+    """username -> {full_name, ward, competencies:set, status, is_supervisor}
+    for every approved, active nurse. Used to build scheduler NurseStates."""
+    rows = await conn.fetch(
+        """
+        SELECT username, full_name, ward, competencies, status, is_supervisor
+        FROM users
+        WHERE role = 'nurse' AND is_active = TRUE AND approval_status = 'approved'
+        """
+    )
+    out: dict[str, dict] = {}
+    for r in rows:
+        comps = {c for c in (r["competencies"] or "").split(",") if c}
+        out[r["username"]] = {
+            "full_name": r["full_name"],
+            "ward": r["ward"],
+            "competencies": comps,
+            "status": r["status"] or "available",
+            "is_supervisor": bool(r["is_supervisor"]),
+        }
+    return out
+
+
+async def get_supervisor_usernames(conn: asyncpg.Connection, ward: str | None = None) -> list[str]:
+    """Supervisors (same ward first if ward given), for escalation."""
+    rows = await conn.fetch(
+        """
+        SELECT username, ward FROM users
+        WHERE role = 'nurse' AND is_active = TRUE AND approval_status = 'approved'
+          AND is_supervisor = TRUE
+        ORDER BY full_name
+        """
+    )
+    if ward:
+        same = [r["username"] for r in rows if r["ward"] == ward]
+        other = [r["username"] for r in rows if r["ward"] != ward]
+        return same + other
+    return [r["username"] for r in rows]
+
+
+async def get_patient_acuity_by_room(conn: asyncpg.Connection, room_number: str) -> int | None:
+    return await conn.fetchval(
+        """
+        SELECT acuity FROM patients
+        WHERE room_number = $1 AND is_discharged = FALSE
+        ORDER BY admitted_at DESC LIMIT 1
+        """,
+        room_number,
+    )
+
+
+async def get_ward_for_room(conn: asyncpg.Connection, room_number: str) -> str | None:
+    return await conn.fetchval(
+        "SELECT ward FROM rooms WHERE room_number = $1", room_number
     )
 
 
