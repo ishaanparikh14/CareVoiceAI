@@ -122,6 +122,31 @@ async def dispatch_board(
     return {"nurses": nurses, "pending_alerts": alerts}
 
 
+# ── POST /admin/nurses/{username}/busy ────────────────────────────────────────
+# Dispatcher marks a nurse occupied/free; the scheduler skips occupied nurses.
+
+class AdminBusyRequest(BaseModel):
+    busy: bool = Field(..., description="True = occupied, False = free")
+
+
+@router.post("/nurses/{username}/busy", summary="Dispatcher: mark a nurse occupied or free")
+async def admin_set_nurse_busy(
+    username: str,
+    body: AdminBusyRequest,
+    admin: AdminUser,
+    conn: asyncpg.Connection = Depends(get_conn),
+):
+    from pg_database import get_user_by_username
+    from routing import set_manual_busy
+
+    user = await get_user_by_username(conn, username)
+    if user is None or user["role"] != "nurse":
+        raise HTTPException(status_code=404, detail=f"'{username}' is not a nurse")
+    set_manual_busy(username, body.busy)
+    logger.info("Admin %s set nurse %s manual busy=%s", admin["username"], username, body.busy)
+    return {"username": username, "busy": body.busy}
+
+
 # ── GET /admin/nurses ─────────────────────────────────────────────────────────
 
 @router.get("/nurses", summary="All nurses")

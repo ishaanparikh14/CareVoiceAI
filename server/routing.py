@@ -66,14 +66,26 @@ async def nurse_availability(db) -> list[dict]:
     async for conn in get_conn():
         rows = await get_approved_nurse_usernames(conn)
         break
+    from routers.signal import registry as signal_registry
     for r in rows:
         u = r["username"]
+        held = active_counts.get(u, 0)
+        reasons = []
+        if signal_registry.is_busy(u):
+            reasons.append("On a call")
+        if held > 0:
+            reasons.append(f"Handling {held} request{'s' if held != 1 else ''}")
+        if u in MANUAL_BUSY:
+            reasons.append("Marked busy")
         nurses.append({
             "username": u,
             "full_name": r["full_name"],
+            "ward": r["ward"],
             "online": nurse_is_online(u),
             "busy": nurse_is_busy(u, active_counts),
-            "active_alerts": active_counts.get(u, 0),
+            "manual_busy": u in MANUAL_BUSY,
+            "busy_reason": " · ".join(reasons),
+            "active_alerts": held,
         })
     return nurses
 

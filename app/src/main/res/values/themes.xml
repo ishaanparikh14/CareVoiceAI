@@ -44,6 +44,13 @@
         <item name="android:statusBarColor">@color/cv_nurse_dark</item>
     </style>
 
+    <!-- Admin dispatch console: slate brand, draws its own toolbar. -->
+    <style name="Theme.CareVoice.Admin.NoActionBar" parent="Theme.CareVoice.NoActionBar">
+        <item name="colorPrimary">@color/cv_admin</item>
+        <item name="colorPrimaryVariant">@color/cv_admin_dark</item>
+        <item name="android:statusBarColor">@color/cv_admin_dark</item>
+    </style>
+
     <!-- In-call + incoming-call screens: dark, immersive. -->
     <style name="Theme.CareVoice.Call" parent="Theme.CareVoice.NoActionBar">
         <item name="android:statusBarColor">@color/cv_call_bg_start</item>

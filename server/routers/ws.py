@@ -142,6 +142,30 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
+def _nurse_from_token(websocket: WebSocket) -> str | None:
+    """Return the nurse username from a Bearer header or ?token= query param.
+
+    Only nurse tokens are keyed (admins/patients watching the feed still get
+    broadcasts but are never targeted). Returns None if absent or invalid.
+    """
+    raw = None
+    auth = websocket.headers.get("authorization", "")
+    if auth.lower().startswith("bearer "):
+        raw = auth[7:].strip()
+    if not raw:
+        raw = websocket.query_params.get("token")
+    if not raw:
+        return None
+    try:
+        from auth import decode_token
+        payload = decode_token(raw)
+    except Exception:
+        return None
+    if payload.get("role") != "nurse":
+        return None
+    return payload.get("sub")
+
+
 # ── WebSocket route ───────────────────────────────────────────────────────────
 
 @router.websocket("/ws/nurse")
@@ -163,7 +187,15 @@ async def nurse_ws(
       • "ping" every WS_KEEPALIVE_SECONDS to prevent idle disconnection.
       • {"event": "connected", "nurse_id": "..."} immediately on connect.
     """
-    await manager.connect(websocket, nurse=nurse_id if nurse_id != "unknown" else None)
+    # Identify the nurse from their JWT (Authorization header or ?token=) so
+    # targeted routing can address this socket by username. The Android app
+    # sends the header; the web dashboard may pass ?token=. Fall back to the
+    # legacy nurse_id query param only if no valid token is present.
+    nurse_username = _nurse_from_token(websocket)
+    if nurse_username is None and nurse_id != "unknown":
+        nurse_username = nurse_id
+    await manager.connect(websocket, nurse=nurse_username)
+    nurse_id = nurse_username or nurse_id
     logger.info("Nurse '%s' connected via WebSocket", nurse_id)
 
     # Send an immediate welcome frame so the client knows the connection is live.
