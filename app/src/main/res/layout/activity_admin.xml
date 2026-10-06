@@ -1,147 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Admin dispatch console: toolbar (refresh + logout), live stats, nurses, pending requests. -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<!-- Admin console = the website's admin dashboard (/admin) in a WebView,
+     signed in with the app's session. Native views only cover loading/errors. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorBackground"
-    android:orientation="vertical">
+    android:background="#0F1117">
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar"
+    <WebView
+        android:id="@+id/webView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="?attr/actionBarSize"
-        android:background="@color/cv_admin"
-        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
-        app:title="@string/admin_title"
-        app:titleTextColor="@android:color/white"
-        app:subtitleTextColor="@color/cv_white_80" />
-
-    <!-- Live summary counts -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/cv_admin"
-        android:orientation="horizontal"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingBottom="14dp">
-
-        <include
-            android:id="@+id/statFree"
-            layout="@layout/item_admin_stat"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-
-        <include
-            android:id="@+id/statBusy"
-            layout="@layout/item_admin_stat"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-
-        <include
-            android:id="@+id/statOffline"
-            layout="@layout/item_admin_stat"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-
-        <include
-            android:id="@+id/statPending"
-            layout="@layout/item_admin_stat"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-    </LinearLayout>
-
-    <androidx.core.widget.NestedScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:fillViewport="true">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <TextView
-                android:id="@+id/tvRequestsHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/admin_section_requests"
-                android:textColor="@color/colorText"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvNoRequests"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_pill"
-                android:backgroundTint="@color/cv_free_bg"
-                android:padding="14dp"
-                android:text="@string/admin_no_requests"
-                android:textColor="@color/cv_free"
-                android:textSize="14sp"
-                android:visibility="gone" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvAlerts"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:nestedScrollingEnabled="false" />
-
-            <TextView
-                android:id="@+id/tvNursesHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="@string/admin_section_nurses"
-                android:textColor="@color/colorText"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvNoNurses"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/admin_no_nurses"
-                android:textColor="@color/colorTextSecondary"
-                android:textSize="14sp"
-                android:visibility="gone" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvNurses"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:nestedScrollingEnabled="false" />
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+        android:layout_height="match_parent" />
 
     <ProgressBar
         android:id="@+id/progress"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="3dp"
+        android:layout_gravity="top"
         android:indeterminate="true"
         android:visibility="gone" />
 
-    <TextView
-        android:id="@+id/tvStatus"
+    <!-- Shown when the server can't be reached -->
+    <LinearLayout
+        android:id="@+id/errorView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/colorCardBackground"
+        android:layout_height="match_parent"
+        android:background="#0F1117"
         android:gravity="center"
-        android:padding="10dp"
-        android:textColor="@color/colorTextSecondary"
-        android:textSize="12sp" />
-</LinearLayout>
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/admin_offline_title"
+            android:textColor="#E2E8F0"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvError"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:textColor="#8892A4"
+            android:textSize="14sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRetry"
+            style="@style/Widget.CareVoice.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:minHeight="48dp"
+            android:text="@string/admin_retry"
+            app:backgroundTint="#4F8EF7"
+            xmlns:app="http://schemas.android.com/apk/res-auto" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLogout"
+            style="@style/Widget.CareVoice.Button.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:minHeight="48dp"
+            android:text="@string/admin_logout"
+            android:textColor="#F87171" />
+    </LinearLayout>
+</FrameLayout>

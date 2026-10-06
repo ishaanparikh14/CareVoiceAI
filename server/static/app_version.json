@@ -1,7 +1,7 @@
 {
-  "versionCode": 3,
-  "versionName": "1.2",
+  "versionCode": 4,
+  "versionName": "1.3",
   "apkUrl": "/static/carevoice-latest.apk",
-  "changelog": "Rebuilt admin dispatch console: log out button, live free/occupied counts, mark nurses occupied or free, clearer request routing, and automatic sign-out when the session expires.",
+  "changelog": "The admin console in the app is now the same as the website admin dashboard: Overview, Dispatch, Alerts, Analytics, Approvals, Rooms, Patients, Nurses and Server Logs, with sign-out.",
   "mandatory": false
 }

@@ -44,36 +44,15 @@
     <string name="login_subtitle_nurse">CareVoice AI Nurse Station</string>
     <string name="login_subtitle_admin">CareVoice AI Dispatch Console</string>
 
-    <!-- Admin dispatch console -->
-    <string name="admin_title">Dispatch Console</string>
-    <string name="admin_signed_in_as">Signed in as %1$s</string>
-    <string name="admin_refresh">Refresh</string>
+    <!-- Admin console (the website's /admin page inside the app) -->
+    <string name="admin_title">CareVoice Admin</string>
     <string name="admin_logout">Log out</string>
-    <string name="admin_logout_confirm">Log out of the dispatch console?</string>
-    <string name="admin_stat_free">Free</string>
-    <string name="admin_stat_busy">Occupied</string>
-    <string name="admin_stat_offline">Offline</string>
-    <string name="admin_stat_pending">Pending</string>
-    <string name="admin_section_nurses">Nurses</string>
-    <string name="admin_section_requests">Pending requests</string>
-    <string name="admin_no_nurses">No approved nurses yet.</string>
-    <string name="admin_no_requests">No pending requests. All clear.</string>
-    <string name="admin_pill_free">FREE</string>
-    <string name="admin_pill_busy">OCCUPIED</string>
-    <string name="admin_pill_offline">OFFLINE</string>
-    <string name="admin_redirect">Redirect</string>
-    <string name="admin_redirect_title">Send Room %1$s request to…</string>
-    <string name="admin_redirect_sending">Redirecting…</string>
-    <string name="admin_routed_to">Routed to %1$s</string>
-    <string name="admin_routed_broadcast">Broadcast to all nurses (no assigned nurse free)</string>
-    <string name="admin_routed_none">Not routed yet</string>
-    <string name="admin_mark_busy">Mark occupied</string>
-    <string name="admin_mark_free">Mark free</string>
-    <string name="admin_nurse_actions">%1$s</string>
-    <string name="admin_updated">Live · updated %1$s</string>
-    <string name="admin_offline_retry">Can\'t reach the server. Retrying…</string>
+    <string name="admin_exit">Exit</string>
+    <string name="admin_exit_confirm">Close the admin console? You\'ll stay signed in.</string>
+    <string name="admin_retry">Try again</string>
+    <string name="admin_offline_title">Can\'t reach the server</string>
+    <string name="admin_offline_detail">%1$s\n%2$s</string>
     <string name="admin_session_expired">Session expired. Please log in again.</string>
-    <string name="admin_not_admin">This account is not an admin.</string>
     <string name="login_hint_username">Username</string>
     <string name="login_hint_password">Password</string>
     <string name="login_btn">Sign In</string>
