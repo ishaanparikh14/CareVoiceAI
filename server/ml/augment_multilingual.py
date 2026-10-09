@@ -16,9 +16,6 @@ HI_SUFFIXES = ["", " कृपया", " जल्दी", " please"]
 KN_PREFIXES = ["", "ನರ್ಸ್ ", "ದಯವಿಟ್ಟು ", "ಸ್ವಲ್ಪ ", "ಅಕ್ಕ ", " ಏನ್ರೀ "]
 KN_SUFFIXES = ["", " ದಯವಿಟ್ಟು", " ಬೇಗ", " please"]
 
-DE_PREFIXES = ["", "Schwester ", "bitte ", "Entschuldigung ", "Hallo "]
-DE_SUFFIXES = ["", " bitte", " schnell", " danke"]
-
 
 def _variants(text: str, prefixes, suffixes, max_variants=4):
     seen = []
@@ -52,5 +49,4 @@ def get_augmented_multilingual(base_rows):
     extra = []
     extra += expand_language(base_rows, "hi", HI_PREFIXES, HI_SUFFIXES, per_phrase=4)
     extra += expand_language(base_rows, "kn", KN_PREFIXES, KN_SUFFIXES, per_phrase=4)
-    extra += expand_language(base_rows, "de", DE_PREFIXES, DE_SUFFIXES, per_phrase=4)
     return extra
