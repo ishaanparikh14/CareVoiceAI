@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>CareVoice AI — Admin Dashboard</title>
+<title>CareVoice AI ΓÇö Admin Dashboard</title>
 <style>
-/* ── Reset ─────────────────────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Reset ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg:        #f1f5f9;   /* slate-100 */
@@ -35,18 +35,18 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-/* ── Top nav ────────────────────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Top nav ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .topbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 24px; height: 58px; gap: 12px;
+  padding: 0 24px; height: 58px;
   background: var(--surface); border-bottom: 1px solid var(--border);
   position: sticky; top: 0; z-index: 100; flex-shrink: 0;
 }
-.topbar-logo { display: flex; align-items: center; gap: 10px; min-width: 0; flex-shrink: 1; }
-.topbar-logo svg { color: var(--accent); flex-shrink: 0; }
-.topbar-logo h1 { font-size: 1.1rem; font-weight: 800; white-space: nowrap; }
-.topbar-logo span { font-size: .7rem; font-weight: 600; color: var(--accent); background: rgba(79,70,229,.12); padding: 2px 8px; border-radius: 20px; border: 1px solid rgba(79,70,229,.25); white-space: nowrap; flex-shrink: 0; }
-.topbar-right { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.topbar-logo { display: flex; align-items: center; gap: 10px; }
+.topbar-logo svg { color: var(--accent); }
+.topbar-logo h1 { font-size: 1.1rem; font-weight: 800; }
+.topbar-logo span { font-size: .7rem; font-weight: 600; color: var(--accent); background: rgba(79,70,229,.12); padding: 2px 8px; border-radius: 20px; border: 1px solid rgba(79,70,229,.25); }
+.topbar-right { display: flex; align-items: center; gap: 16px; }
 .admin-badge { font-size: .78rem; color: var(--muted); }
 .admin-badge strong { color: var(--text); }
 .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: .82rem; transition: all .15s; }
@@ -61,7 +61,7 @@ body {
 .sidebar-scrim { display: none; position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 95; }
 .sidebar-scrim.open { display: block; }
 
-/* ── Layout ─────────────────────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Layout ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .layout { display: flex; flex: 1; overflow: hidden; }
 .sidebar { width: 220px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); padding: 16px 0; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
 .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: .88rem; font-weight: 500; color: var(--muted); cursor: pointer; border-left: 3px solid transparent; transition: all .15s; user-select: none; }
@@ -78,7 +78,7 @@ body {
 .page-header h2 { font-size: 1.4rem; font-weight: 700; }
 .page-header p  { font-size: .85rem; color: var(--muted); margin-top: 4px; }
 
-/* ── Stat cards ─────────────────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Stat cards ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
 .card-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
@@ -91,7 +91,7 @@ body {
 .card-value { font-size: 2rem; font-weight: 800; line-height: 1; }
 .card-sub { font-size: .75rem; color: var(--muted); }
 
-/* ── Tables ─────────────────────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Tables ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
 .table-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
 .table-header h3 { font-size: .95rem; font-weight: 700; }
@@ -102,7 +102,7 @@ body {
 .tbl tbody tr:last-child td { border-bottom: none; }
 .tbl tbody tr:hover td { background: var(--surface2); }
 
-/* ── Badges ─────────────────────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Badges ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: .73rem; font-weight: 700; white-space: nowrap; }
 .badge-critical { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
 .badge-urgent { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
@@ -114,7 +114,7 @@ body {
 .badge-discharged, .badge-unoccupied { background: #f1f5f9; color: var(--muted); border: 1px solid var(--border); }
 .badge-info { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
 
-/* ── Filter bar ─────────────────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Filter bar ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--surface2); align-items:center; }
 .filter-bar select, .filter-bar input[type=text] { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 7px; font-size: .82rem; outline: none; }
 .filter-bar select:focus, .filter-bar input:focus { border-color: var(--accent); }
@@ -131,7 +131,7 @@ body {
 .mini-select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 4px 8px; border-radius: 6px; font-size: .78rem; outline: none; }
 .mini-select:focus { border-color: var(--accent); }
 
-/* ── Charts ─────────────────────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Charts ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .chart-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px; }
 .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
 .chart-card h4 { font-size: .85rem; font-weight: 700; margin-bottom: 16px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
@@ -157,7 +157,7 @@ body {
 .hour-bar { width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; transition: height .5s ease; }
 .hour-lbl { font-size: .6rem; color: var(--muted); }
 
-/* ── Room cards ─────────────────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Room cards ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
 .room-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; transition: border-color .15s; }
 .room-card:hover { border-color: var(--accent); }
@@ -169,7 +169,7 @@ body {
 .unacked-dot { display: inline-block; width: 8px; height: 8px; background: var(--red); border-radius: 50%; animation: pulse 1.5s infinite; }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(1.3)} }
 
-/* ── Empty / pagination / log ───────────────────────────────────────────── */
+/* ΓöÇΓöÇ Empty / pagination / log ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .empty { text-align: center; padding: 48px 24px; color: var(--muted); }
 .skeleton { background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%); background-size: 200%; animation: shimmer 1.3s infinite; border-radius: 6px; height: 16px; }
 @keyframes shimmer { from { background-position: 200% } to { background-position: -200% } }
@@ -193,7 +193,7 @@ body {
 .log-line.level-INFO { color: #2563eb; }
 .log-empty { color: var(--muted); text-align: center; padding: 32px; font-family: var(--font); }
 
-/* ── Modal ──────────────────────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Modal ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .modal-overlay { display:none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; align-items: center; justify-content: center; }
 .modal-overlay.open { display: flex; }
 .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px; width: 100%; max-width: 420px; }
@@ -210,7 +210,7 @@ body {
 .toast.show { opacity: 1; transform: translateY(0); }
 .toast.err { border-color: var(--red); color: #b91c1c; }
 
-/* ── Phones / in-app view: sidebar becomes a swipeable tab strip ───────────── */
+/* ΓöÇΓöÇ Phones / in-app view: sidebar becomes a swipeable tab strip ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 @media (max-width: 768px) {
   .topbar { padding: 0 12px; height: 54px; }
   .topbar-logo h1 { font-size: 1rem; }
@@ -236,22 +236,12 @@ body {
   .cards { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .card { padding: 14px; }
   .card-value { font-size: 1.6rem; }
-
-  /* Tables fit the phone width — no forced horizontal scroll. */
-  .table-wrap { overflow-x: visible; }
-  .tbl { min-width: 0; width: 100%; font-size: .78rem; table-layout: fixed; }
-  .tbl th, .tbl td { padding: 9px 8px; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
-  .transcript-cell { max-width: none; white-space: normal; }
-
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tbl { min-width: 640px; }
   .chart-grid, .room-grid { grid-template-columns: 1fr; }
   .modal { margin: 16px; padding: 22px; }
   .toast { left: 16px; right: 16px; bottom: 16px; text-align: center; }
-  .btn-sm, .mini-select { padding: 7px 8px; font-size: .78rem; }
-
-  /* Top bar: give Refresh and Sign Out clear separation + tap room. */
-  .topbar-right { gap: 10px; }
-  .refresh-btn, .btn-logout { padding: 8px 12px; }
-  .refresh-btn { gap: 5px; }
+  .btn-sm, .mini-select { padding: 7px 10px; font-size: .8rem; }
 }
 </style>
 </head>
@@ -268,7 +258,7 @@ body {
     <h1>CareVoice AI</h1><span>Admin</span>
   </div>
   <div class="topbar-right">
-    <span class="admin-badge">Signed in as <strong id="admin-name">—</strong></span>
+    <span class="admin-badge">Signed in as <strong id="admin-name">ΓÇö</strong></span>
     <span class="last-updated" id="last-updated-label"></span>
     <button class="refresh-btn" id="refresh-btn" onclick="refreshCurrent()">
       <svg id="refresh-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
@@ -333,7 +323,7 @@ body {
         <div class="table-header"><div><h3>Recent Alerts</h3><p>Last 10 requests across all rooms</p></div></div>
         <table class="tbl">
           <thead><tr><th>Time</th><th>Room</th><th>Priority</th><th>Intent</th><th>Transcript</th><th>Status</th></tr></thead>
-          <tbody id="overview-alerts-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr></tbody>
+          <tbody id="overview-alerts-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">LoadingΓÇª</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -346,14 +336,14 @@ body {
         <div class="table-header"><div><h3>Pending Requests</h3><p>Unacknowledged requests and who they were sent to</p></div></div>
         <table class="tbl">
           <thead><tr><th>Time</th><th>Room</th><th>Priority</th><th>Request</th><th>Sent To</th><th>Redirect To</th></tr></thead>
-          <tbody id="dispatch-alerts-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr></tbody>
+          <tbody id="dispatch-alerts-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">LoadingΓÇª</td></tr></tbody>
         </table>
       </div>
       <div class="table-wrap">
         <div class="table-header"><div><h3>Nurse Availability</h3><p>Free nurses receive new requests first. Occupied nurses are skipped.</p></div></div>
         <table class="tbl">
           <thead><tr><th>Nurse</th><th>Ward</th><th>Status</th><th>Reason</th><th>Active</th><th>Action</th></tr></thead>
-          <tbody id="dispatch-nurses-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr></tbody>
+          <tbody id="dispatch-nurses-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">LoadingΓÇª</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -370,7 +360,7 @@ body {
         </div>
         <table class="tbl">
           <thead><tr><th>ID</th><th>Time</th><th>Room</th><th>Priority</th><th>Intent</th><th>Transcript</th><th>Acked By</th><th>Ack Time</th></tr></thead>
-          <tbody id="alerts-body"><tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr></tbody>
+          <tbody id="alerts-body"><tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">LoadingΓÇª</td></tr></tbody>
         </table>
         <div class="pagination" id="alerts-pagination"></div>
       </div>
@@ -379,7 +369,7 @@ body {
     <!-- Analytics -->
     <div class="page" id="page-analytics">
       <div class="page-header"><div><h2>Analytics</h2><p>Trends, distribution, occupancy, and workload</p></div></div>
-      <div class="chart-grid" id="analytics-grid"><p style="color:var(--muted)">Loading…</p></div>
+      <div class="chart-grid" id="analytics-grid"><p style="color:var(--muted)">LoadingΓÇª</p></div>
     </div>
 
     <!-- Approvals -->
@@ -396,7 +386,7 @@ body {
         </div>
         <table class="tbl">
           <thead><tr><th>Name</th><th>Username</th><th>Ward</th><th>Status</th><th>Requested</th><th>Actions</th></tr></thead>
-          <tbody id="approvals-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr></tbody>
+          <tbody id="approvals-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">LoadingΓÇª</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -410,7 +400,7 @@ body {
       <div class="table-wrap">
         <table class="tbl">
           <thead><tr><th>Room</th><th>Ward</th><th>Status</th><th>Patient</th><th>Attending Nurse</th><th>Set Status</th></tr></thead>
-          <tbody id="rooms-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr></tbody>
+          <tbody id="rooms-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">LoadingΓÇª</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -422,7 +412,7 @@ body {
         <div class="filter-bar"><label><input type="checkbox" id="filter-show-discharged" checked onchange="loadPatients()"/> Show discharged</label></div>
         <table class="tbl">
           <thead><tr><th>Name</th><th>Room</th><th>Age</th><th>Diagnosis</th><th>Attending Nurse</th><th>Requests</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="patients-body"><tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr></tbody>
+          <tbody id="patients-body"><tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">LoadingΓÇª</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -433,7 +423,7 @@ body {
       <div class="table-wrap">
         <table class="tbl">
           <thead><tr><th>Name</th><th>Username</th><th>Ward</th><th>Approval</th><th>Status</th><th>Alerts Ack'd</th><th>Registered</th></tr></thead>
-          <tbody id="nurses-body"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr></tbody>
+          <tbody id="nurses-body"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">LoadingΓÇª</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -449,7 +439,7 @@ body {
             <button class="btn-auto-refresh" id="log-auto-btn" onclick="toggleLogAuto()">Auto-refresh: OFF</button>
           </div>
         </div>
-        <div class="log-lines" id="log-lines"><p class="log-empty">Loading…</p></div>
+        <div class="log-lines" id="log-lines"><p class="log-empty">LoadingΓÇª</p></div>
       </div>
     </div>
 
@@ -548,10 +538,10 @@ function priorityBadge(p) {
   const dot = p === 'Critical' ? '<span class="unacked-dot" style="width:6px;height:6px;display:inline-block;margin-right:4px;"></span>' : '';
   return `<span class="badge badge-${cls}">${dot}${p}</span>`;
 }
-function ackBadge(a, by) { return a ? `<span class="badge badge-acked">✓ ${escHtml(by||'ACK')}</span>` : `<span class="badge badge-pending">Pending</span>`; }
+function ackBadge(a, by) { return a ? `<span class="badge badge-acked">Γ£ô ${escHtml(by||'ACK')}</span>` : `<span class="badge badge-pending">Pending</span>`; }
 function statusBadge(s) { return `<span class="badge badge-${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>`; }
-function relTime(iso) { if (!iso) return '—'; const d = Math.round((Date.now()-new Date(iso))/1000); if(d<60)return `${d}s ago`; if(d<3600)return `${Math.floor(d/60)}m ago`; if(d<86400)return `${Math.floor(d/3600)}h ago`; return new Date(iso).toLocaleDateString(); }
-function fmtDate(iso) { return iso ? new Date(iso).toLocaleString() : '—'; }
+function relTime(iso) { if (!iso) return 'ΓÇö'; const d = Math.round((Date.now()-new Date(iso))/1000); if(d<60)return `${d}s ago`; if(d<3600)return `${Math.floor(d/60)}m ago`; if(d<86400)return `${Math.floor(d/3600)}h ago`; return new Date(iso).toLocaleDateString(); }
+function fmtDate(iso) { return iso ? new Date(iso).toLocaleString() : 'ΓÇö'; }
 function escHtml(s) { if (s==null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function toast(msg, err=false) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show' + (err?' err':''); setTimeout(()=>t.classList.remove('show'), 2800); }
 
@@ -611,19 +601,19 @@ async function loadAlerts(offset) {
           <td>${priorityBadge(a.priority)}</td>
           <td style="font-size:.82rem">${escHtml(a.intent)}</td>
           <td class="transcript-cell" title="${escHtml(a.transcript)}">${escHtml(a.transcript)}</td>
-          <td>${a.ack_by ? escHtml(a.ack_by) : '<span style="color:var(--muted)">—</span>'}</td>
-          <td style="font-size:.76rem;color:var(--muted);white-space:nowrap">${a.ack_at ? relTime(a.ack_at) : '—'}</td></tr>`).join('');
+          <td>${a.ack_by ? escHtml(a.ack_by) : '<span style="color:var(--muted)">ΓÇö</span>'}</td>
+          <td style="font-size:.76rem;color:var(--muted);white-space:nowrap">${a.ack_at ? relTime(a.ack_at) : 'ΓÇö'}</td></tr>`).join('');
     const totalPages = Math.ceil(data.total / ALERTS_LIMIT);
     const cur = Math.floor(offset / ALERTS_LIMIT) + 1;
     document.getElementById('alerts-pagination').innerHTML = `
-      <button onclick="loadAlerts(${offset-ALERTS_LIMIT})" ${offset===0?'disabled':''}>← Prev</button>
+      <button onclick="loadAlerts(${offset-ALERTS_LIMIT})" ${offset===0?'disabled':''}>ΓåÉ Prev</button>
       <span>Page ${cur} of ${totalPages||1} (${data.total} total)</span>
-      <button onclick="loadAlerts(${offset+ALERTS_LIMIT})" ${offset+ALERTS_LIMIT>=data.total?'disabled':''}>Next →</button>`;
+      <button onclick="loadAlerts(${offset+ALERTS_LIMIT})" ${offset+ALERTS_LIMIT>=data.total?'disabled':''}>Next ΓåÆ</button>`;
     stampUpdate();
   } catch(e) { console.error(e); }
 }
 
-/* Analytics — donut + bars + hourly */
+/* Analytics ΓÇö donut + bars + hourly */
 function donut(items, colorMap, total) {
   if (!total) return '<p style="color:var(--muted);font-size:.82rem">No data yet</p>';
   let acc = 0; const segs = [];
@@ -645,8 +635,8 @@ async function loadAnalytics() {
     const roomTotal = roomSummary.reduce((s,r)=>s+r.count,0);
     const maxHour = Math.max(...stats.by_hour.map(h=>h.count), 1);
     const maxDay = Math.max(...stats.by_day.map(d=>d.count), 1);
-    const hourly = stats.by_hour.map(h => `<div class="hour-col" title="${h.hour}:00 — ${h.count} alerts"><div class="hour-bar" style="height:${Math.round(h.count/maxHour*100)}%"></div><span class="hour-lbl">${h.hour%3===0?h.hour:''}</span></div>`).join('');
-    const dayBars = stats.by_day.length ? stats.by_day.map(d=>`<div class="bar-row"><span class="bar-label">${d.date?d.date.slice(5):'—'}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(d.count/maxDay*100)}%;background:var(--accent)"></div></div><span class="bar-count">${d.count}</span></div>`).join('') : '<p style="color:var(--muted);font-size:.82rem">No data yet</p>';
+    const hourly = stats.by_hour.map(h => `<div class="hour-col" title="${h.hour}:00 ΓÇö ${h.count} alerts"><div class="hour-bar" style="height:${Math.round(h.count/maxHour*100)}%"></div><span class="hour-lbl">${h.hour%3===0?h.hour:''}</span></div>`).join('');
+    const dayBars = stats.by_day.length ? stats.by_day.map(d=>`<div class="bar-row"><span class="bar-label">${d.date?d.date.slice(5):'ΓÇö'}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(d.count/maxDay*100)}%;background:var(--accent)"></div></div><span class="bar-count">${d.count}</span></div>`).join('') : '<p style="color:var(--muted);font-size:.82rem">No data yet</p>';
 
     document.getElementById('analytics-grid').innerHTML = `
       <div class="chart-card"><h4>Alerts by Priority</h4>${donut(stats.by_priority, l=>priColors[l]||'#4f8ef7', priTotal)}</div>
@@ -676,7 +666,7 @@ async function loadApprovals() {
       : list.map(n => `<tr>
           <td style="font-weight:600">${escHtml(n.full_name)}</td>
           <td style="color:var(--muted);font-family:monospace;font-size:.82rem">${escHtml(n.username)}</td>
-          <td>${n.ward?`<span class="badge badge-info">${escHtml(n.ward)}</span>`:'—'}</td>
+          <td>${n.ward?`<span class="badge badge-info">${escHtml(n.ward)}</span>`:'ΓÇö'}</td>
           <td><span class="badge badge-${n.approval_status}">${n.approval_status}</span></td>
           <td style="font-size:.78rem;color:var(--muted)">${relTime(n.created_at)}</td>
           <td>
@@ -698,13 +688,13 @@ async function loadRooms() {
     const rooms = await api('/admin/rooms-manage');
     const tb = document.getElementById('rooms-body');
     const opts = ['occupied','unoccupied','cleaning','maintenance'];
-    tb.innerHTML = !rooms.length ? `<tr><td colspan="6"><div class="empty">No rooms yet — add one</div></td></tr>`
+    tb.innerHTML = !rooms.length ? `<tr><td colspan="6"><div class="empty">No rooms yet ΓÇö add one</div></td></tr>`
       : rooms.map(r => `<tr>
           <td><span style="font-weight:700;color:var(--accent)">${escHtml(r.room_number)}</span></td>
-          <td style="color:var(--muted)">${escHtml(r.ward||'—')}</td>
+          <td style="color:var(--muted)">${escHtml(r.ward||'ΓÇö')}</td>
           <td>${statusBadge(r.status)}</td>
           <td>${r.patient_name?escHtml(r.patient_name):'<span style="color:var(--muted)">Empty</span>'}</td>
-          <td style="color:var(--muted);font-size:.82rem">${escHtml(r.attending_name||r.attending_username||'—')}</td>
+          <td style="color:var(--muted);font-size:.82rem">${escHtml(r.attending_name||r.attending_username||'ΓÇö')}</td>
           <td><select class="mini-select" onchange="setRoomStatus('${escHtml(r.room_number)}', this.value)">
             ${opts.map(o=>`<option value="${o}" ${o===r.status?'selected':''}>${o.charAt(0).toUpperCase()+o.slice(1)}</option>`).join('')}
           </select></td></tr>`).join('');
@@ -713,7 +703,7 @@ async function loadRooms() {
 }
 async function setRoomStatus(room, status) {
   try { await api(`/admin/rooms-manage/${encodeURIComponent(room)}`, { method:'PATCH', body: JSON.stringify({status}) });
-    toast(`Room ${room} → ${status}`); loadRooms();
+    toast(`Room ${room} ΓåÆ ${status}`); loadRooms();
   } catch(e) { toast(e.message, true); loadRooms(); }
 }
 function openRoomModal() { document.getElementById('room-modal').classList.add('open'); }
@@ -733,7 +723,7 @@ async function submitRoom() {
   } catch(e) { toast(e.message, true); }
 }
 
-/* Patients — assign + discharge */
+/* Patients ΓÇö assign + discharge */
 async function loadPatients() {
   const showDischarged = document.getElementById('filter-show-discharged').checked;
   try {
@@ -743,9 +733,9 @@ async function loadPatients() {
     tb.innerHTML = !patients.length ? `<tr><td colspan="8"><div class="empty">No patients found</div></td></tr>`
       : patients.map(p => `<tr style="${p.is_discharged?'opacity:.55':''}">
           <td><span style="font-weight:600">${escHtml(p.full_name)}</span><div style="font-size:.75rem;color:var(--muted);font-family:monospace">${escHtml(p.username)}</div></td>
-          <td>${p.is_discharged?'—':`<span class="badge badge-info">${escHtml(p.room_number)}</span>`}</td>
-          <td style="color:var(--muted)">${p.age ?? '—'}</td>
-          <td style="font-size:.82rem;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.diagnosis||'—')}</td>
+          <td>${p.is_discharged?'ΓÇö':`<span class="badge badge-info">${escHtml(p.room_number)}</span>`}</td>
+          <td style="color:var(--muted)">${p.age ?? 'ΓÇö'}</td>
+          <td style="font-size:.82rem;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.diagnosis||'ΓÇö')}</td>
           <td><select class="mini-select" onchange="assignPatient(${p.id}, this.value)">
             <option value="">Unassigned</option>
             ${assignableNurses.map(n=>`<option value="${escHtml(n.username)}" ${n.username===p.attending?'selected':''}>${escHtml(n.full_name)}</option>`).join('')}
@@ -779,7 +769,7 @@ async function loadNurses() {
       : nurses.map(n => `<tr>
           <td><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0">${escHtml(n.full_name.charAt(0).toUpperCase())}</div><span style="font-weight:600">${escHtml(n.full_name)}</span></div></td>
           <td style="color:var(--muted);font-family:monospace;font-size:.82rem">${escHtml(n.username)}</td>
-          <td>${n.ward?`<span class="badge badge-info">${escHtml(n.ward)}</span>`:'—'}</td>
+          <td>${n.ward?`<span class="badge badge-info">${escHtml(n.ward)}</span>`:'ΓÇö'}</td>
           <td>${apprMap[n.username]?`<span class="badge badge-${apprMap[n.username]}">${apprMap[n.username]}</span>`:'<span class="badge badge-approved">approved</span>'}</td>
           <td>${n.is_active?'<span class="badge badge-active">Active</span>':'<span class="badge badge-inactive">Inactive</span>'}</td>
           <td><span style="font-weight:700">${n.alerts_acked}</span></td>
@@ -835,16 +825,16 @@ async function loadDispatch(silent) {
       : alerts.map(a => {
           const sent = a.fell_back ? '<span class="badge badge-pending">Broadcast to all</span>'
             : a.routed_to ? `<span class="badge badge-info">${escHtml(nameOf(a.routed_to))}</span>` : '<span style="color:var(--muted)">Not routed</span>';
-          const re = a.reroute_count ? ` <span style="color:var(--muted);font-size:.74rem">· rerouted ${a.reroute_count}×</span>` : '';
+          const re = a.reroute_count ? ` <span style="color:var(--muted);font-size:.74rem">┬╖ rerouted ${a.reroute_count}├ù</span>` : '';
           const opts = sorted.filter(n => n.username !== a.routed_to)
             .map(n => `<option value="${escHtml(n.username)}">${escHtml(n.full_name)} (${stateOf(n)})</option>`).join('');
           return `<tr>
             <td style="white-space:nowrap;color:var(--muted);font-size:.78rem">${relTime(a.created_at)}</td>
             <td><span class="badge badge-info">${escHtml(a.room_id)}</span></td>
             <td>${priorityBadge(a.priority)}</td>
-            <td style="font-size:.82rem">${escHtml(a.patient_name || 'Patient')} · ${escHtml(a.summary || a.intent)}</td>
+            <td style="font-size:.82rem">${escHtml(a.patient_name || 'Patient')} ┬╖ ${escHtml(a.summary || a.intent)}</td>
             <td>${sent}${re}</td>
-            <td><select class="mini-select" onchange="redirectAlert(${a.id}, this)"><option value="">Choose nurse…</option>${opts}</select></td></tr>`;
+            <td><select class="mini-select" onchange="redirectAlert(${a.id}, this)"><option value="">Choose nurseΓÇª</option>${opts}</select></td></tr>`;
         }).join('');
 
     const nb = document.getElementById('dispatch-nurses-body');
@@ -856,9 +846,9 @@ async function loadDispatch(silent) {
             : `<button class="btn-sm reject" onclick="setNurseBusy('${escHtml(n.username)}', true)">Mark occupied</button>`;
           return `<tr>
             <td><strong>${escHtml(n.full_name)}</strong><div style="color:var(--muted);font-size:.74rem">@${escHtml(n.username)}</div></td>
-            <td>${escHtml(n.ward || '—')}</td>
+            <td>${escHtml(n.ward || 'ΓÇö')}</td>
             <td><span class="badge badge-${cls}">${stateOf(n)}</span></td>
-            <td style="color:var(--muted);font-size:.8rem">${escHtml(n.busy_reason || '—')}</td>
+            <td style="color:var(--muted);font-size:.8rem">${escHtml(n.busy_reason || 'ΓÇö')}</td>
             <td>${n.active_alerts}</td>
             <td>${btn}</td></tr>`;
         }).join('');
