@@ -38,15 +38,15 @@ body {
 /* ── Top nav ────────────────────────────────────────────────────────────── */
 .topbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 24px; height: 58px;
+  padding: 0 24px; height: 58px; gap: 12px;
   background: var(--surface); border-bottom: 1px solid var(--border);
   position: sticky; top: 0; z-index: 100; flex-shrink: 0;
 }
-.topbar-logo { display: flex; align-items: center; gap: 10px; }
-.topbar-logo svg { color: var(--accent); }
-.topbar-logo h1 { font-size: 1.1rem; font-weight: 800; }
-.topbar-logo span { font-size: .7rem; font-weight: 600; color: var(--accent); background: rgba(79,70,229,.12); padding: 2px 8px; border-radius: 20px; border: 1px solid rgba(79,70,229,.25); }
-.topbar-right { display: flex; align-items: center; gap: 16px; }
+.topbar-logo { display: flex; align-items: center; gap: 10px; min-width: 0; flex-shrink: 1; }
+.topbar-logo svg { color: var(--accent); flex-shrink: 0; }
+.topbar-logo h1 { font-size: 1.1rem; font-weight: 800; white-space: nowrap; }
+.topbar-logo span { font-size: .7rem; font-weight: 600; color: var(--accent); background: rgba(79,70,229,.12); padding: 2px 8px; border-radius: 20px; border: 1px solid rgba(79,70,229,.25); white-space: nowrap; flex-shrink: 0; }
+.topbar-right { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
 .admin-badge { font-size: .78rem; color: var(--muted); }
 .admin-badge strong { color: var(--text); }
 .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: .82rem; transition: all .15s; }
@@ -236,12 +236,22 @@ body {
   .cards { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .card { padding: 14px; }
   .card-value { font-size: 1.6rem; }
-  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .tbl { min-width: 640px; }
+
+  /* Tables fit the phone width — no forced horizontal scroll. */
+  .table-wrap { overflow-x: visible; }
+  .tbl { min-width: 0; width: 100%; font-size: .78rem; table-layout: fixed; }
+  .tbl th, .tbl td { padding: 9px 8px; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
+  .transcript-cell { max-width: none; white-space: normal; }
+
   .chart-grid, .room-grid { grid-template-columns: 1fr; }
   .modal { margin: 16px; padding: 22px; }
   .toast { left: 16px; right: 16px; bottom: 16px; text-align: center; }
-  .btn-sm, .mini-select { padding: 7px 10px; font-size: .8rem; }
+  .btn-sm, .mini-select { padding: 7px 8px; font-size: .78rem; }
+
+  /* Top bar: give Refresh and Sign Out clear separation + tap room. */
+  .topbar-right { gap: 10px; }
+  .refresh-btn, .btn-logout { padding: 8px 12px; }
+  .refresh-btn { gap: 5px; }
 }
 </style>
 </head>

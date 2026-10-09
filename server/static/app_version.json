@@ -1,7 +1,7 @@
 {
-  "versionCode": 8,
-  "versionName": "1.7",
+  "versionCode": 9,
+  "versionName": "1.8",
   "apkUrl": "/static/carevoice-latest.apk",
-  "changelog": "Admin console now includes the full dashboard — Overview, Dispatch, Alerts, Analytics, Approvals, Rooms, Patients, Nurses and Server Logs — with a light theme and a menu button to reach every section.",
+  "changelog": "Admin console layout fixes: tables now fit the screen (no sideways scrolling), the title fits on one line, and the Refresh and Sign Out buttons have more spacing.",
   "mandatory": false
 }
