@@ -82,28 +82,4 @@
     <color name="cv_offline">#64748B</color>
     <color name="cv_offline_bg">#F1F5F9</color>
 
-    <!-- ── Admin console: web-dashboard dark theme (matches static/admin.html) ── -->
-    <color name="adm_bg">#0F1117</color>            <!-- page background -->
-    <color name="adm_surface">#1A1D27</color>       <!-- cards / header -->
-    <color name="adm_surface2">#22263A</color>      <!-- raised / stat tiles -->
-    <color name="adm_border">#2E3350</color>
-    <color name="adm_accent">#4F8EF7</color>        <!-- blue accent -->
-    <color name="adm_accent_soft">#1F2A44</color>   <!-- accent tint bg -->
-    <color name="adm_text">#E2E8F0</color>
-    <color name="adm_muted">#8892A4</color>
-    <!-- Priority badges (web palette) -->
-    <color name="adm_critical">#F87171</color>
-    <color name="adm_critical_bg">#2A1416</color>
-    <color name="adm_urgent">#FBBF24</color>
-    <color name="adm_urgent_bg">#2A2110</color>
-    <color name="adm_routine">#4ADE80</color>
-    <color name="adm_routine_bg">#132019</color>
-    <!-- Nurse status (web palette) -->
-    <color name="adm_free">#4ADE80</color>
-    <color name="adm_free_bg">#132019</color>
-    <color name="adm_busy">#F87171</color>
-    <color name="adm_busy_bg">#2A1416</color>
-    <color name="adm_offline">#8892A4</color>
-    <color name="adm_offline_bg">#22263A</color>
-
 </resources>

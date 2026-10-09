@@ -73,6 +73,10 @@ captures/
 Thumbs.db
 desktop.ini
 
+# ── Agent / worktree scratch dirs ───────────────────────────
+.agents/
+.worktrees/
+
 # ── Scratch / debug files ───────────────────────────────────
 push_lfs.txt
 server/_ct.py
