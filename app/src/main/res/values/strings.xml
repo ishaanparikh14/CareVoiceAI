@@ -74,6 +74,9 @@
     <string name="admin_offline_retry">Can\'t reach the server. Retrying…</string>
     <string name="admin_session_expired">Session expired. Please log in again.</string>
     <string name="admin_not_admin">This account is not an admin.</string>
+    <string name="admin_exit">Exit</string>
+    <string name="admin_exit_confirm">Leave the admin console?</string>
+    <string name="admin_offline_detail">Can\'t reach %1$s.\n\n%2$s</string>
     <string name="login_hint_username">Username</string>
     <string name="login_hint_password">Password</string>
     <string name="login_btn">Sign In</string>
