@@ -19,7 +19,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.carevoice.app.databinding.ActivityAdminBinding
 import com.carevoice.app.databinding.ItemAdminAlertBinding
 import com.carevoice.app.databinding.ItemAdminNurseBinding
-import com.google.android.material.chip.Chip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -36,11 +35,13 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 
 /**
- * Native admin dispatch console — same visual language as the nurse/patient
- * screens (slate header, Material cards, pills). Shows which nurses are
- * free / occupied / on break / offline with their competencies, the live
- * pending requests (with acuity + required competency), and lets the admin
- * redirect a request or change a nurse's status. Polls /admin/dispatch-board.
+ * Native admin dispatch console. Shows which nurses are free / occupied /
+ * offline, the live pending requests, and lets the admin redirect a request to
+ * a chosen nurse or mark a nurse occupied/free. Polls /admin/dispatch-board.
+ *
+ * Simple handling only: alerts are delivered to the patient's assigned nurses
+ * (broadcast fallback); the admin can reassign afterwards. No acuity (ESI),
+ * competency matching, live-status gating, or escalation.
  */
 class AdminActivity : AppCompatActivity() {
 
@@ -66,15 +67,13 @@ class AdminActivity : AppCompatActivity() {
     data class Nurse(
         val username: String, val fullName: String, val ward: String,
         val online: Boolean, val busy: Boolean, val manualBusy: Boolean,
-        val reason: String, val activeAlerts: Int, val status: String,
-        val competencies: List<String>, val isSupervisor: Boolean,
+        val reason: String, val activeAlerts: Int,
     )
 
     data class PendingAlert(
         val id: Int, val room: String, val patient: String, val priority: String,
         val intent: String, val summary: String, val createdAt: String,
-        val routedTo: String?, val fellBack: Boolean, val rerouteCount: Int,
-        val acuity: Int?, val requiredCompetency: String?, val timeCritical: Boolean,
+        val routedTo: String?, val fellBack: Boolean,
     )
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -205,9 +204,8 @@ class AdminActivity : AppCompatActivity() {
     }
 
     private fun statusRank(n: Nurse) = when {
-        !n.online -> 3
-        n.busy    -> 2
-        n.status == "on_break" -> 1
+        !n.online -> 2
+        n.busy    -> 1
         else      -> 0
     }
 
@@ -215,7 +213,6 @@ class AdminActivity : AppCompatActivity() {
         if (arr == null) return emptyList()
         return (0 until arr.length()).map { i ->
             val o = arr.getJSONObject(i)
-            val comps = o.optJSONArray("competencies")
             Nurse(
                 username = o.optString("username"),
                 fullName = o.optString("full_name").ifBlank { o.optString("username") },
@@ -225,10 +222,6 @@ class AdminActivity : AppCompatActivity() {
                 manualBusy = o.optBoolean("manual_busy"),
                 reason = o.optString("busy_reason"),
                 activeAlerts = o.optInt("active_alerts"),
-                status = o.optString("status").ifBlank { "available" },
-                competencies = if (comps == null) emptyList()
-                    else (0 until comps.length()).map { comps.getString(it) },
-                isSupervisor = o.optBoolean("is_supervisor"),
             )
         }
     }
@@ -247,10 +240,6 @@ class AdminActivity : AppCompatActivity() {
                 createdAt = o.optString("created_at"),
                 routedTo = o.optString("routed_to").takeUnless { it.isBlank() || it == "null" },
                 fellBack = o.optBoolean("fell_back"),
-                rerouteCount = o.optInt("reroute_count"),
-                acuity = if (o.isNull("acuity")) null else o.optInt("acuity"),
-                requiredCompetency = o.optString("required_competency").takeUnless { it.isBlank() || it == "null" },
-                timeCritical = o.optBoolean("time_critical"),
             )
         }
     }
@@ -260,12 +249,7 @@ class AdminActivity : AppCompatActivity() {
     private fun showRedirectDialog(alert: PendingAlert) {
         val choices = nurses.filter { it.username != alert.routedTo }
         if (choices.isEmpty()) { toast(getString(R.string.admin_no_nurses)); return }
-        val labels = choices.map { n ->
-            val state = pillLabel(n)
-            val skill = if (alert.requiredCompetency != null &&
-                n.competencies.contains(alert.requiredCompetency)) " ✓" else ""
-            "${n.fullName}  ·  $state$skill"
-        }.toTypedArray()
+        val labels = choices.map { n -> "${n.fullName}  ·  ${pillLabel(n)}" }.toTypedArray()
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.admin_redirect_title, alert.room))
             .setItems(labels) { _, which -> redirect(alert, choices[which]) }
@@ -283,32 +267,15 @@ class AdminActivity : AppCompatActivity() {
         }
     }
 
-    // ── Nurse actions: status + mark busy ──────────────────────────────────────
+    // ── Nurse actions: mark occupied / free ─────────────────────────────────────
 
     private fun showNurseActions(n: Nurse) {
-        val statuses = listOf(
-            "available" to "Available",
-            "in_patient_room" to "In patient room",
-            "on_break" to "On break",
-            "off_duty" to "Off duty",
-        )
-        val items = statuses.map { it.second }.toMutableList()
-        items.add(if (n.manualBusy) "Clear 'occupied' flag" else "Mark occupied")
+        val items = arrayOf(if (n.manualBusy) "Clear 'occupied' flag" else "Mark occupied")
         AlertDialog.Builder(this)
             .setTitle(n.fullName)
-            .setItems(items.toTypedArray()) { _, which ->
-                if (which < statuses.size) setStatus(n, statuses[which].first)
-                else setBusy(n, !n.manualBusy)
-            }
+            .setItems(items) { _, _ -> setBusy(n, !n.manualBusy) }
             .setNegativeButton(R.string.settings_cancel, null)
             .show()
-    }
-
-    private fun setStatus(n: Nurse, status: String) {
-        postJson("/admin/nurses/${n.username}/status", JSONObject().put("status", status)) { ok, _ ->
-            toast(if (ok) "${n.fullName}: ${status.replace('_', ' ')}" else "Could not update status")
-            fetchBoard(false)
-        }
     }
 
     private fun setBusy(n: Nurse, busy: Boolean) {
@@ -346,34 +313,14 @@ class AdminActivity : AppCompatActivity() {
     private fun pillLabel(n: Nurse): String = when {
         !n.online -> getString(R.string.admin_pill_offline)
         n.busy    -> getString(R.string.admin_pill_busy)
-        n.status == "on_break" -> getString(R.string.admin_pill_break)
-        n.status == "in_patient_room" -> getString(R.string.admin_pill_in_room)
         else -> getString(R.string.admin_pill_free)
     }
 
     /** (foreground, background) colors for a nurse's status pill. */
     private fun pillColors(n: Nurse): Pair<Int, Int> = when {
-        !n.online -> color(R.color.cv_offline) to color(R.color.cv_offline_bg)
-        n.busy    -> color(R.color.cv_busy) to color(R.color.cv_busy_bg)
-        n.status == "on_break" -> color(R.color.cv_break) to color(R.color.cv_break_bg)
-        n.status == "in_patient_room" -> color(R.color.colorLoginNurseAccent) to color(R.color.cv_nurse_soft)
-        else -> color(R.color.cv_free) to color(R.color.cv_free_bg)
-    }
-
-    private fun compChip(text: String, highlight: Boolean): Chip = Chip(this).apply {
-        this.text = text
-        isClickable = false
-        isCheckable = false
-        chipMinHeight = 56f
-        textSize = 11f
-        setEnsureMinTouchTargetSize(false)
-        if (highlight) {
-            setChipBackgroundColorResource(R.color.cv_busy_bg)
-            setTextColor(color(R.color.cv_busy))
-        } else {
-            setChipBackgroundColorResource(R.color.cv_primary_soft)
-            setTextColor(color(R.color.colorLoginPatientAccent))
-        }
+        !n.online -> color(R.color.adm_offline) to color(R.color.adm_offline_bg)
+        n.busy    -> color(R.color.adm_busy) to color(R.color.adm_busy_bg)
+        else -> color(R.color.adm_free) to color(R.color.adm_free_bg)
     }
 
     private fun ago(iso: String): String = try {
@@ -383,13 +330,6 @@ class AdminActivity : AppCompatActivity() {
             s < 86400 -> "${s / 3600}h ago"; else -> "${s / 86400}d ago"
         }
     } catch (_: Exception) { "" }
-
-    private fun prettyComp(c: String) = when (c) {
-        "icu_certified" -> "ICU"
-        "iv_start" -> "IV"
-        "medication_qualified" -> "Meds"
-        else -> c.replace('_', ' ')
-    }
 
     // ── Adapters ──────────────────────────────────────────────────────────────
 
@@ -402,7 +342,7 @@ class AdminActivity : AppCompatActivity() {
         override fun getItemCount() = items.size
         override fun onBindViewHolder(h: VH, pos: Int) {
             val n = items[pos]
-            h.b.tvNurseName.text = n.fullName + (if (n.isSupervisor) "  ★ Supervisor" else "")
+            h.b.tvNurseName.text = n.fullName
             h.b.tvNurseMeta.text = buildString {
                 append("@${n.username}")
                 if (n.ward.isNotBlank()) append(" · ${n.ward}")
@@ -415,8 +355,7 @@ class AdminActivity : AppCompatActivity() {
             h.b.tvStatusPill.backgroundTintList = ColorStateList.valueOf(bg)
             h.b.dotStatus.backgroundTintList = ColorStateList.valueOf(fg)
             h.b.chipsComp.removeAllViews()
-            n.competencies.forEach { h.b.chipsComp.addView(compChip(prettyComp(it), false)) }
-            h.b.chipsComp.visibility = if (n.competencies.isEmpty()) View.GONE else View.VISIBLE
+            h.b.chipsComp.visibility = View.GONE
             h.b.cardNurse.setOnClickListener { showNurseActions(n) }
         }
     }
@@ -431,9 +370,9 @@ class AdminActivity : AppCompatActivity() {
         override fun onBindViewHolder(h: VH, pos: Int) {
             val a = items[pos]
             val (fg, bg, strip) = when (a.priority) {
-                "Critical" -> Triple(R.color.colorPriorityCritical, R.color.colorPriorityCriticalBg, R.color.colorPriorityCritical)
-                "Urgent"   -> Triple(R.color.colorPriorityUrgent, R.color.colorPriorityUrgentBg, R.color.colorPriorityUrgent)
-                else       -> Triple(R.color.colorPriorityRoutine, R.color.colorPriorityRoutineBg, R.color.colorPriorityRoutine)
+                "Critical" -> Triple(R.color.adm_critical, R.color.adm_critical_bg, R.color.adm_critical)
+                "Urgent"   -> Triple(R.color.adm_urgent, R.color.adm_urgent_bg, R.color.adm_urgent)
+                else       -> Triple(R.color.adm_routine, R.color.adm_routine_bg, R.color.adm_routine)
             }
             h.b.tvPriority.text = a.priority.ifBlank { "Routine" }
             h.b.tvPriority.setTextColor(color(fg))
@@ -444,18 +383,12 @@ class AdminActivity : AppCompatActivity() {
             h.b.tvBody.text = "${a.patient} · ${a.summary.ifBlank { a.intent }}"
 
             h.b.chipsMeta.removeAllViews()
-            a.acuity?.let { h.b.chipsMeta.addView(compChip("ESI $it", it <= 2)) }
-            if (a.timeCritical) h.b.chipsMeta.addView(compChip("Time-critical", true))
-            a.requiredCompetency?.let { h.b.chipsMeta.addView(compChip("Needs ${prettyComp(it)}", false)) }
-            h.b.chipsMeta.visibility = if (h.b.chipsMeta.childCount == 0) View.GONE else View.VISIBLE
+            h.b.chipsMeta.visibility = View.GONE
 
-            h.b.tvRouting.text = buildString {
-                append(when {
-                    a.fellBack -> getString(R.string.admin_routed_broadcast)
-                    a.routedTo != null -> getString(R.string.admin_routed_to, nameFor(a.routedTo))
-                    else -> getString(R.string.admin_routed_none)
-                })
-                if (a.rerouteCount > 0) append(" · rerouted ${a.rerouteCount}×")
+            h.b.tvRouting.text = when {
+                a.fellBack -> getString(R.string.admin_routed_broadcast)
+                a.routedTo != null -> getString(R.string.admin_routed_to, nameFor(a.routedTo))
+                else -> getString(R.string.admin_routed_none)
             }
             val busy = a.id in redirecting
             h.b.btnRedirect.isEnabled = !busy

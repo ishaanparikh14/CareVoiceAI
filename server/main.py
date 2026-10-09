@@ -93,42 +93,6 @@ async def _escalation_loop():
             logger.warning("Escalation loop error (continuing): %s", exc)
 
 
-# ── Auto-reroute background loop ──────────────────────────────────────────────
-
-async def _reroute_loop():
-    """
-    Periodically find alerts that were routed to a specific nurse but remain
-    unacknowledged past REROUTE_UNACKED_AFTER_SECONDS, and reroute each to the
-    next available nurse assigned to that patient (skipping the one who didn't
-    ack). Falls back to broadcast when nobody assigned is free.
-
-    This is the scheduling failover's time dimension: the initial route skips
-    nurses who are busy *now*; this loop handles a nurse who received an alert
-    but never responded.
-    """
-    after = settings.REROUTE_UNACKED_AFTER_SECONDS
-    every = max(5, settings.REROUTE_CHECK_INTERVAL_SECONDS)
-    if after <= 0:
-        logger.info("Auto-reroute disabled (REROUTE_UNACKED_AFTER_SECONDS=0)")
-        return
-
-    logger.info("Auto-reroute active: unacked routed alerts re-sent after %ds (check every %ds)", after, every)
-    from routing import reroute_stale
-    while True:
-        try:
-            await asyncio.sleep(every)
-            async with aiosqlite.connect(settings.DB_PATH) as db:
-                db.row_factory = aiosqlite.Row
-                n = await reroute_stale(db, older_than_seconds=after)
-                if n:
-                    logger.info("Auto-reroute: re-sent %d stale alert(s)", n)
-        except asyncio.CancelledError:
-            logger.info("Reroute loop cancelled — shutting down")
-            break
-        except Exception as exc:
-            logger.warning("Reroute loop error (continuing): %s", exc)
-
-
 # ── Lifespan ──────────────────────────────────────────────────────────────────
 
 @asynccontextmanager
@@ -184,8 +148,6 @@ async def lifespan(app: FastAPI):
 
     # Start the auto-escalation background task (Urgent → Critical after timeout).
     escalation_task = asyncio.create_task(_escalation_loop())
-    # Start the auto-reroute background task (unacked routed alert → next nurse).
-    reroute_task = asyncio.create_task(_reroute_loop())
 
     # Pre-warm the Whisper model so the first real request doesn't timeout
     # waiting for a 150 MB download + GPU load.  Runs in a thread executor so
@@ -205,12 +167,10 @@ async def lifespan(app: FastAPI):
 
     # ── Shutdown ──────────────────────────────────────────────────────────────
     escalation_task.cancel()
-    reroute_task.cancel()
-    for _t in (escalation_task, reroute_task):
-        try:
-            await _t
-        except (asyncio.CancelledError, Exception):
-            pass
+    try:
+        await escalation_task
+    except (asyncio.CancelledError, Exception):
+        pass
     await close_pool()
     logger.info("CareVoice AI server shutting down")
 

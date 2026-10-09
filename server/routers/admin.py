@@ -87,22 +87,15 @@ async def admin_stats(
 async def dispatch_board(
     _admin: AdminUser,
     db: aiosqlite.Connection = Depends(get_db),
-    conn: asyncpg.Connection = Depends(get_conn),
 ):
-    from routing import nurse_availability, required_competency_for, is_time_critical
+    from routing import nurse_availability
 
     nurses = await nurse_availability(db)
-
-    # Room → ESI acuity map (from Postgres) to annotate each request.
-    acuity_rows = await conn.fetch(
-        "SELECT room_number, acuity FROM patients WHERE is_discharged = FALSE"
-    )
-    acuity_by_room = {r["room_number"]: r["acuity"] for r in acuity_rows}
 
     # Pending (unacknowledged) alerts, newest first.
     query = """
         SELECT id, room_id, patient_name, priority, intent, summary,
-               created_at, routed_to, fell_back, reroute_count
+               created_at, routed_to, fell_back
         FROM alerts
         WHERE acknowledged = 0
         ORDER BY created_at DESC
@@ -112,7 +105,6 @@ async def dispatch_board(
         rows = await cur.fetchall()
     alerts = []
     for r in rows:
-        esi = acuity_by_room.get(r["room_id"])
         alerts.append({
             "id":            r["id"],
             "room_id":       r["room_id"],
@@ -123,10 +115,6 @@ async def dispatch_board(
             "created_at":    r["created_at"],
             "routed_to":     r["routed_to"],
             "fell_back":     bool(r["fell_back"]),
-            "reroute_count": r["reroute_count"],
-            "acuity":        esi,
-            "required_competency": required_competency_for(r["intent"], r["priority"], esi),
-            "time_critical": is_time_critical(r["priority"], esi),
         })
 
     return {"nurses": nurses, "pending_alerts": alerts}
@@ -155,65 +143,6 @@ async def admin_set_nurse_busy(
     set_manual_busy(username, body.busy)
     logger.info("Admin %s set nurse %s manual busy=%s", admin["username"], username, body.busy)
     return {"username": username, "busy": body.busy}
-
-
-# ── Admin routing-attribute editors ───────────────────────────────────────────
-
-class StatusBody(BaseModel):
-    status: str = Field(..., description="available | in_patient_room | on_break | off_duty")
-
-class CompetenciesBody(BaseModel):
-    competencies: str = Field("", description="Comma-separated skills, e.g. 'icu_certified,iv_start'")
-
-class SupervisorBody(BaseModel):
-    is_supervisor: bool
-
-class AcuityBody(BaseModel):
-    acuity: int | None = Field(None, ge=1, le=5, description="ESI 1 (most acute) – 5")
-
-
-@router.post("/nurses/{username}/status", summary="Admin: set a nurse's live status")
-async def admin_set_nurse_status(
-    username: str, body: StatusBody, admin: AdminUser,
-    conn: asyncpg.Connection = Depends(get_conn),
-):
-    from pg_database import set_nurse_status
-    if not await set_nurse_status(conn, username, body.status):
-        raise HTTPException(404, f"Nurse '{username}' not found or invalid status")
-    logger.info("Admin %s set %s status=%s", admin["username"], username, body.status)
-    return {"username": username, "status": body.status}
-
-
-@router.post("/nurses/{username}/competencies", summary="Admin: set a nurse's competencies")
-async def admin_set_nurse_competencies(
-    username: str, body: CompetenciesBody, admin: AdminUser,
-    conn: asyncpg.Connection = Depends(get_conn),
-):
-    from pg_database import set_nurse_competencies
-    if not await set_nurse_competencies(conn, username, body.competencies):
-        raise HTTPException(404, f"Nurse '{username}' not found")
-    return {"username": username, "competencies": body.competencies}
-
-
-@router.post("/nurses/{username}/supervisor", summary="Admin: set/clear supervisor flag")
-async def admin_set_nurse_supervisor(
-    username: str, body: SupervisorBody, admin: AdminUser,
-    conn: asyncpg.Connection = Depends(get_conn),
-):
-    from pg_database import set_nurse_supervisor
-    if not await set_nurse_supervisor(conn, username, body.is_supervisor):
-        raise HTTPException(404, f"Nurse '{username}' not found")
-    return {"username": username, "is_supervisor": body.is_supervisor}
-
-
-@router.post("/rooms/{room_number}/acuity", summary="Admin: set a room patient's ESI acuity")
-async def admin_set_room_acuity(
-    room_number: str, body: AcuityBody, admin: AdminUser,
-    conn: asyncpg.Connection = Depends(get_conn),
-):
-    from pg_database import set_patient_acuity
-    await set_patient_acuity(conn, room_number, body.acuity)
-    return {"room_number": room_number, "acuity": body.acuity}
 
 
 # ── GET /admin/nurses ─────────────────────────────────────────────────────────

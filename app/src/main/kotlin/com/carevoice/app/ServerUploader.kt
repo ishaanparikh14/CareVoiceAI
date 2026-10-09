@@ -67,7 +67,7 @@ class ServerUploader(private val context: Context) {
         const val KEY_ROOM_ID    = "room_id"
 
         // Default server URL. Can be overridden in Settings (e.g. a hospital LAN IP).
-        const val DEFAULT_SERVER_URL = "https://ishaan-isp11--carevoice-fastapi-app.modal.run"
+        const val DEFAULT_SERVER_URL = "https://3-110-163-212.sslip.io"
         const val DEFAULT_ROOM_ID    = "4B"
     }
 

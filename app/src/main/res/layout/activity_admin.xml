@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorBackground"
+    android:background="@color/adm_bg"
     android:orientation="vertical">
 
     <!-- Header -->
@@ -82,7 +82,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-medium"
                 android:text="@string/admin_section_requests"
-                android:textColor="@color/colorText"
+                android:textColor="@color/adm_text"
                 android:textSize="16sp" />
 
             <TextView
@@ -91,10 +91,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_pill"
-                android:backgroundTint="@color/cv_free_bg"
+                android:backgroundTint="@color/adm_surface2"
                 android:padding="14dp"
                 android:text="@string/admin_no_requests"
-                android:textColor="@color/cv_free"
+                android:textColor="@color/adm_muted"
                 android:textSize="14sp"
                 android:visibility="gone" />
 
@@ -111,7 +111,7 @@
                 android:layout_marginTop="20dp"
                 android:fontFamily="sans-serif-medium"
                 android:text="@string/admin_section_nurses"
-                android:textColor="@color/colorText"
+                android:textColor="@color/adm_text"
                 android:textSize="16sp" />
 
             <TextView
@@ -120,7 +120,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="@string/admin_no_nurses"
-                android:textColor="@color/colorTextSecondary"
+                android:textColor="@color/adm_muted"
                 android:textSize="14sp"
                 android:visibility="gone" />
 
@@ -145,9 +145,9 @@
         android:id="@+id/tvStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/colorCardBackground"
+        android:background="@color/adm_surface"
         android:gravity="center"
         android:padding="10dp"
-        android:textColor="@color/colorTextSecondary"
+        android:textColor="@color/adm_muted"
         android:textSize="12sp" />
 </LinearLayout>

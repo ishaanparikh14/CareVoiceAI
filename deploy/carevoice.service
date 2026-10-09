@@ -1,0 +1,18 @@
+[Unit]
+Description=CareVoice AI FastAPI server
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/home/ec2-user/carevoice-server
+ExecStart=/home/ec2-user/carevoice-server/.venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port 8000 --log-level info
+Restart=always
+RestartSec=5
+# Give the ML models time to load before systemd considers startup failed.
+TimeoutStartSec=180
+
+[Install]
+WantedBy=multi-user.target

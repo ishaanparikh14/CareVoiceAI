@@ -1,7 +1,7 @@
 {
-  "versionCode": 5,
-  "versionName": "1.4",
+  "versionCode": 6,
+  "versionName": "1.5",
   "apkUrl": "/static/carevoice-latest.apk",
-  "changelog": "New native admin dispatch console (free/occupied/on-break/offline nurses, competencies, redirect). Smarter routing by patient acuity (ESI), nurse competency and live status, with primary to secondary to supervisor escalation.",
+  "changelog": "Simplified alert routing — requests go to the patient's assigned nurses and the admin can reassign. Admin console refreshed to match the web dashboard. Removed German language support.",
   "mandatory": false
 }

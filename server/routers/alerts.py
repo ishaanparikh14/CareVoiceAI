@@ -300,31 +300,3 @@ async def set_busy(
     set_manual_busy(current_user["username"], body.busy)
     logger.info("Nurse %s manual busy=%s", current_user["username"], body.busy)
     return {"username": current_user["username"], "busy": body.busy}
-
-
-# ── POST /alerts/status ───────────────────────────────────────────────────────
-# A nurse sets their live location/status. The scheduler checks this before
-# routing time-critical requests (on-break / off-duty are skipped).
-
-class StatusRequest(BaseModel):
-    status: str = Field(..., description="available | in_patient_room | on_break | off_duty")
-
-
-@router.post("/status", summary="Nurse: set live location/status")
-async def set_status(
-    body:         StatusRequest,
-    current_user: CurrentUser,
-):
-    if current_user["role"] != "nurse":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                            detail="Only a nurse can set status")
-    from pg_database import get_conn, set_nurse_status
-    ok = False
-    async for conn in get_conn():
-        ok = await set_nurse_status(conn, current_user["username"], body.status)
-        break
-    if not ok:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                            detail="Invalid status value")
-    logger.info("Nurse %s status=%s", current_user["username"], body.status)
-    return {"username": current_user["username"], "status": body.status}
