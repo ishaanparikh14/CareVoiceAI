@@ -154,29 +154,15 @@ class SendVoiceNoteActivity : AppCompatActivity() {
 
     private fun setupLanguage() {
         val prefs = getSharedPreferences(ServerUploader.PREFS_NAME, Context.MODE_PRIVATE)
-        val checkedId = when (prefs.getString(PREF_LANG, "en")) {
-            "hi" -> R.id.btnLangHi
-            "de" -> R.id.btnLangDe
-            else -> R.id.btnLangEn
-        }
-        binding.toggleLanguage.check(checkedId)
-        binding.toggleLanguage.addOnButtonCheckedListener { _, id, isChecked ->
-            if (isChecked) {
-                val code = when (id) {
-                    R.id.btnLangHi -> "hi"
-                    R.id.btnLangDe -> "de"
-                    else -> "en"
-                }
-                prefs.edit().putString(PREF_LANG, code).apply()
-            }
+        val saved = prefs.getString(PREF_LANG, "en")
+        binding.toggleLanguage.check(if (saved == "hi") R.id.btnLangHi else R.id.btnLangEn)
+        binding.toggleLanguage.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) prefs.edit().putString(PREF_LANG, if (checkedId == R.id.btnLangHi) "hi" else "en").apply()
         }
     }
 
-    private fun selectedLanguage(): String = when (binding.toggleLanguage.checkedButtonId) {
-        R.id.btnLangHi -> "hi"
-        R.id.btnLangDe -> "de"
-        else -> "en"
-    }
+    private fun selectedLanguage(): String =
+        if (binding.toggleLanguage.checkedButtonId == R.id.btnLangHi) "hi" else "en"
 
     private fun targetRoom(): String? =
         if (isNurse) rooms.getOrNull(binding.spinnerRoom.selectedItemPosition)?.room else patientRoom()

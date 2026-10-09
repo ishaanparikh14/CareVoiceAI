@@ -97,10 +97,9 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         setContentView(binding.root)
 
         // Voice announcements — load saved prefs (default: on, English).
-        // Supported announcement languages: en / hi / de. Any other saved value
-        // (e.g. the retired Kannada 'kn') is migrated to English.
+        // Kannada TTS removed — migrate any previously-saved 'kn' choice to English.
         var savedLang = voicePrefs.getString(KEY_VOICE_LANG, "en") ?: "en"
-        if (savedLang != "en" && savedLang != "hi" && savedLang != "de") {
+        if (savedLang != "en" && savedLang != "hi") {
             savedLang = "en"
             voicePrefs.edit().putString(KEY_VOICE_LANG, "en").apply()
         }
@@ -356,9 +355,9 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         }
         layout.addView(cb)
 
-        // Language spinner (en / hi / de)
-        val labels = arrayOf("English", "हिंदी (Hindi)", "Deutsch (German)")
-        val codes  = arrayOf("en", "hi", "de")
+        // Language spinner (Kannada TTS removed)
+        val labels = arrayOf("English", "हिंदी (Hindi)")
+        val codes  = arrayOf("en", "hi")
         val spinner = android.widget.Spinner(this).apply {
             adapter = android.widget.ArrayAdapter(
                 this@NurseActivity, android.R.layout.simple_spinner_dropdown_item, labels
