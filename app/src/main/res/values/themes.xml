@@ -172,7 +172,7 @@
         <item name="android:orientation">vertical</item>
         <item name="android:gravity">center</item>
         <item name="android:background">@drawable/bg_pill</item>
-        <item name="android:backgroundTint">@color/adm_surface2</item>
+        <item name="android:backgroundTint">@color/cv_white_12</item>
         <item name="android:paddingTop">12dp</item>
         <item name="android:paddingBottom">12dp</item>
     </style>

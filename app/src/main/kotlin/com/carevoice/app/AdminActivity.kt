@@ -318,9 +318,9 @@ class AdminActivity : AppCompatActivity() {
 
     /** (foreground, background) colors for a nurse's status pill. */
     private fun pillColors(n: Nurse): Pair<Int, Int> = when {
-        !n.online -> color(R.color.adm_offline) to color(R.color.adm_offline_bg)
-        n.busy    -> color(R.color.adm_busy) to color(R.color.adm_busy_bg)
-        else -> color(R.color.adm_free) to color(R.color.adm_free_bg)
+        !n.online -> color(R.color.cv_offline) to color(R.color.cv_offline_bg)
+        n.busy    -> color(R.color.cv_busy) to color(R.color.cv_busy_bg)
+        else -> color(R.color.cv_free) to color(R.color.cv_free_bg)
     }
 
     private fun ago(iso: String): String = try {
@@ -370,9 +370,9 @@ class AdminActivity : AppCompatActivity() {
         override fun onBindViewHolder(h: VH, pos: Int) {
             val a = items[pos]
             val (fg, bg, strip) = when (a.priority) {
-                "Critical" -> Triple(R.color.adm_critical, R.color.adm_critical_bg, R.color.adm_critical)
-                "Urgent"   -> Triple(R.color.adm_urgent, R.color.adm_urgent_bg, R.color.adm_urgent)
-                else       -> Triple(R.color.adm_routine, R.color.adm_routine_bg, R.color.adm_routine)
+                "Critical" -> Triple(R.color.colorPriorityCritical, R.color.colorPriorityCriticalBg, R.color.colorPriorityCritical)
+                "Urgent"   -> Triple(R.color.colorPriorityUrgent, R.color.colorPriorityUrgentBg, R.color.colorPriorityUrgent)
+                else       -> Triple(R.color.colorPriorityRoutine, R.color.colorPriorityRoutineBg, R.color.colorPriorityRoutine)
             }
             h.b.tvPriority.text = a.priority.ifBlank { "Routine" }
             h.b.tvPriority.setTextColor(color(fg))

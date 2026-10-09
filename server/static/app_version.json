@@ -1,7 +1,7 @@
 {
-  "versionCode": 6,
-  "versionName": "1.5",
+  "versionCode": 7,
+  "versionName": "1.6",
   "apkUrl": "/static/carevoice-latest.apk",
-  "changelog": "Simplified alert routing — requests go to the patient's assigned nurses and the admin can reassign. Admin console refreshed to match the web dashboard. Removed German language support.",
+  "changelog": "Admin console redesigned with a cleaner dashboard layout that matches the rest of the app's light theme.",
   "mandatory": false
 }
