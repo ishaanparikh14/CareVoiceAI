@@ -249,7 +249,7 @@ async def process_audio(wav_bytes: bytes, room_id: str, lang_hint: str | None = 
       3. Map intent -> priority (Critical/Urgent/Routine) with a critical-marker
          safety override; decide whether to notify the nurse.
 
-    lang_hint: optional ISO code ('en'/'hi'/'kn'/'de'). When provided, Whisper is
+    lang_hint: optional ISO code ('en'/'hi'/'kn'). When provided, Whisper is
     forced to that language — the most reliable path (no auto-detect ambiguity).
     """
     import asyncio
@@ -334,10 +334,8 @@ def _transcribe(wav_bytes: bytes, lang_hint: str | None = None) -> tuple[str, st
     """
     Run faster-whisper transcription synchronously (called via executor).
 
-    Strategy (robust multilingual, en/hi/kn/de):
-      • If lang_hint is given ('en'/'hi'/'kn'/'de'), force that language — most
-        reliable. A forced 'de' returns before the Indic correction block, so
-        German is never rewritten to a Devanagari language.
+    Strategy (robust multilingual, en/hi/kn):
+      • If lang_hint is given ('en'/'hi'/'kn'), force that language — most reliable.
       • Otherwise auto-detect, then correct two known failure modes:
           - Urdu detected  → re-transcribe as Hindi (Devanagari).
           - Kannada speech mis-emitted as Devanagari → re-transcribe as Kannada
@@ -353,12 +351,7 @@ def _transcribe(wav_bytes: bytes, lang_hint: str | None = None) -> tuple[str, st
 
     try:
         # ── Forced language (explicit hint) — no ambiguity, best accuracy ──────
-        # A forced "de" (like en/hi/kn) is passed straight to Whisper and
-        # RETURNS here, before the Indic auto-detect/correction block below, so
-        # German is never rewritten to hi/kn. For this reason "de" must NOT be
-        # added to _DEVANAGARI_LANGS (that block runs only on the auto-detect
-        # branch where lang_hint is None/blank).
-        if lang_hint in ("en", "hi", "kn", "de"):
+        if lang_hint in ("en", "hi", "kn"):
             text, info, _ = _run_whisper(model, tmp_path, lang_hint)
             logger.info("Whisper(forced=%s): text='%s'", lang_hint, text)
             return (text if text else "[silence]", lang_hint)

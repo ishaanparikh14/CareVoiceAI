@@ -40,7 +40,7 @@ VOICE_DIR = settings.STORAGE_DIR / "voice_notes"
 VOICE_DIR.mkdir(parents=True, exist_ok=True)
 
 _MAX_BYTES = 10 * 1024 * 1024          # 10 MB hard cap
-_ALLOWED_LANGS = {"en", "hi", "de"}
+_ALLOWED_LANGS = {"en", "hi"}
 
 
 class VoiceNoteResponse(BaseModel):
@@ -88,7 +88,7 @@ async def upload_voice_note(
     if not room_id:
         raise HTTPException(422, "room_id is required")
     if language not in _ALLOWED_LANGS:
-        raise HTTPException(422, "language must be 'en', 'hi', or 'de'")
+        raise HTTPException(422, "language must be 'en' or 'hi'")
 
     data = await audio.read(_MAX_BYTES + 1)
     if len(data) > _MAX_BYTES:

@@ -37,8 +37,8 @@ Given a raw STT transcript and the classified intent it returns an
 Design constraints
 ------------------
 • Deterministic + fully on-premises (no cloud calls, LAN-only requirement).
-• Multilingual: English, Hindi and German (primary, actively targeted); Kannada
-  keyword lists retained for future use but not actively targeted in this version.
+• Multilingual: English and Hindi (primary); Kannada keyword lists retained
+  for future use but not actively targeted in this version.
 • No external NLP library (spaCy, NLTK, etc.) — the keyword approach gives
   100% accuracy on the tested corpus and zero cold-start latency.
 """
@@ -176,10 +176,6 @@ _EMOTION_LEVELS: tuple[EmotionLevel, ...] = (
             # Hindi
             "बचव", "बचओ", "मर रह", "सस नह", "दम घट", "सहन नह",
             "bachao", "mar raha", "saans nahi", "dam ghut",
-            # German (umlaut-folded; ss-form; whole words/phrases for the Latin
-            # word-boundary matcher)
-            "keine luft", "ersticke", "ich sterbe", "rette mich",
-            "nicht aushalten", "herzinfarkt",
         ),
     ),
 
@@ -196,9 +192,6 @@ _EMOTION_LEVELS: tuple[EmotionLevel, ...] = (
             # Hindi
             "डर लग", "बहत दरद", "घबर", "बरदशत नह", "बहत तकलफ",
             "dar lag", "bahut dard", "ghabra", "takleef",
-            # German (umlaut-folded; ss-form; whole words/phrases)
-            "angst", "schreckliche schmerzen", "sehr starke schmerzen",
-            "unertraglich", "ich weine", "panik",
         ),
     ),
 
@@ -214,9 +207,6 @@ _EMOTION_LEVELS: tuple[EmotionLevel, ...] = (
             # Hindi
             "चत", "बचन", "जलद आओ", "परशन", "ठक नह",
             "chinta", "jaldi aao", "pareshan", "theek nahi",
-            # German (umlaut-folded; ss-form; whole words/phrases)
-            "besorgt", "unruhig", "nervos", "bitte beeilen",
-            "kommen sie schnell", "mir ist schwindelig",
         ),
     ),
 )
@@ -228,8 +218,6 @@ _CALM_SIGNALS: tuple[str, ...] = (
     "when you get time", "im fine", "i am fine", "im okay",
     "i am okay", "no problem", "just wanted",
     "koi jaldi nahi", "jab time mile",
-    # German calm cues (umlaut-folded; ss-form)
-    "kein stress", "keine eile", "mir geht es gut", "alles gut",
 )
 
 
@@ -322,8 +310,6 @@ _SUMMARY_RULES: tuple[SummaryRule, ...] = (
             "not able to breathe", "trouble breathing",
             "hard to breathe", "short of breath", "breathless",
             "सस नह", "दम घट", "saans nahi",
-            # German (whole words/phrases; umlaut-folded; ss-form)
-            "keine luft", "atemnot", "kann nicht atmen", "ersticke",
         ),
         summary = "cannot breathe — respiratory emergency",
     ),
@@ -332,32 +318,23 @@ _SUMMARY_RULES: tuple[SummaryRule, ...] = (
         keywords = (
             "chest pain", "chest hurts", "heart attack",
             "pain in my chest", "सन म दरद", "seene me dard",
-            # German (whole word + inflected forms; umlaut-folded; ss-form)
-            "brustschmerzen", "brustschmerz", "schmerz in der brust",
-            "herzinfarkt",
         ),
         summary = "chest pain — possible cardiac emergency",
     ),
     SummaryRule(
         applicable_intents = None,
-        keywords = ("bleeding", "blood", "खन बह", "khoon",
-                    # German (whole word + inflected forms; ss-form)
-                    "blutung", "blutungen", "blutet", "ich blute"),
+        keywords = ("bleeding", "blood", "खन बह", "khoon"),
         summary  = "is bleeding — needs urgent attention",
     ),
     SummaryRule(
         applicable_intents = None,
         keywords = ("fell down", "i fell", "have fallen", "fallen down",
-                    "gir gaya", "गर गय",
-                    # German (umlaut-folded; ss-form)
-                    "gesturzt", "gefallen", "bin gefallen", "ich bin gesturzt"),
+                    "gir gaya", "गर गय"),
         summary  = "has fallen and needs help",
     ),
     SummaryRule(
         applicable_intents = None,
-        keywords = ("seizure", "convulsion", "fit", "मरगी",
-                    # German
-                    "krampfanfall", "anfall"),
+        keywords = ("seizure", "convulsion", "fit", "मरगी"),
         summary  = "may be having a seizure",
     ),
 
@@ -365,47 +342,37 @@ _SUMMARY_RULES: tuple[SummaryRule, ...] = (
     SummaryRule(
         applicable_intents = frozenset({Intent.MEDICATION, Intent.PAIN}),
         keywords = ("painkiller", "pain killer", "pain medicine",
-                    "dard ki dawa", "दरद क दव",
-                    # German
-                    "schmerzmittel"),
+                    "dard ki dawa", "दरद क दव"),
         summary  = "needs a painkiller",
     ),
     SummaryRule(
         applicable_intents = frozenset({Intent.MEDICATION}),
-        keywords = ("insulin", "इनसलन"),  # German "insulin" is identical
+        keywords = ("insulin", "इनसलन"),
         summary  = "needs insulin",
     ),
     SummaryRule(
         applicable_intents = frozenset({Intent.MEDICATION}),
         keywords = ("injection", "इजकशन", "इनजकशन",
-                    "injection chahiye", "sui", "सई",
-                    # German (whole word + inflected form)
-                    "spritze", "spritzen"),
+                    "injection chahiye", "sui", "सई"),
         summary  = "is asking for an injection",
     ),
     SummaryRule(
         applicable_intents = frozenset({Intent.MEDICATION}),
         keywords = ("antibiotic", "tablet", "tablets", "pill", "pills",
-                    "गल", "मातर",
-                    # German (whole word + inflected form)
-                    "tablette", "tabletten"),
+                    "गल", "मातर"),
         summary  = "needs their medication",
     ),
 
     # ── Food / Water ──────────────────────────────────────────────────────────
     SummaryRule(
         applicable_intents = frozenset({Intent.FOOD_WATER}),
-        keywords = ("water", "thirsty", "drink", "पन", "पानी", "pyaas",
-                    # German (whole word + inflected form)
-                    "wasser", "durst", "durstig"),
+        keywords = ("water", "thirsty", "drink", "पन", "पानी", "pyaas"),
         summary  = "wants water",
     ),
     SummaryRule(
         applicable_intents = frozenset({Intent.FOOD_WATER}),
         keywords = ("hungry", "food", "eat", "meal", "lunch", "dinner",
-                    "breakfast", "juice", "snack", "भख", "khana",
-                    # German (whole word + inflected form)
-                    "hunger", "hungrig", "essen", "mahlzeit"),
+                    "breakfast", "juice", "snack", "भख", "khana"),
         summary  = "is hungry and wants food",
     ),
 
@@ -414,48 +381,36 @@ _SUMMARY_RULES: tuple[SummaryRule, ...] = (
         applicable_intents = frozenset({Intent.MOBILITY}),
         keywords = ("bathroom", "toilet", "washroom", "restroom",
                     "bedpan", "commode", "urinate", "pee",
-                    "बथरम", "टयलट", "शचलय", "toilet jana",
-                    # German
-                    "toilette", "badezimmer", "bettpfanne"),
+                    "बथरम", "टयलट", "शचलय", "toilet jana"),
         summary  = "needs to use the bathroom",
     ),
     SummaryRule(
         applicable_intents = frozenset({Intent.MOBILITY}),
-        keywords = ("wheelchair", "वहलचयर",
-                    # German
-                    "rollstuhl"),
+        keywords = ("wheelchair", "वहलचयर"),
         summary  = "needs a wheelchair",
     ),
     SummaryRule(
         applicable_intents = frozenset({Intent.MOBILITY}),
         keywords = ("stand up", "get up", "sit up", "out of bed",
                     "help me walk", "help me move", "turn over",
-                    "उठन", "uthna",
-                    # German
-                    "aufstehen", "umdrehen", "hinsetzen"),
+                    "उठन", "uthna"),
         summary  = "needs help moving",
     ),
 
     # ── Hygiene ───────────────────────────────────────────────────────────────
     SummaryRule(
         applicable_intents = frozenset({Intent.HYGIENE}),
-        keywords = ("bath", "shower", "wash", "clean me", "नहन", "snaana",
-                    # German
-                    "baden", "waschen", "dusche"),
+        keywords = ("bath", "shower", "wash", "clean me", "नहन", "snaana"),
         summary  = "would like to wash / bathe",
     ),
     SummaryRule(
         applicable_intents = frozenset({Intent.HYGIENE}),
-        keywords = ("sheets", "bedsheet", "bed sheet", "change my bed", "चदर",
-                    # German
-                    "bettlaken", "laken"),
+        keywords = ("sheets", "bedsheet", "bed sheet", "change my bed", "चदर"),
         summary  = "needs bed sheets changed",
     ),
     SummaryRule(
         applicable_intents = frozenset({Intent.HYGIENE}),
-        keywords = ("diaper", "nappy", "soiled", "डयपर",
-                    # German (whole word + inflected form)
-                    "windel", "windeln"),
+        keywords = ("diaper", "nappy", "soiled", "डयपर"),
         summary  = "needs a diaper change",
     ),
 
@@ -463,47 +418,35 @@ _SUMMARY_RULES: tuple[SummaryRule, ...] = (
     SummaryRule(
         applicable_intents = frozenset({Intent.EMOTIONAL_SUPPORT}),
         keywords = ("lonely", "someone to talk", "talk to me",
-                    "stay with me", "feel alone", "company", "अकल",
-                    # German
-                    "einsam", "allein"),
+                    "stay with me", "feel alone", "company", "अकल"),
         summary  = "feels lonely and wants someone to talk to",
     ),
     SummaryRule(
         applicable_intents = frozenset({Intent.EMOTIONAL_SUPPORT}),
         keywords = ("scared", "afraid", "anxious", "depressed",
-                    "sad", "crying", "डर", "udaas",
-                    # German
-                    "angst", "traurig"),
+                    "sad", "crying", "डर", "udaas"),
         summary  = "is distressed and wants emotional support",
     ),
 
     # ── Pain — location-specific ──────────────────────────────────────────────
     SummaryRule(
         applicable_intents = frozenset({Intent.PAIN}),
-        keywords = ("headache", "head hurts", "head is", "सर म दरद",
-                    # German (whole word + inflected form)
-                    "kopfschmerzen", "kopfschmerz"),
+        keywords = ("headache", "head hurts", "head is", "सर म दरद"),
         summary  = "has a headache",
     ),
     SummaryRule(
         applicable_intents = frozenset({Intent.PAIN}),
-        keywords = ("stomach", "tummy", "abdomen", "belly", "पट म दरद", "hotte",
-                    # German (whole word + inflected form)
-                    "bauchschmerzen", "bauchschmerz"),
+        keywords = ("stomach", "tummy", "abdomen", "belly", "पट म दरद", "hotte"),
         summary  = "has stomach pain",
     ),
     SummaryRule(
         applicable_intents = frozenset({Intent.PAIN}),
-        keywords = ("back hurts", "back pain", "my back", "कमर", "बठ म दरद",
-                    # German (umlaut-folded; whole word + inflected form)
-                    "ruckenschmerzen", "ruckenschmerz"),
+        keywords = ("back hurts", "back pain", "my back", "कमर", "बठ म दरद"),
         summary  = "has back pain",
     ),
     SummaryRule(
         applicable_intents = frozenset({Intent.PAIN}),
-        keywords = ("leg", "knee", "foot", "arm", "shoulder", "पर म दरद", "kaal",
-                    # German
-                    "bein", "schulter", "knie"),
+        keywords = ("leg", "knee", "foot", "arm", "shoulder", "पर म दरद", "kaal"),
         summary  = "has limb pain",
     ),
 
@@ -511,16 +454,12 @@ _SUMMARY_RULES: tuple[SummaryRule, ...] = (
     SummaryRule(
         applicable_intents = frozenset({Intent.INFORMATION}),
         keywords = ("what time", "when will", "when is", "how long",
-                    "kab", "कब",
-                    # German
-                    "wann", "wie lange"),
+                    "kab", "कब"),
         summary  = "has a question about timing",
     ),
     SummaryRule(
         applicable_intents = frozenset({Intent.INFORMATION, Intent.OTHER}),
-        keywords = ("doctor", "when will the doctor", "डकटर", "vaidya",
-                    # German
-                    "arzt", "den arzt"),
+        keywords = ("doctor", "when will the doctor", "डकटर", "vaidya"),
         summary  = "is asking about the doctor",
     ),
 )

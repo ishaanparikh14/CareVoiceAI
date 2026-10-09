@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS alerts (
     ack_by         TEXT,
     created_at     TEXT    NOT NULL,
     ack_at         TEXT,
-    language       TEXT,                        -- detected/forced ISO lang: en|hi|kn|de (nullable)
+    language       TEXT,                        -- detected/forced ISO lang: en|hi|kn (nullable)
     escalated      INTEGER NOT NULL DEFAULT 0,  -- 1 once auto-escalated Urgent→Critical
     escalated_at   TEXT,                        -- ISO-8601 UTC when escalation happened
     patient_name   TEXT,                        -- looked up from patients table (nullable)
@@ -68,7 +68,6 @@ CREATE INDEX IF NOT EXISTS idx_alerts_ack     ON alerts (acknowledged, created_a
 # EXISTS", so we attempt each ALTER and ignore the duplicate-column error. This
 # keeps pre-existing databases working without a manual migration.
 _MIGRATIONS = [
-    # language stores a free-text ISO code: en|hi|kn|de (no CHECK constraint)
     "ALTER TABLE alerts ADD COLUMN language TEXT",
     "ALTER TABLE alerts ADD COLUMN escalated INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE alerts ADD COLUMN escalated_at TEXT",
