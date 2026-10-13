@@ -50,6 +50,11 @@ _KEYWORDS: list[tuple[Intent, list[str]]] = [
         "ಸಿರಾಡ", "ಉಸಿರಾಡ", "ಉಸಿರ", "ಎದೆ ನುವು", "ಏದೆ ನುವು", "ಎದೆನುವು",
         # Kannada→Devanagari transliterations Whisper 'small' emits (empirical)
         "उसिरो कटु", "उसिरु कटु", "एदे नोउ", "एदे नोव",
+        # German (umlaut-folded; ss-form only, no esszett)
+        "keine luft", "keine luft bekomm", "ersticke", "atemnot",
+        "brustschmerz", "herzinfarkt", "herzanfall", "bewusstlos",
+        "ohnmacht", "starke blutung", "blutet stark", "krampf anfall",
+        "notfall",
     ]),
 
     # ── MEDICATION ────────────────────────────────────────────────────────────
@@ -72,6 +77,9 @@ _KEYWORDS: list[tuple[Intent, list[str]]] = [
         "मटसन", "मडसन", "औषध",
         # Kannada→Devanagari transliterations Whisper 'small' emits (empirical)
         "आउश्दी", "आश्दी", "आउश", "मात्रे", "आउषधी",
+        # German (umlaut-folded; ss-form only, no esszett)
+        "medikament", "tablette", "spritze", "insulin", "schmerzmittel",
+        "antibiotik", "tropf", "dosis", "medizin",
     ]),
 
     # ── PAIN ──────────────────────────────────────────────────────────────────
@@ -94,6 +102,10 @@ _KEYWORDS: list[tuple[Intent, list[str]]] = [
         # Kannada→Devanagari transliterations Whisper 'small' emits (empirical)
         # (normalised: ो/ौ matras stripped, so नोय्→नय, नोई→नई, नोव→नव)
         "नोय", "नोई", "नोव", "नई",
+        # German (umlaut-folded; ss-form only, no esszett). "weh" is NOT used
+        # (3 Latin chars -> dropped by the min_len=4 Latin guard); use phrases.
+        "schmerz", "schmerzt", "tut weh", "tut mir weh", "kopfschmerz",
+        "ruckenschmerz", "bauchschmerz", "brennt", "krampf",
     ]),
 
     # ── FOOD / WATER ──────────────────────────────────────────────────────────
@@ -111,6 +123,9 @@ _KEYWORDS: list[tuple[Intent, list[str]]] = [
         "neeru", "hasivu", "aahara", "oota",
         # Kannada→Devanagari transliterations Whisper 'small' emits (empirical)
         "नीरु", "हसीव", "हसिव", "वागिद", "कुदियलु", "कुदिय",
+        # German (umlaut-folded; ss-form only, no esszett)
+        "wasser", "durst", "hunger", "essen", "trinken", "mahlzeit",
+        "saft", "durstig", "hungrig",
     ]),
 
     # ── MOBILITY ──────────────────────────────────────────────────────────────
@@ -130,6 +145,9 @@ _KEYWORDS: list[tuple[Intent, list[str]]] = [
         "ಶೌಚಾಲ", "ಶಾವಚಾಲ", "ಶಾವಚ", "ಚಾಲೆಕೆ", "ಗಾಲಿಕ", "ಗಾಲಿಕಾರಿ", "ಗಾಲಿಕುರ್",
         # Kannada→Devanagari transliterations Whisper 'small' emits (empirical)
         "शुव्चा", "शवचा", "शुवचा", "गालिकृ", "गालिकु", "इद्दे लल", "इद्देलल",
+        # German (umlaut-folded; ss-form only, no esszett)
+        "toilette", "badezimmer", "aufstehen", "rollstuhl", "umdrehen",
+        "hinsetzen", "laufen helfen", "bettpfanne",
     ]),
 
     # ── HYGIENE ───────────────────────────────────────────────────────────────
@@ -147,6 +165,9 @@ _KEYWORDS: list[tuple[Intent, list[str]]] = [
         "swachcha", "snaana", "tole",
         # Kannada→Devanagari transliterations Whisper 'small' emits (empirical)
         "स्वट्च", "स्वच", "स्नाद", "स्ना", "हासीगे", "हासिगे",
+        # German (umlaut-folded; ss-form only, no esszett)
+        "waschen", "baden", "dusche", "sauber", "schmutzig", "windel",
+        "bettlaken", "laken wechseln",
     ]),
 
     # ── EMOTIONAL SUPPORT ─────────────────────────────────────────────────────
@@ -166,6 +187,9 @@ _KEYWORDS: list[tuple[Intent, list[str]]] = [
         "ವನ್ಟಿ", "ವಂಟಿ", "ಒಂಟಿತನ", "ವನ್ಟಿತನ", "ಭಯ ಆಗು",
         # Kannada→Devanagari transliterations Whisper 'small' emits (empirical)
         "वंटी", "वंटि", "ंटी तन", "भय आगु", "बे आगु",
+        # German (umlaut-folded; ss-form only, no esszett)
+        "angst", "allein", "einsam", "traurig", "deprimiert", "weine",
+        "nervos", "besorgt", "bleib bei mir",
     ]),
 ]
 

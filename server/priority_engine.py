@@ -68,6 +68,14 @@ CRITICAL_FRAGMENTS = [
     # ── unconscious / collapse / bleeding ──
     "unconscious", "collaps", "faint", "बहश", "बेहश", "behosh", "behosh",
     "मरछ", "ಮೂರ್ಛೆ", "bleeding badly", "खन बह", "khoon", "ರಕ್ತ",
+
+    # ── German (umlaut-folded; ss-form only, no esszett) ──
+    # breathlessness
+    "keine luft", "bekomme keine luft", "atemnot", "ersticke", "kann nicht atmen",
+    # chest / heart
+    "brustschmerz", "schmerz in der brust", "herzinfarkt", "herzanfall",
+    # unconscious / bleeding
+    "bewusstlos", "ohnmacht", "starke blutung", "blutet stark",
 ]
 
 
@@ -101,6 +109,11 @@ URGENT_FRAGMENTS = [
     "ವೈದ್ಯರನ್ನು", "ಡಾಕ್ಟರ್", "vaidyar", "doctor beku",
     # ── medication / pain adjacent phrasings that the model sometimes routes wrong ──
     "medicine", "medication", "tablet", "injection", "painkiller",
+    # ── German (umlaut-folded; ss-form only, no esszett) ──
+    # doctor request
+    "arzt rufen", "brauche einen arzt", "holen sie den arzt", "den arzt bitte",
+    # medication-adjacent (same urgent-floor behaviour as the English entries above)
+    "medikament", "spritze", "schmerzmittel",
 ]
 
 
