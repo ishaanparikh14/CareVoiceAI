@@ -1,7 +1,7 @@
 {
-  "versionCode": 12,
-  "versionName": "2.1",
+  "versionCode": 13,
+  "versionName": "2.2",
   "apkUrl": "/static/carevoice-latest.apk",
-  "changelog": "German language support, voice-note notifications for patients and nurses, a nurse Available/Occupied status toggle, tidier call screen, and admin reassignment fixes.",
+  "changelog": "Fix: a request assigned or broadcast to a nurse no longer disappears from their dashboard on refresh - it stays until acknowledged, declined, or taken by someone else.",
   "mandatory": false
 }

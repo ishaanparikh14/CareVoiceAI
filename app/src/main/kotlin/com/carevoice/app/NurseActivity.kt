@@ -669,8 +669,18 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 val parsed = parseAlertList(body).filter { isMyRoom(it.roomId) }
                 withContext(Dispatchers.Main) {
                     binding.progressLoading.visibility = View.GONE
+                    // Preserve dispatch-sourced cards (broadcast / admin-reassigned)
+                    // that aren't in this nurse's own rooms — otherwise the room
+                    // filter here would wipe a request the nurse was just handed
+                    // and it would vanish from the screen on the next poll.
+                    val parsedIds = parsed.map { it.id }.toSet()
+                    val keptDispatch = allAlerts.filter { a ->
+                        requestIdForAlert.containsKey(a.id) && a.id !in parsedIds && !a.acknowledged
+                    }
                     allAlerts.clear()
                     allAlerts.addAll(parsed)
+                    // Re-add preserved dispatch cards at the top, newest first.
+                    keptDispatch.asReversed().forEach { allAlerts.add(0, it) }
                     submitFilteredList()
                     updateCountBadge()
                     refreshDrawerAlertCount()
