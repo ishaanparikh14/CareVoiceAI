@@ -1,7 +1,7 @@
 {
-  "versionCode": 16,
-  "versionName": "2.5",
+  "versionCode": 17,
+  "versionName": "2.6",
   "apkUrl": "/static/carevoice-latest.apk",
-  "changelog": "Every request is now read aloud regardless of category. Manual 'Call Nurse' alerts show the patient name and summary (no more null). Accept/Decline is shown only for requests from patients not assigned to you - your own patients' requests go straight to acknowledge.",
+  "changelog": "Fixes: the acknowledge button no longer gets stuck on one request; manual Call Nurse alerts now route and broadcast properly when the primary nurse is offline; and a nurse handling a reassigned request can now actually call that patient.",
   "mandatory": false
 }

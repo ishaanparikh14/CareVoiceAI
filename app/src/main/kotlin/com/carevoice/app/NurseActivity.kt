@@ -816,27 +816,32 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
                 val code = http.newCall(req).execute().use { it.code }
                 withContext(Dispatchers.Main) {
-                    if (code == 200 || code == 201) {
+                    // 200/201 = acked by us; 409 = already acknowledged (race or
+                    // dispatch resolved it) — either way the request IS handled,
+                    // so mark it acked locally instead of leaving a stuck card.
+                    if (code == 200 || code == 201 || code == 409) {
                         val idx = allAlerts.indexOfFirst { it.id == alertId }
                         if (idx >= 0) allAlerts[idx] = allAlerts[idx].copy(acknowledged = true, ackedBy = by)
                         submitFilteredList()
                         updateCountBadge()
                         refreshDrawerAlertCount()
-                        // If that was the last pending request, auto-clear busy so
-                        // the admin board + this phone show Available immediately.
                         if (!hasUnackedRequests()) {
                             iAmOccupied = false
                             markAvailable()
                         }
                         Snackbar.make(binding.root, getString(R.string.nurse_ack_success), Snackbar.LENGTH_SHORT).show()
                     } else {
-                        submitFilteredList()
+                        // Real failure — force every visible row to re-bind so the
+                        // optimistically-disabled ACK button re-enables (DiffUtil
+                        // would otherwise skip the unchanged item and leave it
+                        // stuck disabled until a logout/login).
+                        adapter.notifyDataSetChanged()
                         Snackbar.make(binding.root, getString(R.string.nurse_ack_failed), Snackbar.LENGTH_SHORT).show()
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    submitFilteredList()
+                    adapter.notifyDataSetChanged()
                     Snackbar.make(binding.root, getString(R.string.nurse_ack_failed), Snackbar.LENGTH_SHORT).show()
                 }
             }

@@ -100,6 +100,9 @@ class AlertAdapter(
                 b.tvAckedBy.visibility = View.GONE
                 b.btnAvailable.visibility = View.GONE
                 b.root.alpha = 1f
+                // Always re-enable on (re)bind — a recycled holder or a failed
+                // ACK must never leave the button permanently disabled.
+                b.btnAck.isEnabled = true
 
                 b.btnAck.setOnClickListener {
                     // Optimistically disable the button to prevent double-tap

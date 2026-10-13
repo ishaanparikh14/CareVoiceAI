@@ -99,11 +99,24 @@ async def manual_alert(
         emotion        = emotion,
         alert_message  = alert_message,
     )
-    if _ws_broadcast is not None:
-        payload = WsAlertPayload.from_alert_response(alert_resp)
-        await _ws_broadcast(payload.model_dump_json())
+    # Route through the dispatch engine (same path as audio alerts): offer to
+    # the primary if available, otherwise broadcast to all FREE nurses, and
+    # escalate to the admin if nobody is free. A raw broadcast here would bypass
+    # dispatch entirely (showing "Not routed" and never reaching free nurses
+    # when the primary is offline) — the bug this fixes.
+    payload = WsAlertPayload.from_alert_response(alert_resp).model_dump_json()
+    try:
+        from routing import route_alert
+        routed_to, fell_back = await route_alert(
+            db, room_id=room_id, alert_id=alert_id, payload_json=payload,
+        )
+        logger.info("Manual alert %d routed_to=%s fell_back=%s", alert_id, routed_to, fell_back)
+    except Exception as exc:
+        logger.warning("Manual alert dispatch failed (%s) — raw broadcast fallback", exc)
+        if _ws_broadcast is not None:
+            await _ws_broadcast(payload)
 
-    logger.info("Manual alert created: id=%d room=%s patient=%s", alert_id, room_id, patient_name)
+    logger.info("Manual alert created: id=%d room=%s patient=%s", alert_id, room_id, resolved_name)
 
     return AckResponse(
         alert_id     = alert_id,

@@ -176,10 +176,50 @@ async def _authorized_pair(
         return bool(patient and patient["attending"] == target_username)
 
     if sender_role == "nurse" and target_role == "patient":
-        # The nurse must be the attending nurse of the target patient.
+        # 1) The nurse is the permanent attending nurse of the target patient.
         patients = await get_patients_for_nurse(conn, sender_username)
-        return any(p["username"] == target_username for p in patients)
+        if any(p["username"] == target_username for p in patients):
+            return True
+        # 2) OR the nurse is CURRENTLY HANDLING a request for that patient's
+        #    room (a reassigned/broadcast request). This lets a nurse who was
+        #    handed a request call that patient for as long as the request is
+        #    unacknowledged — the "mapped only while handling" rule.
+        tgt_patient = await get_patient_by_user_id(conn, target["id"])
+        target_room = tgt_patient["room_number"] if tgt_patient else None
+        if target_room:
+            return await _nurse_handling_room(sender_username, target_room)
+        return False
 
+    return False
+
+
+async def _nurse_handling_room(nurse_username: str, room_number: str) -> bool:
+    """True if the nurse currently holds an active (unacknowledged) request for
+    this room — via an alert routed to her OR an active dispatch assignment.
+    Checked against the SQLite alerts/dispatch store."""
+    import aiosqlite
+    from config import settings
+    try:
+        async with aiosqlite.connect(settings.DB_PATH) as db:
+            db.row_factory = aiosqlite.Row
+            # Unacknowledged alert routed to this nurse for the room.
+            async with db.execute(
+                "SELECT 1 FROM alerts WHERE room_id = ? AND routed_to = ? "
+                "AND acknowledged = 0 LIMIT 1",
+                (room_number, nurse_username),
+            ) as cur:
+                if await cur.fetchone():
+                    return True
+            # Active dispatch request assigned to this nurse for the room.
+            async with db.execute(
+                "SELECT 1 FROM dispatch_requests WHERE room_id = ? AND assignee = ? "
+                "AND state NOT IN ('resolved','cancelled') LIMIT 1",
+                (room_number, nurse_username),
+            ) as cur:
+                if await cur.fetchone():
+                    return True
+    except Exception as exc:
+        logger.warning("[SIGNAL] handling-room check failed (%s) — denying", exc)
     return False
 
 
