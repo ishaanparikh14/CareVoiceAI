@@ -946,15 +946,25 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         refreshDrawerAlertCount()
         binding.rvAlerts.scrollToPosition(0)
         if (!alert.acknowledged) chimeForAlert(alert.id, alert.priority)
+        // Read out every incoming request (all categories).
+        if (!alert.acknowledged) tts.maybeAnnounce(
+            alertId = alert.id, priority = alert.priority, roomId = alert.roomId,
+            intent = alert.intent, escalated = alert.escalated, acknowledged = alert.acknowledged,
+            summary = alert.summary, patientName = alert.patientName
+        )
 
-        if (assigned) {
-            // It's mine now — no prompt, just the normal ack flow.
+        // If this request is for one of MY OWN assigned patients, it's mine to
+        // handle directly — no Accept/Decline prompt, just ACK. The offer prompt
+        // is only for requests from patients NOT assigned to me (reassignments /
+        // broadcasts pulling me in from elsewhere).
+        if (assigned || isMyRoom(alert.roomId)) {
             offeredAlertIds.remove(alert.id)
-            Snackbar.make(binding.root, "Request assigned to you — Room ${alert.roomId}", Snackbar.LENGTH_SHORT).show()
+            if (assigned) Snackbar.make(binding.root,
+                "Request assigned to you — Room ${alert.roomId}", Snackbar.LENGTH_SHORT).show()
             return
         }
 
-        // Open offer → prompt once.
+        // Open offer (from another patient) → prompt once.
         if (!offeredAlertIds.add(alert.id)) return
         showOfferDialog(requestId, alert)
     }

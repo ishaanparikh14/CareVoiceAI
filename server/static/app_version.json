@@ -1,7 +1,7 @@
 {
-  "versionCode": 15,
-  "versionName": "2.4",
+  "versionCode": 16,
+  "versionName": "2.5",
   "apkUrl": "/static/carevoice-latest.apk",
-  "changelog": "A nurse handling a reassigned request can now call that patient and send voice notes to them (resolved across the full ward while the request is active). Voice-note speak/listen language is now chosen in Settings and used for translation too.",
+  "changelog": "Every request is now read aloud regardless of category. Manual 'Call Nurse' alerts show the patient name and summary (no more null). Accept/Decline is shown only for requests from patients not assigned to you - your own patients' requests go straight to acknowledge.",
   "mandatory": false
 }

@@ -58,7 +58,16 @@ async def manual_alert(
 
     room_id = room_id.strip() or "Unknown"
 
-    transcript = f"[MANUAL CALL] {patient_name} in Room {room_id} pressed the Call Nurse button"
+    # Resolve the real patient name for the room when the caller didn't pass one.
+    resolved_name = patient_name
+    if not resolved_name or resolved_name == "Patient":
+        from pg_database import get_patient_name_by_room
+        resolved_name = (await get_patient_name_by_room(room_id)) or "Patient"
+
+    transcript = f"[MANUAL CALL] {resolved_name} in Room {room_id} pressed the Call Nurse button"
+    summary    = "pressed the Call Nurse button — needs immediate help"
+    emotion    = "distressed"
+    alert_message = f"Patient {resolved_name} in Room {room_id} is calling — manual emergency call — {summary}."
 
     alert_id = await insert_alert(
         db,
@@ -68,6 +77,10 @@ async def manual_alert(
         distress_score = 0.0,   # distress_score is deprecated; not used in display or logic
         transcript     = transcript,
         wav_path       = None,
+        patient_name   = resolved_name,
+        summary        = summary,
+        emotion        = emotion,
+        alert_message  = alert_message,
     )
 
     # Broadcast to all connected nurses via WebSocket
@@ -81,6 +94,10 @@ async def manual_alert(
         transcript     = transcript,
         acknowledged   = False,
         created_at     = now,
+        patient_name   = resolved_name,
+        summary        = summary,
+        emotion        = emotion,
+        alert_message  = alert_message,
     )
     if _ws_broadcast is not None:
         payload = WsAlertPayload.from_alert_response(alert_resp)
