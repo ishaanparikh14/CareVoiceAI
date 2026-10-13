@@ -340,7 +340,7 @@ body {
         </table>
       </div>
       <div class="table-wrap">
-        <div class="table-header"><div><h3>Nurse Availability</h3><p>Free nurses receive new requests first. Occupied nurses are skipped.</p></div></div>
+        <div class="table-header"><div><h3>Nurse Availability</h3><p>Free nurses receive new requests first. Occupied nurses are skipped.</p></div><button class="btn-filter" onclick="resetNurses()">Reset Nurses</button></div>
         <table class="tbl">
           <thead><tr><th>Nurse</th><th>Ward</th><th>Status</th><th>Reason</th><th>Active</th><th>Action</th></tr></thead>
           <tbody id="dispatch-nurses-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr></tbody>
@@ -803,9 +803,25 @@ async function loadDispatch(silent) {
   try {
     const d = await api('/admin/dispatch-board');
     const nurses = d.nurses || [], alerts = d.pending_alerts || [];
-    const free = nurses.filter(n => n.online && !n.busy).length;
-    const busy = nurses.filter(n => n.online && n.busy).length;
-    const off  = nurses.filter(n => !n.online).length;
+    // Explicit three-state status from the server (available/busy/offline),
+    // falling back to the old booleans for safety.
+    const statusOf2 = n => n.status || (!n.online ? 'offline' : (n.busy ? 'busy' : 'available'));
+    const free = nurses.filter(n => statusOf2(n) === 'available').length;
+    const busy = nurses.filter(n => statusOf2(n) === 'busy').length;
+    const off  = nurses.filter(n => statusOf2(n) === 'offline').length;
+    const needsAdminList = alerts.filter(a => a.needs_admin);
+    const needsAdmin = needsAdminList.length;
+    // Toast once when a request newly escalates to the admin (so a monitoring
+    // admin notices even without staring at the board).
+    try {
+      const seen = window._seenNeedsAdmin || (window._seenNeedsAdmin = new Set());
+      needsAdminList.forEach(a => {
+        if (!seen.has(a.id)) { seen.add(a.id); toast(`Room ${a.room_id}: no free nurse accepted — reassign needed`, true); }
+      });
+      // Forget resolved ones so a future re-escalation re-alerts.
+      const live = new Set(needsAdminList.map(a => a.id));
+      [...seen].forEach(id => { if (!live.has(id)) seen.delete(id); });
+    } catch (e) {}
     const db = document.getElementById('nav-dispatch');
     if (alerts.length) { db.style.display = 'inline-block'; db.textContent = alerts.length; } else db.style.display = 'none';
 
@@ -813,34 +829,54 @@ async function loadDispatch(silent) {
       <div class="card"><div class="card-label">Free</div><div class="card-value" style="color:var(--green)">${free}</div></div>
       <div class="card"><div class="card-label">Occupied</div><div class="card-value" style="color:var(--red)">${busy}</div></div>
       <div class="card"><div class="card-label">Offline</div><div class="card-value" style="color:var(--muted)">${off}</div></div>
-      <div class="card"><div class="card-label">Pending</div><div class="card-value" style="color:var(--yellow)">${alerts.length}</div></div>`;
+      <div class="card"><div class="card-label">Pending</div><div class="card-value" style="color:var(--yellow)">${alerts.length}</div>${needsAdmin?`<div class="card-sub" style="color:var(--red);font-weight:700">${needsAdmin} need you</div>`:''}</div>`;
 
     const nameOf = u => (nurses.find(n => n.username === u) || {}).full_name || u;
-    const stateOf = n => !n.online ? 'Offline' : (n.busy ? 'Occupied' : 'Free');
-    const order = n => !n.online ? 2 : (n.busy ? 1 : 0);
+    const stateOf = n => { const s = statusOf2(n); return s === 'offline' ? 'Offline' : (s === 'busy' ? 'Occupied' : 'Free'); };
+    const order = n => { const s = statusOf2(n); return s === 'offline' ? 2 : (s === 'busy' ? 1 : 0); };
     const sorted = [...nurses].sort((a, b) => order(a) - order(b) || a.full_name.localeCompare(b.full_name));
+    // Admin may reassign to any ONLINE nurse (free or occupied) — an admin
+    // override is a deliberate human decision. Free nurses are listed first.
+    const assignableNurses = sorted.filter(n => statusOf2(n) !== 'offline');
 
     const ab = document.getElementById('dispatch-alerts-body');
     ab.innerHTML = !alerts.length ? `<tr><td colspan="6"><div class="empty">No pending requests. All clear.</div></td></tr>`
       : alerts.map(a => {
-          const sent = a.fell_back ? '<span class="badge badge-pending">Broadcast to all</span>'
-            : a.routed_to ? `<span class="badge badge-info">${escHtml(nameOf(a.routed_to))}</span>` : '<span style="color:var(--muted)">Not routed</span>';
-          const re = a.reroute_count ? ` <span style="color:var(--muted);font-size:.74rem">┬╖ rerouted ${a.reroute_count}├ù</span>` : '';
-          const opts = sorted.filter(n => n.username !== a.routed_to)
-            .map(n => `<option value="${escHtml(n.username)}">${escHtml(n.full_name)} (${stateOf(n)})</option>`).join('');
-          return `<tr>
+          // Human-readable "Sent To" from the live dispatch state.
+          const st = a.dispatch_state;
+          let sent;
+          if (a.needs_admin) sent = '<span class="badge badge-critical">⚠ Needs reassignment</span>';
+          else if (st === 'broadcasting') sent = '<span class="badge badge-pending">Broadcasting to free nurses…</span>';
+          else if (st === 'assigned' && a.assignee) sent = `<span class="badge badge-approved">✓ ${escHtml(nameOf(a.assignee))}</span>`;
+          else if (st === 'pending_primary' && a.assignee) sent = `<span class="badge badge-info">${escHtml(nameOf(a.assignee))} (primary)</span>`;
+          else if (a.fell_back) sent = '<span class="badge badge-pending">Broadcast to all</span>';
+          else if (a.routed_to) sent = `<span class="badge badge-info">${escHtml(nameOf(a.routed_to))}</span>`;
+          else sent = '<span style="color:var(--muted)">Not routed</span>';
+          const dr = a.decline_reason ? ` <span style="color:var(--muted);font-size:.72rem">· declined: ${escHtml(a.decline_reason).slice(0,40)}</span>` : '';
+          // Reassign targets: any ONLINE nurse (exclude the current assignee).
+          // Free nurses show plainly; occupied ones are flagged so the admin
+          // knows, but can still override to them.
+          const opts = assignableNurses.filter(n => n.username !== a.assignee)
+            .map(n => { const occ = statusOf2(n) === 'busy' ? ' (occupied)' : ''; return `<option value="${escHtml(n.username)}">${escHtml(n.full_name)}${occ}</option>`; }).join('');
+          const reqAttr = a.request_id != null ? a.request_id : '';
+          const rowStyle = a.needs_admin ? ' style="background:rgba(239,68,68,.06)"' : '';
+          const picker = assignableNurses.length
+            ? `<select class="mini-select" onchange="reassignRequest('${reqAttr}', ${a.id}, this)"><option value="">Reassign…</option>${opts}</select>`
+            : '<span style="color:var(--muted);font-size:.76rem">No nurse online</span>';
+          return `<tr${rowStyle}>
             <td style="white-space:nowrap;color:var(--muted);font-size:.78rem">${relTime(a.created_at)}</td>
             <td><span class="badge badge-info">${escHtml(a.room_id)}</span></td>
             <td>${priorityBadge(a.priority)}</td>
-            <td style="font-size:.82rem">${escHtml(a.patient_name || 'Patient')} ┬╖ ${escHtml(a.summary || a.intent)}</td>
-            <td>${sent}${re}</td>
-            <td><select class="mini-select" onchange="redirectAlert(${a.id}, this)"><option value="">Choose nurse…</option>${opts}</select></td></tr>`;
+            <td style="font-size:.82rem">${escHtml(a.patient_name || 'Patient')} · ${escHtml(a.summary || a.intent)}</td>
+            <td>${sent}${dr}</td>
+            <td>${picker}</td></tr>`;
         }).join('');
 
     const nb = document.getElementById('dispatch-nurses-body');
     nb.innerHTML = !sorted.length ? `<tr><td colspan="6"><div class="empty">No approved nurses yet</div></td></tr>`
       : sorted.map(n => {
-          const cls = !n.online ? 'discharged' : (n.busy ? 'inactive' : 'active');
+          const s = statusOf2(n);
+          const cls = s === 'offline' ? 'discharged' : (s === 'busy' ? 'inactive' : 'active');
           const btn = n.manual_busy
             ? `<button class="btn-sm approve" onclick="setNurseBusy('${escHtml(n.username)}', false)">Mark free</button>`
             : `<button class="btn-sm reject" onclick="setNurseBusy('${escHtml(n.username)}', true)">Mark occupied</button>`;
@@ -855,20 +891,37 @@ async function loadDispatch(silent) {
     stampUpdate();
   } catch (e) { if (!silent) toast('Could not load dispatch board: ' + e.message, true); }
 }
-async function redirectAlert(id, sel) {
+// Reassign a pending request to an available nurse. Prefers the dispatch
+// endpoint (request_id); falls back to the legacy per-alert redirect so even a
+// pre-dispatch alert can still be routed.
+async function reassignRequest(requestId, alertId, sel) {
   const target = sel.value; if (!target) return;
   sel.disabled = true;
   try {
-    const r = await api(`/alerts/${id}/redirect`, { method: 'POST', body: JSON.stringify({ target_nurse: target }) });
-    toast(r.message || 'Redirected', !r.delivered);
-  } catch (e) { toast('Redirect failed: ' + e.message, true); }
+    if (requestId !== '' && requestId != null) {
+      const r = await api(`/dispatch/${requestId}/reassign`, { method: 'POST', body: JSON.stringify({ nurse_username: target }) });
+      toast(`Assigned to ${nurseLabel(target)}`, !r.ok);
+    } else {
+      const r = await api(`/alerts/${alertId}/redirect`, { method: 'POST', body: JSON.stringify({ target_nurse: target }) });
+      toast(r.message || 'Reassigned', !r.delivered);
+    }
+  } catch (e) { toast('Reassign failed: ' + e.message, true); }
   loadDispatch(true);
 }
+function nurseLabel(u) { return u; }
 async function setNurseBusy(username, busy) {
   try {
     await api(`/admin/nurses/${encodeURIComponent(username)}/busy`, { method: 'POST', body: JSON.stringify({ busy }) });
     toast(`${username} marked ${busy ? 'occupied' : 'free'}`);
   } catch (e) { toast('Update failed: ' + e.message, true); }
+  loadDispatch(true);
+}
+async function resetNurses() {
+  if (!confirm('Reset ALL nurses to available? This clears every "occupied" flag and releases any requests nurses are holding. Unacknowledged alerts stay.')) return;
+  try {
+    const r = await api('/admin/nurses/reset', { method: 'POST', body: '{}' });
+    toast(r.message || 'All nurses reset to available.');
+  } catch (e) { toast('Reset failed: ' + e.message, true); }
   loadDispatch(true);
 }
 

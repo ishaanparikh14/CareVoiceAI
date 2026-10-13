@@ -179,6 +179,23 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- My status toggle (Available / Occupied) — below the stats -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnMyStatus"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginEnd="16dp"
+                android:text="@string/nurse_status_available"
+                android:textColor="@android:color/white"
+                app:backgroundTint="@color/colorAcknowledged"
+                app:cornerRadius="12dp"
+                app:icon="@drawable/ic_cv_check"
+                app:iconSize="18dp"
+                app:iconTint="@android:color/white"
+                app:layout_scrollFlags="scroll|enterAlways" />
+
             <!-- Quick actions: voice notes -->
             <LinearLayout
                 android:layout_width="match_parent"

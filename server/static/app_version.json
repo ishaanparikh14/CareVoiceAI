@@ -1,7 +1,7 @@
 {
-  "versionCode": 8,
-  "versionName": "1.7",
+  "versionCode": 12,
+  "versionName": "2.1",
   "apkUrl": "/static/carevoice-latest.apk",
-  "changelog": "Admin console now includes the full dashboard - Overview, Dispatch, Alerts, Analytics, Approvals, Rooms, Patients, Nurses and Server Logs - with a light theme and a menu button to reach every section.",
+  "changelog": "German language support, voice-note notifications for patients and nurses, a nurse Available/Occupied status toggle, tidier call screen, and admin reassignment fixes.",
   "mandatory": false
 }

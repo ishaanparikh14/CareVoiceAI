@@ -89,13 +89,20 @@ async def dispatch_board(
     db: aiosqlite.Connection = Depends(get_db),
 ):
     from routing import nurse_availability
+    from database import get_active_dispatch_requests
 
     nurses = await nurse_availability(db)
+
+    # Map alert_id -> dispatch request so the board can show the live state
+    # (pending_primary / broadcasting / assigned / needs_admin) and the id the
+    # admin needs to reassign.
+    disp_rows = await get_active_dispatch_requests(db)
+    disp_by_alert = {d["alert_id"]: d for d in disp_rows}
 
     # Pending (unacknowledged) alerts, newest first.
     query = """
         SELECT id, room_id, patient_name, priority, intent, summary,
-               created_at, routed_to, fell_back
+               created_at, routed_to, fell_back, reroute_count
         FROM alerts
         WHERE acknowledged = 0
         ORDER BY created_at DESC
@@ -105,6 +112,7 @@ async def dispatch_board(
         rows = await cur.fetchall()
     alerts = []
     for r in rows:
+        d = disp_by_alert.get(r["id"])
         alerts.append({
             "id":            r["id"],
             "room_id":       r["room_id"],
@@ -115,6 +123,14 @@ async def dispatch_board(
             "created_at":    r["created_at"],
             "routed_to":     r["routed_to"],
             "fell_back":     bool(r["fell_back"]),
+            "reroute_count": r["reroute_count"] if "reroute_count" in r.keys() else 0,
+            # Dispatch metadata (None for legacy alerts without a dispatch row)
+            "request_id":    d["id"] if d else None,
+            "dispatch_state": d["state"] if d else None,
+            "assignee":      d["assignee"] if d else None,
+            "primary_nurse": d["primary_nurse"] if d else None,
+            "decline_reason": d["decline_reason"] if d else None,
+            "needs_admin":   bool(d and d["state"] == "needs_admin"),
         })
 
     return {"nurses": nurses, "pending_alerts": alerts}
@@ -143,6 +159,25 @@ async def admin_set_nurse_busy(
     set_manual_busy(username, body.busy)
     logger.info("Admin %s set nurse %s manual busy=%s", admin["username"], username, body.busy)
     return {"username": username, "busy": body.busy}
+
+
+# ── POST /admin/nurses/reset ──────────────────────────────────────────────────
+# Reset ALL nurses to a clean baseline: clear every manual-occupied flag and
+# cancel all in-flight dispatch holds, so online nurses return to AVAILABLE.
+
+@router.post("/nurses/reset", summary="Admin: reset all nurses to available (clear occupied + dispatch holds)")
+async def admin_reset_nurses(
+    admin: AdminUser,
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    from dispatch import reset_nurses
+    result = await reset_nurses(db)
+    logger.info("Admin %s reset all nurses: %s", admin["username"], result)
+    return {
+        "ok": True,
+        "message": "All nurses reset to available.",
+        **result,
+    }
 
 
 # ── GET /admin/nurses ─────────────────────────────────────────────────────────

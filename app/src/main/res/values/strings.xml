@@ -130,6 +130,9 @@
     <string name="nurse_loading">Loading alerts…</string>
     <string name="nurse_refresh">Refresh</string>
     <string name="nurse_ack">ACK</string>
+    <string name="nurse_available">Available</string>
+    <string name="nurse_status_available">Status: Available</string>
+    <string name="nurse_status_occupied">Status: Occupied</string>
     <string name="nurse_acked">Acknowledged</string>
     <string name="nurse_filter_all">All</string>
     <string name="nurse_filter_unacked">Pending</string>

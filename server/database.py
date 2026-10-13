@@ -62,6 +62,33 @@ CREATE TABLE IF NOT EXISTS alerts (
 -- Index used by GET /alerts/latest (ordered by created_at DESC, unACK'd first)
 CREATE INDEX IF NOT EXISTS idx_alerts_created ON alerts (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_alerts_ack     ON alerts (acknowledged, created_at DESC);
+
+-- ── Dispatch requests (Uber-style routing lifecycle) ───────────────────────
+-- One row per alert that enters the dispatch loop. The alert itself (above)
+-- stays the unit a nurse acknowledges; this table tracks WHO it is being
+-- offered to and the state machine around primary → broadcast → admin.
+--
+-- state transitions:
+--   pending_primary  → the patient's primary nurse was offered it
+--   broadcasting     → primary declined/offline → offered to all FREE nurses
+--   assigned         → a specific nurse claimed/was assigned it (assignee set)
+--   needs_admin      → nobody free accepted within the broadcast window
+--   resolved         → the underlying alert was acknowledged
+--   cancelled        → superseded / alert gone
+CREATE TABLE IF NOT EXISTS dispatch_requests (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    alert_id      INTEGER NOT NULL UNIQUE,
+    room_id       TEXT    NOT NULL,
+    primary_nurse TEXT,                       -- the patient's primary at dispatch time
+    assignee      TEXT,                       -- nurse currently responsible (NULL while broadcasting)
+    state         TEXT    NOT NULL DEFAULT 'pending_primary',
+    decline_reason TEXT,                       -- reason the primary gave when declining
+    broadcast_at  TEXT,                       -- ISO-8601 UTC when broadcast started (timeout anchor)
+    created_at    TEXT    NOT NULL,
+    updated_at    TEXT    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_dispatch_state ON dispatch_requests (state);
+CREATE INDEX IF NOT EXISTS idx_dispatch_alert ON dispatch_requests (alert_id);
 """
 
 # Columns added after the original release. SQLite has no "ADD COLUMN IF NOT
@@ -90,6 +117,11 @@ async def init_db() -> None:
     Safe to call on every startup — all statements use IF NOT EXISTS.
     """
     async with aiosqlite.connect(settings.DB_PATH) as db:
+        # WAL + a busy timeout let multiple short-lived connections (one per
+        # request, plus the dispatch timer workers) write concurrently without
+        # "database is locked" errors — writers wait briefly instead of failing.
+        await db.execute("PRAGMA journal_mode=WAL")
+        await db.execute("PRAGMA busy_timeout=5000")
         await db.executescript(DDL)
         # Idempotent column migrations for databases created before these
         # columns existed. Duplicate-column errors are expected and ignored.
@@ -114,6 +146,7 @@ async def get_db() -> AsyncGenerator[aiosqlite.Connection, None]:
     """
     async with aiosqlite.connect(settings.DB_PATH) as db:
         db.row_factory = aiosqlite.Row   # rows behave like dicts
+        await db.execute("PRAGMA busy_timeout=5000")
         try:
             yield db
         except Exception:
@@ -400,3 +433,284 @@ async def escalate_alert(db: aiosqlite.Connection, alert_id: int) -> bool:
 def utcnow() -> str:
     """Return the current UTC time as an ISO-8601 string with 'Z' suffix."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+# ── Dispatch request helpers ──────────────────────────────────────────────────
+# These implement the durable, race-safe side of the Uber-style dispatch loop.
+# The in-memory timers and WebSocket fan-out live in dispatch.py; this module
+# only owns the authoritative state in SQLite so concurrent accepts resolve to
+# exactly one winner and the admin board survives a reconnect/poll.
+
+# Terminal states a request can no longer transition out of.
+_DISPATCH_TERMINAL = ("resolved", "cancelled")
+
+
+async def create_dispatch_request(
+    db: aiosqlite.Connection,
+    *,
+    alert_id: int,
+    room_id: str,
+    primary_nurse: str | None,
+    initial_state: str,
+    assignee: str | None = None,
+) -> int:
+    """Create (or replace) the dispatch request for an alert. One per alert.
+
+    If a row already exists for this alert (e.g. a duplicate route), it is reset
+    to the new initial state so the loop never double-tracks the same alert.
+    Returns the dispatch request id.
+    """
+    now = utcnow()
+    broadcast_at = now if initial_state == "broadcasting" else None
+    # alert_id is UNIQUE — upsert so a re-route of the same alert replaces state.
+    await db.execute(
+        """
+        INSERT INTO dispatch_requests
+            (alert_id, room_id, primary_nurse, assignee, state, broadcast_at, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(alert_id) DO UPDATE SET
+            room_id       = excluded.room_id,
+            primary_nurse = excluded.primary_nurse,
+            assignee      = excluded.assignee,
+            state         = excluded.state,
+            decline_reason = NULL,
+            broadcast_at  = excluded.broadcast_at,
+            updated_at    = excluded.updated_at
+        """,
+        (alert_id, room_id, primary_nurse, assignee, initial_state, broadcast_at, now, now),
+    )
+    await db.commit()
+    async with db.execute(
+        "SELECT id FROM dispatch_requests WHERE alert_id = ?", (alert_id,)
+    ) as cur:
+        row = await cur.fetchone()
+    return row["id"]
+
+
+async def get_dispatch_request(db: aiosqlite.Connection, request_id: int) -> dict | None:
+    async with db.execute(
+        "SELECT * FROM dispatch_requests WHERE id = ?", (request_id,)
+    ) as cur:
+        row = await cur.fetchone()
+    return dict(row) if row else None
+
+
+async def get_dispatch_by_alert(db: aiosqlite.Connection, alert_id: int) -> dict | None:
+    async with db.execute(
+        "SELECT * FROM dispatch_requests WHERE alert_id = ?", (alert_id,)
+    ) as cur:
+        row = await cur.fetchone()
+    return dict(row) if row else None
+
+
+async def set_dispatch_broadcasting(
+    db: aiosqlite.Connection, request_id: int, *, decline_reason: str | None = None
+) -> dict | None:
+    """Move a request into the broadcasting state (primary declined/offline).
+
+    Guarded so only a non-terminal, not-yet-assigned-by-accept request can be
+    broadcast. Stamps broadcast_at = now (the 10s timeout anchor). Returns the
+    updated row, or None if the transition was not applied (already resolved,
+    already assigned to someone who accepted, etc.).
+    """
+    now = utcnow()
+    cur = await db.execute(
+        """
+        UPDATE dispatch_requests
+        SET state = 'broadcasting',
+            assignee = NULL,
+            decline_reason = ?,
+            broadcast_at = ?,
+            updated_at = ?
+        WHERE id = ?
+          AND state IN ('pending_primary', 'needs_admin', 'assigned')
+        """,
+        (decline_reason, now, now, request_id),
+    )
+    await db.commit()
+    if cur.rowcount == 0:
+        return None
+    return await get_dispatch_request(db, request_id)
+
+
+async def claim_dispatch_request(
+    db: aiosqlite.Connection, request_id: int, nurse: str
+) -> tuple[bool, dict | None]:
+    """Atomically claim a request for `nurse`.
+
+    Exactly one concurrent caller wins: the UPDATE only succeeds when the row is
+    still open (pending_primary / broadcasting / needs_admin) AND not already
+    assigned to someone else. SQLite serialises writes, so two near-simultaneous
+    accepts cannot both match. Returns (won, row).
+
+    If the request is already assigned to THIS nurse, that is treated as an
+    idempotent win (double-tap Accept) rather than a loss.
+    """
+    now = utcnow()
+    cur = await db.execute(
+        """
+        UPDATE dispatch_requests
+        SET state = 'assigned',
+            assignee = ?,
+            updated_at = ?
+        WHERE id = ?
+          AND state IN ('pending_primary', 'broadcasting', 'needs_admin')
+          AND (assignee IS NULL OR assignee = ?)
+        """,
+        (nurse, now, request_id, nurse),
+    )
+    await db.commit()
+    row = await get_dispatch_request(db, request_id)
+    if cur.rowcount > 0:
+        return True, row
+    # Idempotent: already assigned to this same nurse.
+    if row and row["state"] == "assigned" and row["assignee"] == nurse:
+        return True, row
+    return False, row
+
+
+async def assign_dispatch_request(
+    db: aiosqlite.Connection, request_id: int, nurse: str
+) -> dict | None:
+    """Admin override: force-assign a request to a specific nurse.
+
+    Allowed from any non-terminal state. Returns the updated row, or None if the
+    request is already resolved/cancelled."""
+    now = utcnow()
+    cur = await db.execute(
+        """
+        UPDATE dispatch_requests
+        SET state = 'assigned',
+            assignee = ?,
+            updated_at = ?
+        WHERE id = ?
+          AND state NOT IN ('resolved', 'cancelled')
+        """,
+        (nurse, now, request_id),
+    )
+    await db.commit()
+    if cur.rowcount == 0:
+        return None
+    return await get_dispatch_request(db, request_id)
+
+
+async def mark_dispatch_needs_admin(db: aiosqlite.Connection, request_id: int) -> dict | None:
+    """Move a still-broadcasting request to needs_admin (timeout with no taker).
+
+    Guarded so an accept that landed first is never clobbered."""
+    now = utcnow()
+    cur = await db.execute(
+        """
+        UPDATE dispatch_requests
+        SET state = 'needs_admin',
+            assignee = NULL,
+            updated_at = ?
+        WHERE id = ?
+          AND state = 'broadcasting'
+        """,
+        (now, request_id),
+    )
+    await db.commit()
+    if cur.rowcount == 0:
+        return None
+    return await get_dispatch_request(db, request_id)
+
+
+async def resolve_dispatch_for_alert(
+    db: aiosqlite.Connection, alert_id: int, *, by_nurse: str | None = None
+) -> dict | None:
+    """Mark the dispatch request for an alert as resolved (alert acknowledged).
+
+    Idempotent. Returns the row (whatever its final state) or None if none."""
+    now = utcnow()
+    await db.execute(
+        """
+        UPDATE dispatch_requests
+        SET state = 'resolved',
+            assignee = COALESCE(?, assignee),
+            updated_at = ?
+        WHERE alert_id = ?
+          AND state NOT IN ('resolved', 'cancelled')
+        """,
+        (by_nurse, now, alert_id),
+    )
+    await db.commit()
+    return await get_dispatch_by_alert(db, alert_id)
+
+
+async def cancel_dispatch_request(db: aiosqlite.Connection, request_id: int) -> None:
+    now = utcnow()
+    await db.execute(
+        """
+        UPDATE dispatch_requests
+        SET state = 'cancelled', updated_at = ?
+        WHERE id = ? AND state NOT IN ('resolved', 'cancelled')
+        """,
+        (now, request_id),
+    )
+    await db.commit()
+
+
+async def get_active_dispatch_requests(db: aiosqlite.Connection) -> list[dict]:
+    """All non-terminal dispatch requests, newest first — for the admin board
+    and for timer re-arming after a restart."""
+    async with db.execute(
+        """
+        SELECT * FROM dispatch_requests
+        WHERE state NOT IN ('resolved', 'cancelled')
+        ORDER BY created_at DESC
+        """
+    ) as cur:
+        rows = await cur.fetchall()
+    return [dict(r) for r in rows]
+
+
+async def count_active_dispatch_by_nurse(db: aiosqlite.Connection) -> dict[str, int]:
+    """{nurse: n} assigned-but-unresolved dispatch requests, for busy detection."""
+    async with db.execute(
+        """
+        SELECT assignee AS nurse, COUNT(*) AS n
+        FROM dispatch_requests
+        WHERE state = 'assigned' AND assignee IS NOT NULL
+        GROUP BY assignee
+        """
+    ) as cur:
+        rows = await cur.fetchall()
+    return {r["nurse"]: r["n"] for r in rows if r["nurse"]}
+
+
+async def reset_all_dispatch(db: aiosqlite.Connection) -> int:
+    """Cancel every non-terminal dispatch request. Returns the number cancelled.
+
+    Used by the admin "Reset Nurses" action to clear stuck 'holding'/'assigned'
+    state so all online nurses return to AVAILABLE. Does not touch the alerts
+    themselves (unacknowledged alerts remain visible), only the dispatch holds.
+    """
+    now = utcnow()
+    cur = await db.execute(
+        """
+        UPDATE dispatch_requests
+        SET state = 'cancelled', assignee = NULL, updated_at = ?
+        WHERE state NOT IN ('resolved', 'cancelled')
+        """,
+        (now,),
+    )
+    await db.commit()
+    return cur.rowcount if cur.rowcount is not None else 0
+
+
+async def release_all_routed_alerts(db: aiosqlite.Connection) -> int:
+    """Clear routed_to on all UNACKNOWLEDGED alerts, so no nurse is counted as
+    'holding' them. The alerts themselves stay (acknowledged=0, still visible as
+    pending/unrouted); this just releases the per-nurse hold used by the busy
+    calculation. Returns the number of alerts released.
+    """
+    cur = await db.execute(
+        """
+        UPDATE alerts
+        SET routed_to = NULL, fell_back = 1
+        WHERE acknowledged = 0 AND routed_to IS NOT NULL
+        """
+    )
+    await db.commit()
+    return cur.rowcount if cur.rowcount is not None else 0

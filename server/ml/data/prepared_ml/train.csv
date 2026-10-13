@@ -1,1271 +1,1559 @@
 text,label,intent,lang
-i had a collision while playing soccer. my knee buckled and now it's unstable.,1,Pain,en
-मेरी दवा का समय हो गया है कृपया,2,Medication,hi
-i have a cut that is red and swollen.,2,Medication,en
-ದಯವಿಟ್ಟು ಕುಡಿಯಲು ಏನಾದರೂ ತನ್ನಿ,3,Food/Water,kn
-ನನ್ನ ಮಾತ್ರೆಯ ಸಮಯವಾಗಿದೆ please,2,Medication,kn
-i think i sprained my ankle it really hurts.,1,Pain,en
-ನನಗೆ ಒಂಟಿತನ ಅನಿಸುತ್ತಿದೆ ಸ್ವಲ್ಪ ಹೊತ್ತು ಇರಿ,6,Emotional Support,kn
-"the last time i clipped my toenails, i cut them too short and now i have an infected nail.",2,Medication,en
-मुझे इंसुलिन चाहिए कृपया,2,Medication,hi
-"sometimes when it is cold outside, my face hurts, especially around the pimples that are ready to pop.",2,Medication,en
-i cant breathe,2,Medication,en
-i have a hard muscle pain since i went to the gym,1,Pain,en
-my foot is hurting so much.,1,Pain,en
-what time are visiting hours,7,Information,en
-ಇಂದು ನಾನು ತುಂಬಾ ಖಿನ್ನನಾಗಿದ್ದೇನೆ ಬೇಗ,6,Emotional Support,kn
-i cant sleep because of cough,2,Medication,en
-pain in the large neck,1,Pain,en
-ಈಗ ನನಗೆ ಔಷಧಿ ಸಿಗಬಹುದೇ please,2,Medication,kn
-ನನಗೆ ತುಂಬಾ ಭಯ ಮತ್ತು ಒಂಟಿತನ ಅನಿಸುತ್ತಿದೆ ಬೇಗ,6,Emotional Support,kn
-ನನ್ನ ಮುಂದಿನ ಊಟ ಯಾವಾಗ please,3,Food/Water,kn
-i suffered a deep wound in my hand and i can not stop the bleeding,2,Medication,en
-i think my body temperature is very low.,6,Emotional Support,en
-"i have whooping cough with excess mucous, need mucolytic.",2,Medication,en
-ಸ್ವಚ್ಛ ಬಟ್ಟೆ ಧರಿಸಲು ಸಹಾಯ ಮಾಡಿ ದಯವಿಟ್ಟು,5,Hygiene,kn
-मेरे सिर में दर्द हो रहा है,1,Pain,hi
-क्या आप मेरे लिए व्हीलचेयर ला सकते हैं जल्दी,4,Mobility,hi
-when will the doctor come,7,Information,en
-can i have my medicine now,2,Medication,en
-कमरा बहुत गर्म है please,8,Other,hi
-ಶಸ್ತ್ರಚಿಕಿತ್ಸೆಯ ಬಗ್ಗೆ ನನಗೆ ಭಯವಾಗಿದೆ ಬೇಗ,6,Emotional Support,kn
-my knee hurts when i play squash,1,Pain,en
-i have a break in the skin inside one of my nostrils that has become infected and is now filled with pus.,2,Medication,en
-बहुत ठंड है कृपया एसी ठीक कर दीजिए please,8,Other,hi
-there feels like a swollen knot at my shoulderblade with pain shooting from that,1,Pain,en
-मुझे शौचालय जाना है,4,Mobility,hi
-ನನಗೆ ಉಸಿರಾಡಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ ದಯವಿಟ್ಟು,0,Emergency,kn
-my neck hurts me and i can't stand with this pain,1,Pain,en
-ನನಗೆ ಉಸಿರಾಡಲು ಆಗುತ್ತಿಲ್ಲ ಸಹಾಯ ಮಾಡಿ,0,Emergency,kn
-i have a rash on my skin,2,Medication,en
-i need my insulin shot,2,Medication,en
-ವೈದ್ಯರು ಯಾವಾಗ ಬರುತ್ತಾರೆ,7,Information,kn
-my body feels weak and i tried to make it relax but it stills pain me,1,Pain,en
-i need my insulin,2,Medication,en
-कृपया मुझे बैठने में मदद करो please,4,Mobility,hi
-i am not able to breathe,0,Emergency,en
-please help me change into clean clothes,5,Hygiene,en
-ಹಾಸಿಗೆಯಲ್ಲಿ ತಿರುಗಲು ನನಗೆ ಸಹಾಯ ಬೇಕು,4,Mobility,kn
-क्या आप मुझे मेरी जाँच के नतीजे बता सकते हैं जल्दी,7,Information,hi
-severe pain in the upper left side of chest and may have pain to back,0,Emergency,en
-मुझे लगता है मैं बेहोश हो जाऊँगा please,0,Emergency,hi
-my head hurts whenever i try to do something.,1,Pain,en
-when i eat sugar i notice my vision blurs.,2,Medication,en
-can i have juice instead of water,3,Food/Water,en
-after a breakup i feel something strange in me.,6,Emotional Support,en
-i have a wound between my toes that gets better overnight and then reopens ever day when i wear dress shoes to work.,2,Medication,en
-longitudinal burning line across back with hard respiratory movements,1,Pain,en
-"i never had any acne problem until my last pregnancy, when all of a sudden my back got covered in zits.",2,Medication,en
-my back got injured while i was lifting at the gym,1,Pain,en
-ನಾನು ಕೈ ತೊಳೆಯಬೇಕು ದಯವಿಟ್ಟು,5,Hygiene,kn
-i feel hurts in my heart,0,Emergency,en
-i have a skin rash after eating an ice-cream.,2,Medication,en
-ನನಗೆ ಹಸಿವಾಗಿದೆ ತಿನ್ನಲು ಏನಾದರೂ ಸಿಗಬಹುದೇ ದಯವಿಟ್ಟು,3,Food/Water,kn
-मुझे निराशा और दुख महसूस हो रहा है कृपया,6,Emotional Support,hi
-sterilizer for the eye,2,Medication,en
-can you bring my antibiotics,2,Medication,en
-ನನ್ನ ಮುಂದಿನ ಭೇಟಿ ಯಾವಾಗ please,7,Information,kn
-i feel a sharp pain in my ankle joint when i stand.,1,Pain,en
-when i tried to answer the phine call i found that i can't hear the voice of the speaker,1,Pain,en
-मुझे बहुत प्यास लगी है कृपया,3,Food/Water,hi
-ದಯವಿಟ್ಟು ನನ್ನನ್ನು ಕುರ್ಚಿಗೆ ಸಾಗಿಸಿ ದಯವಿಟ್ಟು,4,Mobility,kn
-i have shooting pain in my kneecap after working out.,1,Pain,en
-क्या आप बिस्तर का सिरहाना ऊँचा कर सकते हैं,8,Other,hi
-i need help turning over in bed,4,Mobility,en
-i break out on my face very frequently,2,Medication,en
-glass broken and wound my leg badly the wound is so wide,2,Medication,en
-i have a problem in my back i cannot extend it,1,Pain,en
-ನಾನು ಯಾವ ಔಷಧಿ ತೆಗೆದುಕೊಳ್ಳುತ್ತಿದ್ದೇನೆ,7,Information,kn
-my shoulder is hurting me,1,Pain,en
-i feel strong pain in my knee after it was hit during the football match.,1,Pain,en
-"i feel hurt, lot of pain in my heart",6,Emotional Support,en
-मैं घर कब जा सकता हूँ जल्दी,7,Information,hi
-मुझे कुछ खाना चाहिए please,3,Food/Water,hi
-"every time i make an effort, i felt dizzy.",0,Emergency,en
-मैं कौन सी दवा ले रहा हूँ,7,Information,hi
-i can't stand up or sit down i have a pain in my back that annoys me,1,Pain,en
-my acne is really embarassing. it's so read.,2,Medication,en
-the severe pain in the stomach i feel,1,Pain,en
-i feel pain in my stomach,1,Pain,en
-ನನಗೆ ಇನ್ಸುಲಿನ್ ಬೇಕು ಬೇಗ,2,Medication,kn
-i feel great pain in the head,1,Pain,en
-i get breakouts on my chest with red patches that get more intense when i get hot.,2,Medication,en
-"i've tried reading books, but nothing can cheer me up.",6,Emotional Support,en
-मुझे बिस्तर से उठना है जल्दी,4,Mobility,hi
-i am having running nose,6,Emotional Support,en
-it is hard to breathe,0,Emergency,en
-मुझे साफ करने की जरूरत है please,5,Hygiene,hi
-ನಾನು ಯಾವ ಔಷಧಿ ತೆಗೆದುಕೊಳ್ಳುತ್ತಿದ್ದೇನೆ please,7,Information,kn
-i have not taken my medicine yet,2,Medication,en
-ದಯವಿಟ್ಟು ನನಗೆ ಕುಳಿತುಕೊಳ್ಳಲು ಸಹಾಯ ಮಾಡಿ please,4,Mobility,kn
-i have found some issues in my skin and tried to use cream but it doesn't get better,2,Medication,en
-i feel pain in my head with a vertigo,1,Pain,en
-ನಾನು ಮೂರ್ಛೆ ಹೋಗುತ್ತೇನೆ ಅನಿಸುತ್ತಿದೆ ಬೇಗ,0,Emergency,kn
-i have a ear ache when i go to the pool,1,Pain,en
-my foot hurts me a lot of playing football,1,Pain,en
-कृपया दरवाज़ा बंद कर दीजिए शोर है please,8,Other,hi
-ಇಂದು ನನ್ನ ದಾದಿ ಯಾರು ದಯವಿಟ್ಟು,7,Information,kn
-ನನಗೆ ಗಾಲಿಕುರ್ಚಿ ತರಬಹುದೇ please,4,Mobility,kn
-ನನಗೆ ಸ್ವಲ್ಪ ಜ್ಯೂಸ್ ಸಿಗಬಹುದೇ please,3,Food/Water,kn
-कृपया मुझे बैठने में मदद करो कृपया,4,Mobility,hi
-i cannot breathe please help,0,Emergency,en
-ನನಗೆ ತುಂಬಾ ಬಾಯಾರಿಕೆಯಾಗಿದೆ,3,Food/Water,kn
-my phone charger is not reaching,8,Other,en
-ನನ್ನ ಎದೆಯಲ್ಲಿ ತುಂಬಾ ನೋವಾಗುತ್ತಿದೆ,0,Emergency,kn
-i have a headache almost every day,1,Pain,en
+mein mund ist trocken ich brauche wasser,3,Food/Water,de
+क्या आप खिड़की खोल सकते हैं please,8,Other,hi
+ನನಗೆ ಚುಚ್ಚುಮದ್ದು ಬೇಕು ಬೇಗ,2,Medication,kn
+मुझे भूख लगी है कुछ खाने को मिल सकता है कृपया,3,Food/Water,hi
+when i'm driving my eyes see in double,2,Medication,en
+it is like i have a needle pushing through my heart.,0,Emergency,en
+i can't rotate my neck,1,Pain,en
+i have some pain when i'm walking around my knees,1,Pain,en
+meine brust ist ganz eng ich kann nicht atmen bitte,0,Emergency,de
+ನನ್ನ ಎದೆ ಬಿಗಿಯಾಗಿದೆ ಉಸಿರಾಡಲು ಆಗುತ್ತಿಲ್ಲ ಬೇಗ,0,Emergency,kn
+मेरा पूरा शरीर दर्द कर रहा है please,1,Pain,hi
+kann mir jemand beim aufstehen helfen danke,4,Mobility,de
+ನನಗೆ ಅಳು ಬರುತ್ತಿದೆ ದಯವಿಟ್ಟು ಇರಿ please,6,Emotional Support,kn
+ದಯವಿಟ್ಟು ನನಗೆ ಒಂದು ಲೋಟ ನೀರು ಕೊಡಿ ಬೇಗ,3,Food/Water,kn
+i had internal pain and gases when i ate indian spicy food yesterday,1,Pain,en
+ich brauche eine waschung im bett bitte,5,Hygiene,de
+मदद करो मुझे खून बह रहा है जल्दी,0,Emergency,hi
+don't cry,1,Pain,en
+मुझे भूख लगी है कुछ खाने को मिल सकता है please,3,Food/Water,hi
+"my skin color on my back is red, i don't know why.",2,Medication,en
+ich glaube ich werde ohnmächtig danke,0,Emergency,de
+ich möchte aus dem bett aufstehen danke,4,Mobility,de
 ಕೋಣೆ ತುಂಬಾ ಬಿಸಿಯಾಗಿದೆ please,8,Other,kn
-i have pain in my stomach,1,Pain,en
-कृपया मुझे दाँत साफ करने में मदद करो जल्दी,5,Hygiene,hi
-मेरे कपड़े गंदे हैं कृपया बदल दीजिए जल्दी,5,Hygiene,hi
-"my head hurts and i lose the sensation in my face, then lose sight in my eye",1,Pain,en
-i cannot bear this squeezing sensation i have in my chest.,0,Emergency,en
-"i feel pain in my legs muscles after i ran yesterday, i took some pain killers but it doesn't help.",1,Pain,en
-i feel pain in my chest area,1,Pain,en
-please help me brush my teeth,5,Hygiene,en
-i often get a sharp pain in my chest and i can't tell what i'm doing that might be triggering it.,0,Emergency,en
-my knees ache on cold and rainy days.,1,Pain,en
-when i eat i feel my stomach hurts,1,Pain,en
-i'm feeling nauseous,1,Pain,en
-i have a pain in my head,1,Pain,en
-need to scratch my skin every minute,2,Medication,en
-there is acne on my face,2,Medication,en
-क्या आप मेरी एंटीबायोटिक ला सकते हैं please,2,Medication,hi
-मुझे अपनी हालत की चिंता है जल्दी,6,Emotional Support,hi
-ದಯವಿಟ್ಟು ಹಲ್ಲು ಉಜ್ಜಲು ಸಹಾಯ ಮಾಡಿ,5,Hygiene,kn
-i feel pain in my heart when i wake up,0,Emergency,en
-i want to eat something,3,Food/Water,en
-the arches of my feet hurt when i wear heels,1,Pain,en
+bitte füllen sie meinen wasserkrug nach,3,Food/Water,de
+ನನ್ನ ಇಡೀ ದೇಹ ನೋಯುತ್ತಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
+मदद करो मुझे खून बह रहा है कृपया,0,Emergency,hi
+i feel a clicking sensation in my knee each time i step.,1,Pain,en
+can i get a fresh gown,5,Hygiene,en
+please clean my room it smells,5,Hygiene,en
+can you tell me the day today,7,Information,en
+ಹಾಸಿಗೆ ಒದ್ದೆಯಾಗಿದೆ ದಯವಿಟ್ಟು ಬದಲಾಯಿಸಿ ದಯವಿಟ್ಟು,5,Hygiene,kn
+ಇಂದು ನಾನು ತುಂಬಾ ಖಿನ್ನನಾಗಿದ್ದೇನೆ please,6,Emotional Support,kn
+when i carry heavy things i feel like breaking my back,2,Medication,en
+बहुत ठंड है कृपया एसी ठीक कर दीजिए please,8,Other,hi
+ಚಲಿಸಿದಾಗ ನನ್ನ ಕಾಲು ನೋಯುತ್ತದೆ ಬೇಗ,1,Pain,kn
+ich habe starke schmerzen in der brust bitte,0,Emergency,de
+i need to be cleaned up please,5,Hygiene,en
+i feel so sore in my stomach area.,1,Pain,en
+मैंने अभी तक दवा नहीं ली है,2,Medication,hi
 someone come quickly i need help now,0,Emergency,en
-it is time for my drops,2,Medication,en
-i feel a sharp pain in my head when i think too hard.,1,Pain,en
-मुझे बिस्तर से उठना है कृपया,4,Mobility,hi
-my chest acne breaks out and never clears up.,2,Medication,en
-मुझे सांस नहीं आ रही है मदद करो कृपया,0,Emergency,hi
-ಕೋಣೆ ತುಂಬಾ ಬಿಸಿಯಾಗಿದೆ,8,Other,kn
-feel like something is being jabbed into my joints,1,Pain,en
-i cut myself and i'm bleeding.,2,Medication,en
+i have acne all over my face,2,Medication,en
+my chest hurts when i smoke,1,Pain,en
+i have for dia,0,Emergency,en
+please help this is urgent,0,Emergency,en
+ಶಸ್ತ್ರಚಿಕಿತ್ಸೆಯ ಬಗ್ಗೆ ನನಗೆ ಭಯವಾಗಿದೆ ಬೇಗ,6,Emotional Support,kn
+my knee hurts when i walk,1,Pain,en
+ನಾನು ಹಾಸಿಗೆಯಿಂದ ಏಳಬೇಕು,4,Mobility,kn
+ನಾನು ಇನ್ನೂ ಔಷಧಿ ತೆಗೆದುಕೊಂಡಿಲ್ಲ ಬೇಗ,2,Medication,kn
+i can't walk well i have an ache in my foot,1,Pain,en
+ಕಿಟಕಿ ತೆರೆಯಬಹುದೇ ಬೇಗ,8,Other,kn
+meine medizin ist jetzt fällig,2,Medication,de
+ನನಗೆ ಒಂಟಿತನ ಅನಿಸುತ್ತಿದೆ ಸ್ವಲ್ಪ ಹೊತ್ತು ಇರಿ ಬೇಗ,6,Emotional Support,kn
+ನಾನು ಯಾವ ಔಷಧಿ ತೆಗೆದುಕೊಳ್ಳುತ್ತಿದ್ದೇನೆ,7,Information,kn
+bitte helfen sie mir zur toilette zu gehen,4,Mobility,de
+"sometimes when it is cold outside, my face hurts, especially around the pimples that are ready to pop.",2,Medication,en
+मुझे ऑपरेशन से डर लग रहा है जल्दी,6,Emotional Support,hi
+mein kopf tut weh danke,1,Pain,de
+i want my headache tablet,2,Medication,en
+ದಯವಿಟ್ಟು ಶೌಚಾಲಯಕ್ಕೆ ನಡೆಯಲು ಸಹಾಯ ಮಾಡಿ,4,Mobility,kn
+"my hair is coming out in chunks, especially when i wash it",2,Medication,en
+i need to go to the washroom,4,Mobility,en
+मेरा अगला भोजन कब आएगा जल्दी,3,Food/Water,hi
+there is sharp pain in my stomach,1,Pain,en
+ದಯವಿಟ್ಟು ಬಾಗಿಲು ಮುಚ್ಚಿ ಗದ್ದಲವಿದೆ ದಯವಿಟ್ಟು,8,Other,kn
+mein rücken tut sehr weh bitte,1,Pain,de
+i get breakouts on my chest with red patches that get more intense when i get hot.,2,Medication,en
+"i used to be out of breath after going up a dozen of stairs, but now i struggle to breath even when i sit down.",0,Emergency,en
+ನನ್ನ ಬಟ್ಟೆ ಕೊಳಕಾಗಿದೆ ದಯವಿಟ್ಟು ಬದಲಾಯಿಸಿ,5,Hygiene,kn
+क्या आप मेरी एंटीबायोटिक ला सकते हैं,2,Medication,hi
+i have an open wound in my arm,2,Medication,en
+i have an indigestion,1,Pain,en
+i feel depressed when i see my hair falling out,2,Medication,en
+ich kann nicht atmen bitte,0,Emergency,de
+ಚಲಿಸಿದಾಗ ನನ್ನ ಕಾಲು ನೋಯುತ್ತದೆ ದಯವಿಟ್ಟು,1,Pain,kn
+ನನ್ನ ಸ್ಥಿತಿಯ ಬಗ್ಗೆ ಚಿಂತೆಯಾಗಿದೆ please,6,Emotional Support,kn
+können sie bitte das licht ausschalten,8,Other,de
+i cant stop coughing.,2,Medication,en
+i got injured exercising,1,Pain,en
+क्या आप बिस्तर का सिरहाना ऊँचा कर सकते हैं कृपया,8,Other,hi
+can you lower the bed,8,Other,en
+my knee hurts when i play squash,1,Pain,en
+जल्दी करो कुछ गड़बड़ है,0,Emergency,hi
+meine brust ist ganz eng ich kann nicht atmen schnell,0,Emergency,de
+क्या आप मुझे एक कंबल ला सकते हैं कृपया,8,Other,hi
+मेरी गोली का समय हो गया है,2,Medication,hi
+who is my nurse today,7,Information,en
+helfen sie mir ich blute stark bitte,0,Emergency,de
+please help me move to the chair,4,Mobility,en
+ich fühle mich sehr ängstlich und allein schnell,6,Emotional Support,de
+कृपया मुझे किसी से बात करनी है please,6,Emotional Support,hi
+i feel pain inside i do not know what it is,1,Pain,en
+bitte helfen sie mir in saubere kleidung danke,5,Hygiene,de
+ನನ್ನ ಬೆನ್ನಿನಲ್ಲಿ ತುಂಬಾ ನೋವಾಗುತ್ತಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
+ದಯವಿಟ್ಟು ನನ್ನ ದಿಂಬು ಸರಿಪಡಿಸಿ please,8,Other,kn
+my body feels weak although i take my vitamins regularly.,1,Pain,en
+ನನ್ನ ಎದೆಯ ಭಾಗದಲ್ಲಿ ನೋವಿದೆ please,1,Pain,kn
+ಚಲಿಸಿದಾಗ ನನ್ನ ಕಾಲು ನೋಯುತ್ತದೆ please,1,Pain,kn
+i feel dizzy and out of sight,0,Emergency,en
+feels like there are pins and needles sticking in my joints,1,Pain,en
+मुझे सीने में दर्द महसूस हो रहा है,1,Pain,hi
+i get clusters of whiteheads and blackheads on my back.,2,Medication,en
+ದಯವಿಟ್ಟು ನನಗೆ ಕುಳಿತುಕೊಳ್ಳಲು ಸಹಾಯ ಮಾಡಿ please,4,Mobility,kn
+मुझे लगता है मैं बेहोश हो जाऊँगा please,0,Emergency,hi
+ನನಗೆ ತುಂಬಾ ಭಯ ಮತ್ತು ಒಂಟಿತನ ಅನಿಸುತ್ತಿದೆ ದಯವಿಟ್ಟು,6,Emotional Support,kn
+please i need something to drink now,3,Food/Water,en
+the joints in my fingers are painful in the morning.,1,Pain,en
+my heart is pumping fast and i'm having a hard time to breath.,0,Emergency,en
+आज मैं बहुत उदास महसूस कर रहा हूँ कृपया,6,Emotional Support,hi
+कृपया मुझे शौचालय तक चलने में मदद करो कृपया,4,Mobility,hi
+ich habe schmerzen im nacken bitte,1,Pain,de
+"it is hard to breath when i am in the underground metro station, why?",0,Emergency,en
+"at first it feels really numb, but then a thousand needles start to prick through my foot.",1,Pain,en
+ನನ್ನ ಭುಜದಲ್ಲಿ ತೀವ್ರ ನೋವಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
+bitte ich brauche einfach jemanden zum reden schnell,6,Emotional Support,de
+meine brust ist ganz eng ich kann nicht atmen,0,Emergency,de
+ಯಾರಾದರೂ ನನಗೆ ಎದ್ದೇಳಲು ಸಹಾಯ ಮಾಡಿ ದಯವಿಟ್ಟು,4,Mobility,kn
+please close the door it is noisy,8,Other,en
+ನನಗೆ ನೋವು ನಿವಾರಕ ಮಾತ್ರೆ ಬೇಕು please,2,Medication,kn
+i feel severe itching in the skin with redness,2,Medication,en
+can you fix the tv channel,8,Other,en
+ಸ್ನಾನ ಮಾಡಲು ನನಗೆ ಸಹಾಯ ಮಾಡುವಿರಾ ಬೇಗ,5,Hygiene,kn
+ನನಗೆ ಅಳು ಬರುತ್ತಿದೆ ದಯವಿಟ್ಟು ಇರಿ,6,Emotional Support,kn
+ich bin unruhig kann jemand bei mir sitzen bitte,6,Emotional Support,de
+mir ist zum weinen bitte bleiben sie,6,Emotional Support,de
+meine gelenke schmerzen danke,1,Pain,de
+ich mache mir sorgen um meinen zustand,6,Emotional Support,de
+wann kann ich nach hause gehen,7,Information,de
+ich hätte gerne etwas zu essen schnell,3,Food/Water,de
+bitte richten sie mein kissen,8,Other,de
+ನನಗೆ ಇನ್ಸುಲಿನ್ ಬೇಕು,2,Medication,kn
+rufen sie sofort den arzt danke,0,Emergency,de
+wann kann ich nach hause gehen danke,7,Information,de
+when i wake up i am feeling cold,6,Emotional Support,en
+ich habe angst vor der operation bitte,6,Emotional Support,de
+ich brauche meine schmerztablette,2,Medication,de
+ದಯವಿಟ್ಟು ನನ್ನ ಮಾತ್ರೆಗಳನ್ನು ತನ್ನಿ,2,Medication,kn
+i dropped my book can you pick it up,8,Other,en
+i need assistance to get up,4,Mobility,en
+क्या मुझे अभी दवा मिल सकती है,2,Medication,hi
+ನನ್ನ ಹೊಟ್ಟೆಯಲ್ಲಿ ತೀವ್ರ ನೋವಿದೆ please,1,Pain,kn
+ನಾನು ಕೈ ತೊಳೆಯಬೇಕು please,5,Hygiene,kn
+मेरी चादर गंदी है इसे बदल दीजिए,5,Hygiene,hi
+i can't turn my neck to the left without feeling a stabbing pain,1,Pain,en
+मेरा अगला भोजन कब आएगा please,3,Food/Water,hi
+meine brust ist ganz eng ich kann nicht atmen danke,0,Emergency,de
+ಸಹಾಯ ಮಾಡಿ ನನಗೆ ರಕ್ತ ಸೋರುತ್ತಿದೆ,0,Emergency,kn
+मेरे घुटने में बहुत दर्द है please,1,Pain,hi
+मुझे बाथरूम जाने में मदद चाहिए जल्दी,4,Mobility,hi
+"when i go to stand, my head starts swirling",0,Emergency,en
+i had a cut that was stitched together but it is not healing. it is oozing green puss and burns.,2,Medication,en
+ich fühle mich einsam können sie eine weile bleiben danke,6,Emotional Support,de
+kann mir jemand beim aufstehen helfen schnell,4,Mobility,de
+wann kann ich nach hause gehen schnell,7,Information,de
+my son had a root canal and the dentist accidentally cut the inside of his cheek and now it will not heal.,2,Medication,en
+my ear is ringing.,1,Pain,en
+ನನಗೆ ಸ್ವಲ್ಪ ಆಹಾರ ಬೇಕು please,3,Food/Water,kn
+i have a split on my thumb that will not heal.,2,Medication,en
+these red spots on my cheeks are new. what is it?,2,Medication,en
+ನನ್ನ ಮಾತ್ರೆಯ ಸಮಯವಾಗಿದೆ,2,Medication,kn
+bitte helfen sie mir in saubere kleidung,5,Hygiene,de
+"i feel dizzy when i set in-front of my laptop for an hour or two, what possibly could be the reason?",0,Emergency,en
+ich bekomme keine luft bitte helfen sie bitte,0,Emergency,de
+ich bin unruhig kann jemand bei mir sitzen schnell,6,Emotional Support,de
+i don't have problems taking in breath but out breath is so heavy,0,Emergency,en
+मुझे कुछ खाना चाहिए कृपया,3,Food/Water,hi
+मुझे यहाँ कितने दिन रहना है,7,Information,hi
+bitte geben sie mir meine verschriebenen tabletten,2,Medication,de
+मेरी दवा का समय हो गया है जल्दी,2,Medication,hi
+क्या आप मेरी एंटीबायोटिक ला सकते हैं कृपया,2,Medication,hi
+when get up i found that i have a stomach ache and i tried to take medecine but my stomach still hurting me,1,Pain,en
+ich habe starke schmerzen im knie bitte,1,Pain,de
+i feel like something is squeezing my lungs.,0,Emergency,en
+क्या मुझे अभी दवा मिल सकती है कृपया,2,Medication,hi
+my son got a tattoo several weeks ago and the skin around it is raised and hot and it looks infected.,2,Medication,en
+क्या मुझे अभी दवा मिल सकती है जल्दी,2,Medication,hi
+ನನಗೆ ಸ್ವಲ್ಪ ಆಹಾರ ಬೇಕು,3,Food/Water,kn
+meine gelenke schmerzen schnell,1,Pain,de
+when is my surgery scheduled,7,Information,en
+could you get me some warm water,3,Food/Water,en
+ಕೋಣೆ ತುಂಬಾ ಬಿಸಿಯಾಗಿದೆ ಬೇಗ,8,Other,kn
+मुझे इंसुलिन चाहिए please,2,Medication,hi
+ich brauche hilfe um zur toilette zu kommen,4,Mobility,de
+i feel pain in my ears with tinnitus,1,Pain,en
+ನಾನು ಸ್ವಂತವಾಗಿ ಚಲಿಸಲು ಆಗುತ್ತಿಲ್ಲ ಬೇಗ,4,Mobility,kn
+something dark is there on my arm,2,Medication,en
+ich fühle mich sehr ängstlich und allein danke,6,Emotional Support,de
+ನನಗೆ ಹಸಿವಾಗಿದೆ ತಿನ್ನಲು ಏನಾದರೂ ಸಿಗಬಹುದೇ please,3,Food/Water,kn
+ನನಗೆ ಇನ್ಸುಲಿನ್ ಬೇಕು please,2,Medication,kn
+मुझे एक और तकिया चाहिए please,8,Other,hi
+i walk every day but now i get short of breath after going only a short way.,0,Emergency,en
+ich brauche eine waschung im bett schnell,5,Hygiene,de
+ich habe wirklich durst,3,Food/Water,de
+i was travelling by ship and i feel dizzy.,0,Emergency,en
+the pain in my ear is unbearable.,1,Pain,en
+ich habe den ganzen tag nichts gegessen,3,Food/Water,de
+i'm not good i'm feeling so cold,6,Emotional Support,en
+मेरे कंधे में तेज़ दर्द है,1,Pain,hi
+i have a headache every time i eat ice cream,1,Pain,en
+i have a break in the skin inside one of my nostrils that has become infected and is now filled with pus.,2,Medication,en
+ನನಗೆ ಒಂದು ಹೊದಿಕೆ ತರಬಹುದೇ,8,Other,kn
+"i feel chilly, like an ice cube. my sister said that she needs several blankets to cover her so that she is warm enough.",6,Emotional Support,en
+need to scratch my skin every minute,2,Medication,en
+my neck has been sore since the accident.,1,Pain,en
+every time it rains i get hives on my belly and sides.,2,Medication,en
+मुझे साफ करने की जरूरत है जल्दी,5,Hygiene,hi
+i need to use the restroom can you assist,4,Mobility,en
+my diaper needs changing,5,Hygiene,en
+i do not feel better in my muscles,1,Pain,en
+i think my wound is infected,2,Medication,en
+ich muss auf die toilette bitte,4,Mobility,de
+all of a sudden i felt dizzy when i stood up.,0,Emergency,en
+i have a sharp pain in my abdomen.,1,Pain,en
+my wound was infected when i was planting some flowers in my garden,2,Medication,en
+i can hardly breathe,0,Emergency,en
+डॉक्टर कब आएंगे please,7,Information,hi
+i have a hard pain in my stomach,1,Pain,en
+ನನಗೆ ಹೃದಯಾಘಾತ ಆಗುತ್ತಿದೆ please,0,Emergency,kn
+क्या मुझे अभी दवा मिल सकती है please,2,Medication,hi
+ನಾನು ಶೌಚಾಲಯ ಬಳಸಬೇಕು,4,Mobility,kn
+können sie mir beim baden helfen danke,5,Hygiene,de
+i have a dull ache in my head,1,Pain,en
+ನನಗೆ ಚುಚ್ಚುಮದ್ದು ಬೇಕು please,2,Medication,kn
+it itches inside my ears.,1,Pain,en
+ich glaube ich habe einen herzinfarkt,0,Emergency,de
+कृपया मुझे कुर्सी तक ले जाओ कृपया,4,Mobility,hi
+मुझे निराशा और दुख महसूस हो रहा है,6,Emotional Support,hi
+i am unable to get up by myself,4,Mobility,en
+i did not get my breakfast,3,Food/Water,en
+i have shooting pain in my kneecap after working out.,1,Pain,en
+after walking i have some pain under my foot,1,Pain,en
+कृपया मुझे कुछ पीने को लाइए कृपया,3,Food/Water,hi
+ನನಗೆ ನಿರಾಶೆ ಮತ್ತು ದುಃಖ ಅನಿಸುತ್ತಿದೆ,6,Emotional Support,kn
+i can't get a girlfriend because of my acne.,2,Medication,en
+bitte geben sie mir meine verschriebenen tabletten bitte,2,Medication,de
+can't keep focus,1,Pain,en
+my arm hurts when i stretch,1,Pain,en
+what are these pills for,7,Information,en
+कृपया मुझे मेरी दवा दीजिए please,2,Medication,hi
+können sie das fenster öffnen,8,Other,de
+ದಯವಿಟ್ಟು ಶೌಚಾಲಯಕ್ಕೆ ನಡೆಯಲು ಸಹಾಯ ಮಾಡಿ ದಯವಿಟ್ಟು,4,Mobility,kn
+i feel head ache,1,Pain,en
+when i lift my arms up i have a soreness in my shoulders,1,Pain,en
+ನನಗೆ ಉಸಿರಾಡಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ ದಯವಿಟ್ಟು,0,Emergency,kn
+कृपया मुझे मेरी दवा दीजिए कृपया,2,Medication,hi
+ದಯವಿಟ್ಟು ಶೌಚಾಲಯಕ್ಕೆ ನಡೆಯಲು ಸಹಾಯ ಮಾಡಿ please,4,Mobility,kn
+क्या आप मुझे मेरा चश्मा दे सकते हैं,8,Other,hi
+ನನ್ನ ಪ್ರತಿಜೀವಕ ಔಷಧಿ ತರಬಹುದೇ ಬೇಗ,2,Medication,kn
+wann gibt es meine nächste mahlzeit,3,Food/Water,de
+ಯಾರಾದರೂ ನನಗೆ ಎದ್ದೇಳಲು ಸಹಾಯ ಮಾಡಿ please,4,Mobility,kn
+"when i drink a lot, i get a headache",1,Pain,en
+ನನಗೆ ತುಂಬಾ ಬಾಯಾರಿಕೆಯಾಗಿದೆ,3,Food/Water,kn
+"redness, swelling, and difficulty walking",1,Pain,en
+ಈಗ ನನಗೆ ಔಷಧಿ ಸಿಗಬಹುದೇ,2,Medication,kn
+i feel sad like hurt or pain,6,Emotional Support,en
+मेरे जोड़ों में दर्द हो रहा है कृपया,1,Pain,hi
+i hit myself and the would doesn't want to heal,2,Medication,en
+ವೈದ್ಯರು ಯಾವಾಗ ಬರುತ್ತಾರೆ,7,Information,kn
+i stopped sports because i get injury from sports,1,Pain,en
+ನಾನು ಇನ್ನೂ ಔಷಧಿ ತೆಗೆದುಕೊಂಡಿಲ್ಲ,2,Medication,kn
+i feel a great pain in my shoulder joint and it does not go away,1,Pain,en
+ನಾನು ಮೂರ್ಛೆ ಹೋಗುತ್ತೇನೆ ಅನಿಸುತ್ತಿದೆ please,0,Emergency,kn
+bitte füllen sie meinen wasserkrug nach bitte,3,Food/Water,de
+कमरा बहुत गर्म है,8,Other,hi
+ನಾನು ಯಾವ ಔಷಧಿ ತೆಗೆದುಕೊಳ್ಳುತ್ತಿದ್ದೇನೆ ಬೇಗ,7,Information,kn
+my knees ache on cold and rainy days.,1,Pain,en
+i lose a lot of my hair,1,Pain,en
+ನನ್ನ ಡಯಾಪರ್ ಬದಲಾಯಿಸಬೇಕು please,5,Hygiene,kn
+ich brauche mein insulin,2,Medication,de
+help me i am bleeding,0,Emergency,en
+ನನಗೆ ನಿರಾಶೆ ಮತ್ತು ದುಃಖ ಅನಿಸುತ್ತಿದೆ ಬೇಗ,6,Emotional Support,kn
+my temperature dropped and my body get synosed,6,Emotional Support,en
+ನಾನು ಆತಂಕಗೊಂಡಿದ್ದೇನೆ ಯಾರಾದರೂ ನನ್ನ ಜೊತೆ ಕುಳಿತುಕೊಳ್ಳಿ,6,Emotional Support,kn
+i have muscle pain that my back i have muscle pain at my back leg,1,Pain,en
+could i please have a glass of water,3,Food/Water,en
+my sore looks like its not healing well.,2,Medication,en
+मेरे कपड़े गंदे हैं कृपया बदल दीजिए जल्दी,5,Hygiene,hi
+ನನಗೆ ಉಸಿರಾಡಲು ಆಗುತ್ತಿಲ್ಲ ಸಹಾಯ ಮಾಡಿ ದಯವಿಟ್ಟು,0,Emergency,kn
+my hands are dirty i need to wash,5,Hygiene,en
+my grandmother last year went to hospital because she was having a hard time breathing,0,Emergency,en
+bitte helfen sie mir beim zähneputzen schnell,5,Hygiene,de
+ಸ್ನಾನ ಮಾಡಲು ನನಗೆ ಸಹಾಯ ಮಾಡುವಿರಾ,5,Hygiene,kn
+ich brauche hilfe um zur toilette zu kommen schnell,4,Mobility,de
+i have a pain in my head,1,Pain,en
+ನಾನು ಈಗ ತುಂಬಾ ಆತಂಕದಲ್ಲಿದ್ದೇನೆ,6,Emotional Support,kn
+ich muss auf die toilette,4,Mobility,de
+अभी क्या समय हुआ है कृपया,7,Information,hi
+it is too cold can you adjust the ac,8,Other,en
+my heart is beating fast and it scares me.,0,Emergency,en
+"i never had any acne problem until my last pregnancy, when all of a sudden my back got covered in zits.",2,Medication,en
+क्या आप मेरे लिए व्हीलचेयर ला सकते हैं,4,Mobility,hi
+there is an injured person,2,Medication,en
+"i was diagnosed with pneumonia, i can't breath easily.",0,Emergency,en
+kann ich jetzt meine medizin bekommen danke,2,Medication,de
+ನನಗೆ ನೋವು ನಿವಾರಕ ಮಾತ್ರೆ ಬೇಕು ಬೇಗ,2,Medication,kn
+i feel a sharp pain in my ankle joint when i stand.,1,Pain,en
+können sie mir meine brille reichen danke,8,Other,de
+i feel pain when parting loved ones,6,Emotional Support,en
+it's hard to see things,2,Medication,en
+chronic bowel pain,1,Pain,en
+my joints ache whenever it is cold,1,Pain,en
+können sie mir eine decke bringen schnell,8,Other,de
+डॉक्टर कब आएंगे जल्दी,7,Information,hi
+my foot is hurting so much.,1,Pain,en
+i have eruptions on my face that come and go .,2,Medication,en
+ich mache mir sorgen um meinen zustand schnell,6,Emotional Support,de
+i had alot of exercise yesterday so i feel sharp muscle pains,1,Pain,en
+i can't see the sign i have a blurry vision,2,Medication,en
+my whole body is aching,1,Pain,en
+i feel that is great pain in my left shoulder,1,Pain,en
+i would like to wash my hands,5,Hygiene,en
+when i remember her i feel down,6,Emotional Support,en
+ich brauche hilfe mich im bett umzudrehen bitte,4,Mobility,de
+kann ich jetzt meine medizin bekommen bitte,2,Medication,de
+i notice a lot more hair coming out than usual when i brush my hair,2,Medication,en
+wann ist mein nächster termin danke,7,Information,de
+मुझे दर्द की गोली चाहिए please,2,Medication,hi
+ನನಗೆ ತುಂಬಾ ಭಯ ಮತ್ತು ಒಂಟಿತನ ಅನಿಸುತ್ತಿದೆ ಬೇಗ,6,Emotional Support,kn
+my head hurts in the back and the pain lasts all day.,1,Pain,en
+"every time i make an effort, i felt dizzy.",0,Emergency,en
+das bett ist nass bitte wechseln sie es bitte,5,Hygiene,de
+ನನ್ನ ಎದೆ ಬಿಗಿಯಾಗಿದೆ ಉಸಿರಾಡಲು ಆಗುತ್ತಿಲ್ಲ,0,Emergency,kn
+how long do i have to stay here,7,Information,en
+mein ganzer körper tut weh,1,Pain,de
+ನನಗೆ ಗಾಲಿಕುರ್ಚಿ ತರಬಹುದೇ,4,Mobility,kn
+ನನ್ನ ಮುಂದಿನ ಭೇಟಿ ಯಾವಾಗ ದಯವಿಟ್ಟು,7,Information,kn
+i feel a huge emotional pain after i broke up with my girlfriend.,6,Emotional Support,en
+ಹಾಸಿಗೆ ಒದ್ದೆಯಾಗಿದೆ ದಯವಿಟ್ಟು ಬದಲಾಯಿಸಿ ಬೇಗ,5,Hygiene,kn
+ich fühle mich heute so niedergeschlagen,6,Emotional Support,de
+i feel like i can hardly breathe unless i get what's in my lungs out,2,Medication,en
+ನಾನು ಶೌಚಾಲಯ ಬಳಸಬೇಕು ಬೇಗ,4,Mobility,kn
+wer ist heute meine pflegekraft,7,Information,de
+ನಾನು ಇಲ್ಲಿ ಎಷ್ಟು ದಿನ ಇರಬೇಕು ದಯವಿಟ್ಟು,7,Information,kn
+there's swelling in my neck and it hurts.,1,Pain,en
+i had a pain in my knee when i was swimming,1,Pain,en
+ich mache mir sorgen um meinen zustand danke,6,Emotional Support,de
+ನನ್ನ ಎದೆಯಲ್ಲಿ ತುಂಬಾ ನೋವಾಗುತ್ತಿದೆ ಬೇಗ,0,Emergency,kn
+i have a very bad cough,2,Medication,en
+meine bettwäsche ist schmutzig bitte wechseln sie sie,5,Hygiene,de
+ನನ್ನ ಎದೆಯ ಭಾಗದಲ್ಲಿ ನೋವಿದೆ ಬೇಗ,1,Pain,kn
+können sie mir eine decke bringen bitte,8,Other,de
+i can't do anything i feel a weak in my body,1,Pain,en
+call the doctor immediately,0,Emergency,en
+i chopped off the tip of my finger while i was cutting some cardboard and i cannot stop the bleeding.,2,Medication,en
+i have a dry skin,2,Medication,en
+ದಯವಿಟ್ಟು ಕುಡಿಯಲು ಏನಾದರೂ ತನ್ನಿ,3,Food/Water,kn
+ich kann nicht atmen schnell,0,Emergency,de
+wann kommt der arzt schnell,7,Information,de
+ಬೇಗ ಬನ್ನಿ ಏನೋ ತಪ್ಪಾಗಿದೆ ದಯವಿಟ್ಟು,0,Emergency,kn
+i have a rash and it itches very bad.,2,Medication,en
+bitte bringen sie mir etwas zu trinken schnell,3,Food/Water,de
+wie spät ist es jetzt schnell,7,Information,de
+ನನ್ನ ತಲೆ ನೋಯುತ್ತಿದೆ,1,Pain,kn
+welche medikamente nehme ich,7,Information,de
+क्या आप मुझे मेरा चश्मा दे सकते हैं please,8,Other,hi
+"i feel like i just can't cope anymore, i feel overwhelmed and like i just can't get a break.",6,Emotional Support,en
+the nerves were so damaged during the operation on my ankle that i cannot stand being touched on the scar.,1,Pain,en
+i have a feeling like my whole body is complaining,1,Pain,en
+ದಯವಿಟ್ಟು ನನಗೆ ಒಂದು ಲೋಟ ನೀರು ಕೊಡಿ ದಯವಿಟ್ಟು,3,Food/Water,kn
+ನನ್ನ ಮಾತ್ರೆಯ ಸಮಯವಾಗಿದೆ please,2,Medication,kn
+i am really thirsty,3,Food/Water,en
+मेरी गर्दन में दर्द है कृपया,1,Pain,hi
+when i sneeze very hard i feel ear ache,1,Pain,en
+मैं अपने हाथ धोना चाहता हूँ कृपया,5,Hygiene,hi
+i don't do anything at home and still i feel exhausted.,1,Pain,en
+मुझे बहुत प्यास लगी है,3,Food/Water,hi
+ದಯವಿಟ್ಟು ದೀಪ ಆರಿಸಿ ದಯವಿಟ್ಟು,8,Other,kn
+my chest is very tight i cannot breathe,0,Emergency,en
+आज मैं बहुत उदास महसूस कर रहा हूँ,6,Emotional Support,hi
+ಈಗ ಸಮಯ ಎಷ್ಟು ಬೇಗ,7,Information,kn
+wann ist meine operation geplant bitte,7,Information,de
+ಸಹಾಯ ಮಾಡಿ ನನಗೆ ರಕ್ತ ಸೋರುತ್ತಿದೆ ದಯವಿಟ್ಟು,0,Emergency,kn
+ನನಗೆ ತುಂಬಾ ಬಾಯಾರಿಕೆಯಾಗಿದೆ ದಯವಿಟ್ಟು,3,Food/Water,kn
+"my heart hurts while i'm sad, why?",0,Emergency,en
+क्या आप मेरे लिए व्हीलचेयर ला सकते हैं कृपया,4,Mobility,hi
+every time i comb my hair there are so many hair in my comb.,2,Medication,en
+"there must be something wrong with my blood circulation, i have to wear socks even on the hottest days, my toes are frozen!",6,Emotional Support,en
+मुझे दिल का दौरा पड़ रहा है कृपया,0,Emergency,hi
+कृपया मुझे एक गिलास पानी दीजिए,3,Food/Water,hi
+there is pain in my joints. i can not bear pain,1,Pain,en
+मेरा डायपर बदलने की जरूरत है please,5,Hygiene,hi
+तुरंत डॉक्टर को बुलाओ जल्दी,0,Emergency,hi
+ich habe schmerzen im nacken danke,1,Pain,de
+i feel discomfort throughout the body in general,1,Pain,en
+मुझे निराशा और दुख महसूस हो रहा है कृपया,6,Emotional Support,hi
+क्या आप मुझे मेरी जाँच के नतीजे बता सकते हैं कृपया,7,Information,hi
+क्या कोई मुझे खड़े होने में मदद करेगा please,4,Mobility,hi
+मैं कौन सी दवा ले रहा हूँ जल्दी,7,Information,hi
+ನನಗೆ ಚುಚ್ಚುಮದ್ದು ಬೇಕು,2,Medication,kn
+मुझे स्पंज बाथ चाहिए जल्दी,5,Hygiene,hi
+bitte helfen sie mir beim zähneputzen bitte,5,Hygiene,de
+ದಯವಿಟ್ಟು ನನಗೆ ಯಾರೊಂದಿಗಾದರೂ ಮಾತನಾಡಬೇಕು,6,Emotional Support,kn
+können sie mein antibiotikum bringen,2,Medication,de
+ನನ್ನ ಮುಂದಿನ ಊಟ ಯಾವಾಗ ಬೇಗ,3,Food/Water,kn
+i cannot bear this squeezing sensation i have in my chest.,0,Emergency,en
+das zimmer ist zu heiß danke,8,Other,de
+mein bein tut weh wenn ich mich bewege,1,Pain,de
+कृपया मेरा तकिया ठीक कर दीजिए,8,Other,hi
+"i can't move my leg, there is pain in the joint",1,Pain,en
+मैं कौन सी दवा ले रहा हूँ please,7,Information,hi
+i hit the ground when trying to shoot a basketball,1,Pain,en
+when i walk i get a stabbing pain in the top of my foot,1,Pain,en
+ದಯವಿಟ್ಟು ನನಗೆ ಯಾರೊಂದಿಗಾದರೂ ಮಾತನಾಡಬೇಕು ಬೇಗ,6,Emotional Support,kn
+मेरे सीने में बहुत दर्द हो रहा है,0,Emergency,hi
+मुझे भूख लगी है कुछ खाने को मिल सकता है जल्दी,3,Food/Water,hi
+"when i move on my shoulder, pain shoots down my arm",1,Pain,en
+मेरे सीने में बहुत दर्द हो रहा है कृपया,0,Emergency,hi
+ನನ್ನ ಮೊಣಕಾಲಿನಲ್ಲಿ ತುಂಬಾ ನೋವಿದೆ,1,Pain,kn
+can you help me take a bath,5,Hygiene,en
+i can't stop coughing,2,Medication,en
+mein kopf tut weh,1,Pain,de
+when i'm awake in the morning i feel strange and have vertigo,0,Emergency,en
+ich fühle mich heute so niedergeschlagen bitte,6,Emotional Support,de
+i can't breath because of cough,2,Medication,en
+das zimmer ist zu heiß schnell,8,Other,de
 मुझे अपनी हालत की चिंता है please,6,Emotional Support,hi
 "i can't walk, my knee hurts me",1,Pain,en
-my head hurts me badly,1,Pain,en
-i have general discomfort in my torso.,1,Pain,en
-"my stomach aches when i eat hot food, why?",1,Pain,en
-i cant sleep because of cold,1,Pain,en
-my hair is falling when i am combing it.,2,Medication,en
-my wound opened up again,2,Medication,en
-"my stomach aches after i drink any soda drink, why?",1,Pain,en
-i feel pain in the lower back,1,Pain,en
-my sore isn't healing well and it's been like this for two weeks.,2,Medication,en
-i am frightened about the surgery,6,Emotional Support,en
-क्या आप मुझे नहाने में मदद करेंगे,5,Hygiene,hi
-i feel a great pain in my shoulder joint and it does not go away,1,Pain,en
-i feel pain in my eyes i can see fog,2,Medication,en
-i can't move my head up and down.,1,Pain,en
-i don't have full range of motion with my arms,1,Pain,en
-i have throbing in my shoulder,1,Pain,en
-ಚಲಿಸಿದಾಗ ನನ್ನ ಕಾಲು ನೋಯುತ್ತದೆ please,1,Pain,kn
-my head gets dizzy when i try to get up.,0,Emergency,en
-कृपया मेरा तकिया ठीक कर दीजिए कृपया,8,Other,hi
-ನನ್ನ ಬಾಯಿ ಒಣಗಿದೆ ನನಗೆ ನೀರು ಬೇಕು ಬೇಗ,3,Food/Water,kn
-i have disterbance in my emotion,6,Emotional Support,en
-my heart hurts when i exercise,0,Emergency,en
-i am choking please help now,0,Emergency,en
-i feel so sore in my stomach area.,1,Pain,en
-ನನ್ನ ಮೊಣಕಾಲಿನಲ್ಲಿ ತುಂಬಾ ನೋವಿದೆ ಬೇಗ,1,Pain,kn
-my knee catches and hurts when i first stand up after sitting.,1,Pain,en
-i have a sharp pain in my abdomen.,1,Pain,en
-my ear hurts and it's worse when i swallow. my ear is very painful and tylenol hasn't helped.,1,Pain,en
-i have a dry skin,2,Medication,en
-my neck has been sore since the accident.,1,Pain,en
-ನನ್ನ ಮುಂದಿನ ಊಟ ಯಾವಾಗ,3,Food/Water,kn
-"i cut my finger opening a can, it won't stop bleeding and the wound is gaping and open",2,Medication,en
-i need another pillow,8,Other,en
-ಸಹಾಯ ಮಾಡಿ ನನಗೆ ರಕ್ತ ಸೋರುತ್ತಿದೆ ದಯವಿಟ್ಟು,0,Emergency,kn
-i need something for the pain a tablet,2,Medication,en
 मुझे अकेलापन लग रहा है कुछ देर रुको please,6,Emotional Support,hi
-every time i take a deep breath i start coughing,2,Medication,en
-मुझे एक और तकिया चाहिए please,8,Other,hi
-i want to get out of bed,4,Mobility,en
-ದಯವಿಟ್ಟು ನನ್ನ ನೀರಿನ ಜಗ್ ತುಂಬಿಸಿ,3,Food/Water,kn
-sometimes i feel like a claw on my chest that leaves me breathless.,0,Emergency,en
-"i started taking swimming lessons and i guess i swallowed too much water through my nose, because this sinusitis is killing me now.",1,Pain,en
-i have a powerful pain inside my neck,1,Pain,en
-क्या मुझे थोड़ा जूस मिल सकता है please,3,Food/Water,hi
-i do not know why i feel cold,6,Emotional Support,en
-ಕಿಟಕಿ ತೆರೆಯಬಹುದೇ,8,Other,kn
-help me reach my walker,4,Mobility,en
-ನಾನು ಮನೆಗೆ ಯಾವಾಗ ಹೋಗಬಹುದು ಬೇಗ,7,Information,kn
-"i feel dizzy when i set in-front of my laptop for an hour or two, what possibly could be the reason?",0,Emergency,en
-मेरे पेट में तेज़ दर्द है कृपया,1,Pain,hi
-there is a tingling sensation in my neck.,1,Pain,en
-have severe cold and cough,2,Medication,en
-"my body feels weak although i eat a lot, why?",1,Pain,en
-ಸಹಾಯ ಮಾಡಿ ನನಗೆ ರಕ್ತ ಸೋರುತ್ತಿದೆ,0,Emergency,kn
-i visited many doctors but they can't find the right treatment toget my hair back,2,Medication,en
-can you explain what this medicine does,7,Information,en
-कृपया मुझे दाँत साफ करने में मदद करो please,5,Hygiene,hi
-there is a sharp pain in my bicep. i have tried to apply pain relief cream but it does not help.,1,Pain,en
-even though i'm an adult my face keeps breaking out in pimples.,2,Medication,en
-my grandmother last year went to hospital because she was having a hard time breathing,0,Emergency,en
-ನನಗೆ ಸ್ಪಂಜ್ ಸ್ನಾನ ಬೇಕು ಬೇಗ,5,Hygiene,kn
-बहुत ठंड है कृपया एसी ठीक कर दीजिए जल्दी,8,Other,hi
-क्या मुझे अभी दवा मिल सकती है जल्दी,2,Medication,hi
-मुझसे साँस नहीं ली जा रही,0,Emergency,hi
-ತುಂಬಾ ಚಳಿಯಿದೆ ದಯವಿಟ್ಟು ಎಸಿ ಸರಿಪಡಿಸಿ ದಯವಿಟ್ಟು,8,Other,kn
-i'm not feeling good i can't take my breath,0,Emergency,en
-there are some pimples on my face that bother me a lot,2,Medication,en
-ನನ್ನ ಎದೆ ಬಿಗಿಯಾಗಿದೆ ಉಸಿರಾಡಲು ಆಗುತ್ತಿಲ್ಲ ಬೇಗ,0,Emergency,kn
-ನಾನು ಹಾಸಿಗೆಯಿಂದ ಏಳಬೇಕು please,4,Mobility,kn
-"i was playing basketball yesterday, i have sprained ankle",1,Pain,en
-मेरा ऑपरेशन कब है please,7,Information,hi
-i used to have acne when i was 15 years old,2,Medication,en
-i cannot move on my own i need help,4,Mobility,en
-i have a strange rash on my arm,1,Pain,en
-मुझे दर्द की गोली चाहिए कृपया,2,Medication,hi
-ನನ್ನ ಮೊಣಕಾಲಿನಲ್ಲಿ ತುಂಬಾ ನೋವಿದೆ,1,Pain,kn
-क्या मुझे अभी दवा मिल सकती है please,2,Medication,hi
-ನನ್ನ ಪ್ರತಿಜೀವಕ ಔಷಧಿ ತರಬಹುದೇ please,2,Medication,kn
-ನನ್ನನ್ನು ಸ್ವಚ್ಛಗೊಳಿಸಬೇಕು,5,Hygiene,kn
-my head hurts in the back and the pain lasts all day.,1,Pain,en
-ಈಗ ಸಮಯ ಎಷ್ಟು please,7,Information,kn
-my stomach feels full and upset and bloating after big meals.,1,Pain,en
-मेरे कंधे में तेज़ दर्द है,1,Pain,hi
-i am really thirsty,3,Food/Water,en
-my chest is very tight i cannot breathe,0,Emergency,en
-मेरे पेट में तेज़ दर्द है,1,Pain,hi
-all of a sudden i felt dizzy when i stood up.,0,Emergency,en
-क्या आप मेरे लिए व्हीलचेयर ला सकते हैं,4,Mobility,hi
-i feel a lot of pain in the joints.,1,Pain,en
-i'm not hearing well i have problem with my ear,1,Pain,en
-all my body is in a bad case and i need a good treatment,1,Pain,en
-the fan is too strong please reduce it,8,Other,en
-मेरे जोड़ों में दर्द हो रहा है कृपया,1,Pain,hi
-i feel hopeless and sad,6,Emotional Support,en
-ತುಂಬಾ ಚಳಿಯಿದೆ ದಯವಿಟ್ಟು ಎಸಿ ಸರಿಪಡಿಸಿ please,8,Other,kn
-"even if the temperature is high in the house, my body is always cold",6,Emotional Support,en
-कृपया मुझे एक गिलास पानी दीजिए,3,Food/Water,hi
-मैं घबराया हुआ हूँ कोई मेरे पास बैठे जल्दी,6,Emotional Support,hi
-i was travelling by ship and i feel dizzy.,0,Emergency,en
-मुझे लगता है मैं बेहोश हो जाऊँगा जल्दी,0,Emergency,hi
-my biceps started aching after i went to the gym,1,Pain,en
-ದಯವಿಟ್ಟು ನನಗೆ ಯಾರೊಂದಿಗಾದರೂ ಮಾತನಾಡಬೇಕು ಬೇಗ,6,Emotional Support,kn
-"can't do any exercise, i feel weak",1,Pain,en
-i feel pain in my body,1,Pain,en
-i feel like i've always got something in my throat,2,Medication,en
-i feel a tightness in my chest,0,Emergency,en
-when i force my eyes to view i have blurry vision.,2,Medication,en
-there is a sharp pain in my bicep,1,Pain,en
-मेरा अगला भोजन कब आएगा,3,Food/Water,hi
-i knocked my foot and it really hurts.,1,Pain,en
-i don't have the energy to do the things that i used to,1,Pain,en
-ನನಗೆ ನಿರಾಶೆ ಮತ್ತು ದುಃಖ ಅನಿಸುತ್ತಿದೆ,6,Emotional Support,kn
-i feel lonely can you stay a while,6,Emotional Support,en
-हिलने पर मेरे पैर में दर्द होता है,1,Pain,hi
-ದಯವಿಟ್ಟು ದೀಪ ಆರಿಸಿ ಬೇಗ,8,Other,kn
-is my cut infected or just healing?,2,Medication,en
-मेरी पीठ में बहुत दर्द हो रहा है कृपया,1,Pain,hi
-ನನಗೆ ಅಳು ಬರುತ್ತಿದೆ ದಯವಿಟ್ಟು ಇರಿ ದಯವಿಟ್ಟು,6,Emotional Support,kn
-i have shoulder pain after doing any home work.,1,Pain,en
-ನನ್ನ ಉಸಿರು ಕಟ್ಟುತ್ತಿದೆ ಬೇಗ ಬನ್ನಿ ಬೇಗ,0,Emergency,kn
-my face is all broken out with pimples.,2,Medication,en
-मुझे एक और तकिया चाहिए,8,Other,hi
-कृपया मुझे मेरी दवा दीजिए जल्दी,2,Medication,hi
-my body feels weak although i take my vitamins regularly.,1,Pain,en
-my head is spinning when i get up.,0,Emergency,en
-ನಾನು ಶೌಚಾಲಯ ಬಳಸಬೇಕು,4,Mobility,kn
-ನನ್ನ ಕುತ್ತಿಗೆಯಲ್ಲಿ ನೋವಿದೆ,1,Pain,kn
-कृपया मुझे बैठने में मदद करो जल्दी,4,Mobility,hi
-can you fix the tv channel,8,Other,en
-मैं घबराया हुआ हूँ कोई मेरे पास बैठे please,6,Emotional Support,hi
-i have a great pain in my thorax from heart injury,0,Emergency,en
-when i bend over i get a shooting pain down my back,1,Pain,en
-मुझे स्पंज बाथ चाहिए जल्दी,5,Hygiene,hi
-when i tried to be warm and wear more clothes i found that i was still cold,6,Emotional Support,en
-कृपया दरवाज़ा बंद कर दीजिए शोर है कृपया,8,Other,hi
-ನನ್ನ ಡಯಾಪರ್ ಬದಲಾಯಿಸಬೇಕು,5,Hygiene,kn
-i have a head pain every single day.,1,Pain,en
-हिलने पर मेरे पैर में दर्द होता है कृपया,1,Pain,hi
-i'm having a hard time reading because the letters are all fuzzy,2,Medication,en
-i feel cold although we are in summer.,6,Emotional Support,en
-ನನ್ನ ಹಾಸಿಗೆ ಹೊದಿಕೆ ಕೊಳಕಾಗಿದೆ ಬದಲಾಯಿಸಿ ದಯವಿಟ್ಟು,5,Hygiene,kn
-when is my surgery scheduled,7,Information,en
-i feel hungry it has been hours,3,Food/Water,en
-what are these pills for,7,Information,en
-"i am struggling to bear weight on my knee, when i stand straight i feel and hear a loud popping noise.",1,Pain,en
-is pimples a skin disease?,2,Medication,en
-i broke my ankle while doing rock climbing in the carpathians.,1,Pain,en
-my stomach feels starts hurting but then it feels better after i eat something mild.,1,Pain,en
-i fell off my bike and since then i had hard knee pain,1,Pain,en
-ನನಗೆ ಒಂದು ಹೊದಿಕೆ ತರಬಹುದೇ,8,Other,kn
-i would like some food,3,Food/Water,en
-ನಾನು ಆತಂಕಗೊಂಡಿದ್ದೇನೆ ಯಾರಾದರೂ ನನ್ನ ಜೊತೆ ಕುಳಿತುಕೊಳ್ಳಿ ದಯವಿಟ್ಟು,6,Emotional Support,kn
-ಬೇಗ ಬನ್ನಿ ಏನೋ ತಪ್ಪಾಗಿದೆ ದಯವಿಟ್ಟು,0,Emergency,kn
-मैं अपने हाथ धोना चाहता हूँ please,5,Hygiene,hi
-ನಾನು ಕೈ ತೊಳೆಯಬೇಕು please,5,Hygiene,kn
-मेरी अगली अपॉइंटमेंट कब है,7,Information,hi
-ನನ್ನ ಸ್ಥಿತಿಯ ಬಗ್ಗೆ ಚಿಂತೆಯಾಗಿದೆ please,6,Emotional Support,kn
-"after playing tennis, i had a powerful sensation close to my neck",1,Pain,en
-ನಾನು ಶೌಚಾಲಯ ಬಳಸಬೇಕು ಬೇಗ,4,Mobility,kn
-it is too cold can you adjust the ac,8,Other,en
-i don't know why i'm constantly sad.,6,Emotional Support,en
-कृपया मुझे दाँत साफ करने में मदद करो,5,Hygiene,hi
-my heart is racing i feel faint,0,Emergency,en
-मुझे भूख लगी है कुछ खाने को मिल सकता है कृपया,3,Food/Water,hi
-कृपया मुझे शौचालय तक चलने में मदद करो कृपया,4,Mobility,hi
-ಈಗ ಸಮಯ ಎಷ್ಟು ದಯವಿಟ್ಟು,7,Information,kn
-ನನಗೆ ಉಸಿರಾಡಲು ಆಗುತ್ತಿಲ್ಲ ಸಹಾಯ ಮಾಡಿ ಬೇಗ,0,Emergency,kn
-the light is too bright,8,Other,en
-the feeling of coughing increases in winter's reach,2,Medication,en
-"at first it feels really numb, but then a thousand needles start to prick through my foot.",1,Pain,en
-ನನ್ನ ಭುಜದಲ್ಲಿ ತೀವ್ರ ನೋವಿದೆ please,1,Pain,kn
-ನನ್ನ ಇಡೀ ದೇಹ ನೋಯುತ್ತಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
-ದಯವಿಟ್ಟು ನನಗೆ ಒಂದು ಲೋಟ ನೀರು ಕೊಡಿ,3,Food/Water,kn
-ನನಗೆ ತುಂಬಾ ಬಾಯಾರಿಕೆಯಾಗಿದೆ ಬೇಗ,3,Food/Water,kn
-i have a knee pain when i walk a lot,1,Pain,en
-मुझे दर्द की गोली चाहिए,2,Medication,hi
-when i extend my leg there is pain in knee joint,1,Pain,en
-आज मैं बहुत उदास महसूस कर रहा हूँ जल्दी,6,Emotional Support,hi
-ನನಗೆ ಹೃದಯಾಘಾತ ಆಗುತ್ತಿದೆ please,0,Emergency,kn
-ನನಗೆ ನಿರಾಶೆ ಮತ್ತು ದುಃಖ ಅನಿಸುತ್ತಿದೆ ಬೇಗ,6,Emotional Support,kn
-i need a shower please,5,Hygiene,en
-i feel discomfort throughout the body in general,1,Pain,en
-i need to be cleaned up,5,Hygiene,en
-i feel pain when parting loved ones,6,Emotional Support,en
-ನನಗೆ ಗಾಲಿಕುರ್ಚಿ ತರಬಹುದೇ,4,Mobility,kn
-my back hurts me and i can't bend it or walk,1,Pain,en
-i have difficulty moving my neck,1,Pain,en
-जल्दी करो कुछ गड़बड़ है please,0,Emergency,hi
-मेरी दवा का समय हो गया है please,2,Medication,hi
-my television and computer seem out of focus even though i have new glasses.,2,Medication,en
-my son had a root canal and the dentist accidentally cut the inside of his cheek and now it will not heal.,2,Medication,en
-ದಯವಿಟ್ಟು ಕುಡಿಯಲು ಏನಾದರೂ ತನ್ನಿ ಬೇಗ,3,Food/Water,kn
-ನಾನು ಸ್ವಂತವಾಗಿ ಚಲಿಸಲು ಆಗುತ್ತಿಲ್ಲ,4,Mobility,kn
-my shoulder has agreat pain,1,Pain,en
-i feel that is great pain in my left shoulder,1,Pain,en
-कृपया मुझे शौचालय तक चलने में मदद करो,4,Mobility,hi
-when i lift my arms up i have a soreness in my shoulders,1,Pain,en
-i am unable to get up by myself,4,Mobility,en
-ನನಗೆ ಇನ್ಸುಲಿನ್ ಬೇಕು please,2,Medication,kn
-i'm suffering from sharp cough accompanied by phlegm,2,Medication,en
-मुझे अकेलापन लग रहा है कुछ देर रुको,6,Emotional Support,hi
-my kneecap feels like it is grating bone on bone when i walk.,1,Pain,en
-i've been over my cold for weeks but still cough every day.,2,Medication,en
-मेरा मुँह सूख रहा है मुझे पानी चाहिए,3,Food/Water,hi
-ಶಸ್ತ್ರಚಿಕಿತ್ಸೆಯ ಬಗ್ಗೆ ನನಗೆ ಭಯವಾಗಿದೆ please,6,Emotional Support,kn
-मुझे अपनी हालत की चिंता है,6,Emotional Support,hi
-ದಯವಿಟ್ಟು ದೀಪ ಆರಿಸಿ ದಯವಿಟ್ಟು,8,Other,kn
-i usually have a bad cough when i get flu.,2,Medication,en
-मेरे कपड़े गंदे हैं कृपया बदल दीजिए,5,Hygiene,hi
-ನನ್ನ ಬಟ್ಟೆ ಕೊಳಕಾಗಿದೆ ದಯವಿಟ್ಟು ಬದಲಾಯಿಸಿ please,5,Hygiene,kn
-मेरे सिर में दर्द हो रहा है please,1,Pain,hi
-i think my wound is infected,2,Medication,en
-क्या आप मेरी एंटीबायोटिक ला सकते हैं कृपया,2,Medication,hi
-i can't walk well i have an ache in my foot,1,Pain,en
-i feel dizzy after severe diarrhea,0,Emergency,en
-आज मेरी नर्स कौन है जल्दी,7,Information,hi
-क्या आप मुझे मेरी जाँच के नतीजे बता सकते हैं please,7,Information,hi
-ನನಗೆ ಗಾಲಿಕುರ್ಚಿ ತರಬಹುದೇ ದಯವಿಟ್ಟು,4,Mobility,kn
-ನನ್ನ ಎದೆಯಲ್ಲಿ ತುಂಬಾ ನೋವಾಗುತ್ತಿದೆ please,0,Emergency,kn
-i feel pain in my neck while i'm working.,1,Pain,en
-it hurts when i bent my arm,1,Pain,en
-मुझे दिल का दौरा पड़ रहा है please,0,Emergency,hi
-मुझे दिल का दौरा पड़ रहा है जल्दी,0,Emergency,hi
-i had internal pain and gases when i ate indian spicy food yesterday,1,Pain,en
-ನನಗೆ ನೋವು ನಿವಾರಕ ಮಾತ್ರೆ ಬೇಕು,2,Medication,kn
-"annoyance starts suddenly, often after an injury or exercise.",1,Pain,en
-ನನ್ನ ಕೀಲುಗಳಲ್ಲಿ ನೋವಾಗುತ್ತಿದೆ,1,Pain,kn
-ನನಗೆ ಒಂಟಿತನ ಅನಿಸುತ್ತಿದೆ ಸ್ವಲ್ಪ ಹೊತ್ತು ಇರಿ please,6,Emotional Support,kn
-मुझे ऑपरेशन से डर लग रहा है please,6,Emotional Support,hi
-ಇಂದು ನಾನು ತುಂಬಾ ಖಿನ್ನನಾಗಿದ್ದೇನೆ,6,Emotional Support,kn
-it feels like someone is hitting my head with a hammer. i feel pain on the top of my head and it throbs.,1,Pain,en
-अभी क्या समय हुआ है,7,Information,hi
-मुझे दिल का दौरा पड़ रहा है,0,Emergency,hi
-i feel like the room is spinning,0,Emergency,en
-i feel dizzy whenever i stand up.,0,Emergency,en
-something dark is there on my arm,2,Medication,en
-ನನ್ನ ಬೆನ್ನಿನಲ್ಲಿ ತುಂಬಾ ನೋವಾಗುತ್ತಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
-ನನಗೆ ಇನ್ಸುಲಿನ್ ಬೇಕು ದಯವಿಟ್ಟು,2,Medication,kn
-ನನ್ನನ್ನು ಸ್ವಚ್ಛಗೊಳಿಸಬೇಕು please,5,Hygiene,kn
-ದಯವಿಟ್ಟು ಹಲ್ಲು ಉಜ್ಜಲು ಸಹಾಯ ಮಾಡಿ ಬೇಗ,5,Hygiene,kn
-what did the doctor say about my reports,7,Information,en
-ನನ್ನನ್ನು ಸ್ವಚ್ಛಗೊಳಿಸಬೇಕು ದಯವಿಟ್ಟು,5,Hygiene,kn
-"i couldn't stop shaking or unclench my jaw, that's how cold i was.",6,Emotional Support,en
-ನನ್ನ ತಲೆ ನೋಯುತ್ತಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
-ನಾನು ಸ್ವಂತವಾಗಿ ಚಲಿಸಲು ಆಗುತ್ತಿಲ್ಲ ಬೇಗ,4,Mobility,kn
-ನಾನು ಇಲ್ಲಿ ಎಷ್ಟು ದಿನ ಇರಬೇಕು ದಯವಿಟ್ಟು,7,Information,kn
-chronic bone disease at the level of the doubles of the lower estremidades,1,Pain,en
-when i think of my parents i feel pain,6,Emotional Support,en
-ಹಾಸಿಗೆ ಒದ್ದೆಯಾಗಿದೆ ದಯವಿಟ್ಟು ಬದಲಾಯಿಸಿ,5,Hygiene,kn
-i feel like there is something swollen and inflamed at the back of my knee.,1,Pain,en
-आज मैं बहुत उदास महसूस कर रहा हूँ,6,Emotional Support,hi
-when i stand up too quickly i start to feel dizzy and light-headed,0,Emergency,en
-i need to use the restroom can you assist,4,Mobility,en
-क्या आप मुझे नहाने में मदद करेंगे कृपया,5,Hygiene,hi
-मुझे दर्द की गोली चाहिए please,2,Medication,hi
-ನನ್ನ ಮುಂದಿನ ಊಟ ಯಾವಾಗ ಬೇಗ,3,Food/Water,kn
-ತಕ್ಷಣ ವೈದ್ಯರನ್ನು ಕರೆಯಿರಿ ಬೇಗ,0,Emergency,kn
-डॉक्टर कब आएंगे कृपया,7,Information,hi
-"i think there's something wrong with my wound, it does not seem to heal like it should.",2,Medication,en
-my back is hurting so much.,1,Pain,en
-chronic bowel pain,1,Pain,en
-मेरी गोली का समय हो गया है कृपया,2,Medication,hi
-मुझे अपनी हालत की चिंता है कृपया,6,Emotional Support,hi
-can someone help me lie down,4,Mobility,en
-my whole body is aching,1,Pain,en
-when i remember her i feel down,6,Emotional Support,en
-ನಾನು ಇನ್ನೂ ಔಷಧಿ ತೆಗೆದುಕೊಂಡಿಲ್ಲ ಬೇಗ,2,Medication,kn
-कृपया लाइट बंद कर दीजिए जल्दी,8,Other,hi
-i get i joint pain when i try to bend my leg or my arm,1,Pain,en
-cramps along the whole abdomen,1,Pain,en
-ನಾನು ಮನೆಗೆ ಯಾವಾಗ ಹೋಗಬಹುದು,7,Information,kn
-i feel suicidal.,6,Emotional Support,en
-"surgical wounds red, firing pus, painful and hot to the touch",2,Medication,en
-ನಾನು ಆತಂಕಗೊಂಡಿದ್ದೇನೆ ಯಾರಾದರೂ ನನ್ನ ಜೊತೆ ಕುಳಿತುಕೊಳ್ಳಿ,6,Emotional Support,kn
-i feel like my heart is on fire.,0,Emergency,en
-मेरे कंधे में तेज़ दर्द है please,1,Pain,hi
-मुझे बाथरूम जाने में मदद चाहिए please,4,Mobility,hi
-"i feel a pain on the left side of my chest, where my heart is",0,Emergency,en
-मुझे यहाँ कितने दिन रहना है जल्दी,7,Information,hi
-i can't carry anything i have a pain in my shoulder,1,Pain,en
-मेरी गर्दन में दर्द है कृपया,1,Pain,hi
-ನನ್ನ ಪ್ರತಿಜೀವಕ ಔಷಧಿ ತರಬಹುದೇ ದಯವಿಟ್ಟು,2,Medication,kn
-stomach pain after drinking milk,1,Pain,en
-what time will i get my next dose,7,Information,en
-i was very active in sports but now my body is feeling pain.,1,Pain,en
-i have severe shoulder pain,1,Pain,en
-मुझे स्पंज बाथ चाहिए please,5,Hygiene,hi
-i need a sponge bath,5,Hygiene,en
-i made lots and lots of analysis to know the main reason for my stomach ache,1,Pain,en
-can i get some juice,3,Food/Water,en
-मेरे जोड़ों में दर्द हो रहा है जल्दी,1,Pain,hi
-मेरे सीने में बहुत दर्द हो रहा है जल्दी,0,Emergency,hi
-"my daughter was bit by her cat and now her hand is sore, red and swollen and the wound is oozing liquid.",2,Medication,en
-i did not get my breakfast,3,Food/Water,en
-मुझसे साँस नहीं ली जा रही जल्दी,0,Emergency,hi
-ನಾನು ಈಗ ತುಂಬಾ ಆತಂಕದಲ್ಲಿದ್ದೇನೆ,6,Emotional Support,kn
-i feel a great amount of pressure of my head.,1,Pain,en
-when i'm too high i start to feel dizzy,0,Emergency,en
-my acne gets worse when it is hot,2,Medication,en
-my foot had been aching since last tuesday.,1,Pain,en
-i feel really sad all the time.,6,Emotional Support,en
-मेरी गर्दन में दर्द है,1,Pain,hi
-ನನ್ನ ಕೀಲುಗಳಲ್ಲಿ ನೋವಾಗುತ್ತಿದೆ ಬೇಗ,1,Pain,kn
-my son had his lip pierced and it is swollen and the skin inside on his lip is grey and looks infected.,2,Medication,en
-मदद करो मुझे खून बह रहा है कृपया,0,Emergency,hi
-ಹಾಸಿಗೆ ಒದ್ದೆಯಾಗಿದೆ ದಯವಿಟ್ಟು ಬದಲಾಯಿಸಿ ದಯವಿಟ್ಟು,5,Hygiene,kn
-मुझसे साँस नहीं ली जा रही please,0,Emergency,hi
-whenever i stand up i feel dizzy.,0,Emergency,en
-ಸ್ವಚ್ಛ ಬಟ್ಟೆ ಧರಿಸಲು ಸಹಾಯ ಮಾಡಿ ಬೇಗ,5,Hygiene,kn
-हिलने पर मेरे पैर में दर्द होता है जल्दी,1,Pain,hi
-can you open the window,8,Other,en
-ನನಗೆ ಚುಚ್ಚುಮದ್ದು ಬೇಕು,2,Medication,kn
-i can't do anything i feel a weak in my body,1,Pain,en
-मैं कौन सी दवा ले रहा हूँ कृपया,7,Information,hi
-the pain feels like it's right below the skin,1,Pain,en
-when i play sports i have some burning sensation in my spine,1,Pain,en
-feels like there are pins and needles sticking in my joints,1,Pain,en
-i feel that it's hard to breath for me specially after running or making any effort,0,Emergency,en
-i need my painkiller tablet,2,Medication,en
-my ear hurts me badly,1,Pain,en
-my daughter had her ears pierced and one of her ear lobes is bright red and burning hot.,2,Medication,en
-i have dark spots on my skin,2,Medication,en
-my acne itches and oozes.,2,Medication,en
-i have front head pain and when i get it the light bothers me.,1,Pain,en
-"when i move on my shoulder, pain shoots down my arm",1,Pain,en
-i have a dull ache in my head,1,Pain,en
-i have a great pain in my foot like thrombing pain with relaxing my pain releif,1,Pain,en
-डॉक्टर कब आएंगे,7,Information,hi
-my hair is falling out in bunches.,2,Medication,en
-मुझे इंजेक्शन चाहिए जल्दी,2,Medication,hi
-क्या आप खिड़की खोल सकते हैं कृपया,8,Other,hi
-मैंने अभी तक दवा नहीं ली है कृपया,2,Medication,hi
-my heart is beating fast and it scares me.,0,Emergency,en
-ನನ್ನ ಔಷಧಿಯ ಸಮಯವಾಗಿದೆ ದಯವಿಟ್ಟು,2,Medication,kn
-i have a sharp pain and clicking sound in my ankle joint when i try to stand on it and walk.,1,Pain,en
-तुरंत डॉक्टर को बुलाओ कृपया,0,Emergency,hi
-ನನ್ನ ಉಸಿರು ಕಟ್ಟುತ್ತಿದೆ ಬೇಗ ಬನ್ನಿ please,0,Emergency,kn
-it's hard to see things,2,Medication,en
-the worst headache was during a hangover in my twenties i sincerely thought i was going to die from brain inflammation.,1,Pain,en
-आज मेरी नर्स कौन है,7,Information,hi
-i am worried about my condition,6,Emotional Support,en
-i feel heart pain when i walk a lot,0,Emergency,en
-having difficulty moving my knee,1,Pain,en
-ಈಗ ಸಮಯ ಎಷ್ಟು ಬೇಗ,7,Information,kn
-i feel pain in my neck after waking up,1,Pain,en
-ನಾನು ಇಲ್ಲಿ ಎಷ್ಟು ದಿನ ಇರಬೇಕು ಬೇಗ,7,Information,kn
-my head is aching,1,Pain,en
-ಸ್ನಾನ ಮಾಡಲು ನನಗೆ ಸಹಾಯ ಮಾಡುವಿರಾ ಬೇಗ,5,Hygiene,kn
-my joints ache whenever it is cold,1,Pain,en
-ನನ್ನ ಪ್ರತಿಜೀವಕ ಔಷಧಿ ತರಬಹುದೇ ಬೇಗ,2,Medication,kn
-my sore looks like its not healing well.,2,Medication,en
-it is like i have a needle pushing through my heart.,0,Emergency,en
-कृपया मुझे साफ कपड़े पहनने में मदद करो कृपया,5,Hygiene,hi
-i chopped off the tip of my finger while i was cutting some cardboard and i cannot stop the bleeding.,2,Medication,en
-"my face has broken out in painful red spots and lumps, that no matter how much i clean my face don't seem to be going away.",2,Medication,en
-i have a pain in my stomach,1,Pain,en
-when will my results be ready,7,Information,en
-कृपया मुझे शौचालय तक चलने में मदद करो जल्दी,4,Mobility,hi
-ನನಗೆ ಅಳು ಬರುತ್ತಿದೆ ದಯವಿಟ್ಟು ಇರಿ please,6,Emotional Support,kn
-क्या मुझे थोड़ा जूस मिल सकता है जल्दी,3,Food/Water,hi
-i could not exercise because of my knee pain,1,Pain,en
-जल्दी करो कुछ गड़बड़ है जल्दी,0,Emergency,hi
-i feel severe itching in the skin with redness,2,Medication,en
-ನನಗೆ ಇನ್ನೊಂದು ದಿಂಬು ಬೇಕು ದಯವಿಟ್ಟು,8,Other,kn
-तुरंत डॉक्टर को बुलाओ जल्दी,0,Emergency,hi
-"there must be something wrong with my blood circulation, i have to wear socks even on the hottest days, my toes are frozen!",6,Emotional Support,en
-मेरा अगला भोजन कब आएगा कृपया,3,Food/Water,hi
-ನಾನು ಆತಂಕಗೊಂಡಿದ್ದೇನೆ ಯಾರಾದರೂ ನನ್ನ ಜೊತೆ ಕುಳಿತುಕೊಳ್ಳಿ please,6,Emotional Support,kn
-may i have a snack,3,Food/Water,en
-कृपया मेरा तकिया ठीक कर दीजिए जल्दी,8,Other,hi
-i feel congestion in my chest,2,Medication,en
-i feel pain inside and i can not identify it,1,Pain,en
-ಸ್ವಚ್ಛ ಬಟ್ಟೆ ಧರಿಸಲು ಸಹಾಯ ಮಾಡಿ,5,Hygiene,kn
-please help me walk to the toilet,4,Mobility,en
-i feel a soreness in my knees when i walk,1,Pain,en
-i complain alot with my neck pain and i really need to be better,1,Pain,en
-when i get up i see my skin vague,2,Medication,en
-ತಕ್ಷಣ ವೈದ್ಯರನ್ನು ಕರೆಯಿರಿ ದಯವಿಟ್ಟು,0,Emergency,kn
-मैं घर कब जा सकता हूँ कृपया,7,Information,hi
-ನನ್ನ ಕನ್ನಡಕ ಕೊಡಬಹುದೇ please,8,Other,kn
-i've been feeling very sad lately,6,Emotional Support,en
-what time is it now,7,Information,en
-i feel lightheaded when i stand up,0,Emergency,en
-ನನಗೆ ತುಂಬಾ ಭಯ ಮತ್ತು ಒಂಟಿತನ ಅನಿಸುತ್ತಿದೆ ದಯವಿಟ್ಟು,6,Emotional Support,kn
-i get clusters of pimples on my face that never go away.,2,Medication,en
-क्या आप बिस्तर का सिरहाना ऊँचा कर सकते हैं कृपया,8,Other,hi
-ಶಸ್ತ್ರಚಿಕಿತ್ಸೆಯ ಬಗ್ಗೆ ನನಗೆ ಭಯವಾಗಿದೆ,6,Emotional Support,kn
-जल्दी करो कुछ गड़बड़ है कृपया,0,Emergency,hi
-ನನಗೆ ಸ್ವಲ್ಪ ಜ್ಯೂಸ್ ಸಿಗಬಹುದೇ,3,Food/Water,kn
-i feel pain in my knee,1,Pain,en
-my knee is hurting so badly.,1,Pain,en
-i have a split on my thumb that will not heal.,2,Medication,en
-my infected wound cause fever,2,Medication,en
-please refill my water jug,3,Food/Water,en
-i feel depressed when i see my hair falling out,2,Medication,en
-मुझे यहाँ कितने दिन रहना है please,7,Information,hi
-मुझे निराशा और दुख महसूस हो रहा है please,6,Emotional Support,hi
-i feel pain in the knee when walking,1,Pain,en
-i just can't seem to get warm. even when everyone around me is warm i always feel cold.,6,Emotional Support,en
-i feel pain inside i do not know what it is,1,Pain,en
-ನಾನು ಸ್ವಂತವಾಗಿ ಚಲಿಸಲು ಆಗುತ್ತಿಲ್ಲ ದಯವಿಟ್ಟು,4,Mobility,kn
-क्या कोई मुझे खड़े होने में मदद करेगा जल्दी,4,Mobility,hi
-i feel pain in my knee when i climb the stairs.,1,Pain,en
-ನನ್ನ ಪರೀಕ್ಷಾ ಫಲಿತಾಂಶ ಹೇಳಬಹುದೇ please,7,Information,kn
-i cut my foot at the pool and it breaks open every day when i walk on it.,2,Medication,en
-ವೈದ್ಯರು ಯಾವಾಗ ಬರುತ್ತಾರೆ ಬೇಗ,7,Information,kn
-i have a cut that has become red and oozes puss.,2,Medication,en
-i was kicked in the head playing soccer last night.,1,Pain,en
-ಚಲಿಸಿದಾಗ ನನ್ನ ಕಾಲು ನೋಯುತ್ತದೆ,1,Pain,kn
-क्या आप मुझे मेरी जाँच के नतीजे बता सकते हैं,7,Information,hi
-ನನಗೆ ಸ್ಪಂಜ್ ಸ್ನಾನ ಬೇಕು,5,Hygiene,kn
-i have injured myself during the soccer match,1,Pain,en
-i've had this cough for two weeks.,2,Medication,en
-मुझे बहुत प्यास लगी है please,3,Food/Water,hi
-ದಯವಿಟ್ಟು ನನ್ನ ನೀರಿನ ಜಗ್ ತುಂಬಿಸಿ please,3,Food/Water,kn
-क्या आप बिस्तर का सिरहाना ऊँचा कर सकते हैं जल्दी,8,Other,hi
-ಇಂದು ನಾನು ತುಂಬಾ ಖಿನ್ನನಾಗಿದ್ದೇನೆ ದಯವಿಟ್ಟು,6,Emotional Support,kn
-मुझे बिस्तर पर करवट लेने में मदद चाहिए जल्दी,4,Mobility,hi
-मेरी छाती जकड़ रही है साँस नहीं आ रही कृपया,0,Emergency,hi
-can you bring clean towels,5,Hygiene,en
-i need to use the restroom,4,Mobility,en
-it itches inside my ears.,1,Pain,en
-i'm very worried that i'll go bald soon. am i very sick?,2,Medication,en
-i have a back pain since i fell on the floor.,1,Pain,en
-ನನ್ನ ಹಾಸಿಗೆ ಹೊದಿಕೆ ಕೊಳಕಾಗಿದೆ ಬದಲಾಯಿಸಿ please,5,Hygiene,kn
-ದಯವಿಟ್ಟು ನನ್ನ ಮಾತ್ರೆಗಳನ್ನು ತನ್ನಿ,2,Medication,kn
-i walk every day but now i get short of breath after going only a short way.,0,Emergency,en
-मैं घर कब जा सकता हूँ please,7,Information,hi
-i have a sharp pain in my ear,1,Pain,en
-ನಾನು ಹಾಸಿಗೆಯಿಂದ ಏಳಬೇಕು ದಯವಿಟ್ಟು,4,Mobility,kn
-ದಯವಿಟ್ಟು ಶೌಚಾಲಯಕ್ಕೆ ನಡೆಯಲು ಸಹಾಯ ಮಾಡಿ,4,Mobility,kn
-i feel weak all over.,1,Pain,en
-ನನ್ನ ಪರೀಕ್ಷಾ ಫಲಿತಾಂಶ ಹೇಳಬಹುದೇ,7,Information,kn
-मुझे यहाँ कितने दिन रहना है कृपया,7,Information,hi
-i had a cut that was stitched together but it is not healing. it is oozing green puss and burns.,2,Medication,en
-ये गोलियाँ किस लिए हैं,7,Information,hi
-please bring me something to drink,3,Food/Water,en
-i feel pain in my shoulders when i write on the keyboard.,1,Pain,en
-मेरा ऑपरेशन कब है,7,Information,hi
-please clean my room it smells,5,Hygiene,en
-मैं अभी बहुत घबराया हुआ हूँ कृपया,6,Emotional Support,hi
-मेरी दवा का समय हो गया है,2,Medication,hi
-i have a headache every time i eat ice cream,1,Pain,en
-ದಯವಿಟ್ಟು ನನಗೆ ಒಂದು ಲೋಟ ನೀರು ಕೊಡಿ ಬೇಗ,3,Food/Water,kn
-ನನಗೆ ಅಳು ಬರುತ್ತಿದೆ ದಯವಿಟ್ಟು ಇರಿ ಬೇಗ,6,Emotional Support,kn
-when i wake up in the morning i feel dizzy,0,Emergency,en
-कृपया मुझे कुर्सी तक ले जाओ please,4,Mobility,hi
-i have a problem in the expiration because i have abronchial asthma,0,Emergency,en
-ಚಲಿಸಿದಾಗ ನನ್ನ ಕಾಲು ನೋಯುತ್ತದೆ ಬೇಗ,1,Pain,kn
-ನನಗೆ ಒಂಟಿತನ ಅನಿಸುತ್ತಿದೆ ಸ್ವಲ್ಪ ಹೊತ್ತು ಇರಿ ಬೇಗ,6,Emotional Support,kn
-"i am always cold, even when i am wearing layers",6,Emotional Support,en
-ಹಾಸಿಗೆಯ ತಲೆಭಾಗ ಎತ್ತರಿಸಬಹುದೇ ದಯವಿಟ್ಟು,8,Other,kn
-मैंने अभी तक दवा नहीं ली है जल्दी,2,Medication,hi
-can you hand me the newspaper,8,Other,en
-can you raise the head of the bed,8,Other,en
-i have severe dry cough,2,Medication,en
-what medication am i taking,7,Information,en
-"i used to be out of breath after going up a dozen of stairs, but now i struggle to breath even when i sit down.",0,Emergency,en
-i have a back pain since i turned 70 years old.,1,Pain,en
-i have difficulty in breathing in crowded places.,0,Emergency,en
-"my body feels weak after my first day in the gym, why?",1,Pain,en
-sometimes i cough because i'm a smoker,2,Medication,en
-i feel like i went to an acupuncture's practice and had 100 needles in my shoulder,1,Pain,en
-"i was injured during football match, i was diagnosed with cruciate ligament",1,Pain,en
-"i am feeling so dizzy, body is so fragile.",1,Pain,en
-why is my shoulder aching when i try to pick up the laundry?,1,Pain,en
-i have severe pain in my shoulder,1,Pain,en
-it is time for my pills,2,Medication,en
-my hair isn't well,2,Medication,en
-कृपया मुझे एक गिलास पानी दीजिए कृपया,3,Food/Water,hi
-कृपया मुझे कुछ पीने को लाइए जल्दी,3,Food/Water,hi
 मुझे इंसुलिन चाहिए जल्दी,2,Medication,hi
-there is a red stain in my skin,2,Medication,en
-मैं अपने हाथ धोना चाहता हूँ जल्दी,5,Hygiene,hi
-"my skin color on my back is red, i don't know why.",2,Medication,en
-i have this strange rash on my arm.,2,Medication,en
-when i wake up in the morning i feel a soreness in my body,1,Pain,en
-ನನ್ನ ಬಾಯಿ ಒಣಗಿದೆ ನನಗೆ ನೀರು ಬೇಕು,3,Food/Water,kn
-ನನಗೆ ಅಳು ಬರುತ್ತಿದೆ ದಯವಿಟ್ಟು ಇರಿ,6,Emotional Support,kn
-अभी क्या समय हुआ है कृपया,7,Information,hi
-my cough is very heavy and i have mucus.,2,Medication,en
-i have for dia,0,Emergency,en
-what helps cuts heal faster?,2,Medication,en
-red flushes accompanied with itchy,2,Medication,en
-ನನ್ನ ತಲೆ ನೋಯುತ್ತಿದೆ ಬೇಗ,1,Pain,kn
-there is pain in my neck,1,Pain,en
-ನನ್ನ ಡಯಾಪರ್ ಬದಲಾಯಿಸಬೇಕು ದಯವಿಟ್ಟು,5,Hygiene,kn
-how is my recovery going,7,Information,en
-i have a pain that radiates up from my right hip to my rib cage. it is at it's worst when i urinate.,1,Pain,en
-मुझे ऑपरेशन से डर लग रहा है जल्दी,6,Emotional Support,hi
-i feel pain in my neck,1,Pain,en
-ಇಂದು ನನ್ನ ದಾದಿ ಯಾರು please,7,Information,kn
-i have pimples on my back.,2,Medication,en
-i hate my acne.,2,Medication,en
-क्या आप मुझे एक कंबल ला सकते हैं,8,Other,hi
-can you tell me my test results,7,Information,en
-ಸಹಾಯ ಮಾಡಿ ನನಗೆ ರಕ್ತ ಸೋರುತ್ತಿದೆ ಬೇಗ,0,Emergency,kn
-कृपया मुझे किसी से बात करनी है,6,Emotional Support,hi
-my body feels like it's in a refrigerator.,6,Emotional Support,en
-i feel very hard to breathe,0,Emergency,en
-i get clusters of whiteheads and blackheads on my back.,2,Medication,en
-i cut my hand a couple of days ago and although i didn't think i needed it stitches it hasn't closed up.,2,Medication,en
-"when i get up, i feel dizzy and fall down.",0,Emergency,en
-ನನ್ನ ಬೆನ್ನಿನಲ್ಲಿ ತುಂಬಾ ನೋವಾಗುತ್ತಿದೆ,1,Pain,kn
-i need to stretch my legs can you help,4,Mobility,en
-ನನಗೆ ಚುಚ್ಚುಮದ್ದು ಬೇಕು ಬೇಗ,2,Medication,kn
-when i stand up too quickly i feel as though i'm going to faint.,0,Emergency,en
-i can't stand with this horrible feeling in my shoulder,1,Pain,en
-can't keep focus,1,Pain,en
-what's the symptoms of appendicitis?,1,Pain,en
-i have a hair shortage,2,Medication,en
-my knees hurt so bad to walk that i stay sitting more than i should.,1,Pain,en
-ಹಾಸಿಗೆಯ ತಲೆಭಾಗ ಎತ್ತರಿಸಬಹುದೇ ಬೇಗ,8,Other,kn
-i have tried to relief it but i can't,1,Pain,en
-the crushing sensation on my heart leaves me breathless.,0,Emergency,en
-कृपया मुझे शौचालय तक चलने में मदद करो please,4,Mobility,hi
-the water jug is empty please refill it,3,Food/Water,en
-ನನ್ನ ಎದೆ ಬಿಗಿಯಾಗಿದೆ ಉಸಿರಾಡಲು ಆಗುತ್ತಿಲ್ಲ,0,Emergency,kn
-कृपया मुझे मेरी दवा दीजिए,2,Medication,hi
-he was discovered to have an open wound.,2,Medication,en
-मेरा डायपर बदलने की जरूरत है please,5,Hygiene,hi
-मेरी चादर गंदी है इसे बदल दीजिए,5,Hygiene,hi
-my temperature dropped and my body get synosed,6,Emotional Support,en
-मुझे साफ करने की जरूरत है कृपया,5,Hygiene,hi
-आज मेरी नर्स कौन है please,7,Information,hi
-ನನ್ನ ಎದೆಯ ಭಾಗದಲ್ಲಿ ನೋವಿದೆ,1,Pain,kn
 i can't breathe,0,Emergency,en
-my stomach has been sore since yesterday.,1,Pain,en
-since i went into the forest i have pain on my ear,1,Pain,en
-ನಾನು ಆತಂಕಗೊಂಡಿದ್ದೇನೆ ಯಾರಾದರೂ ನನ್ನ ಜೊತೆ ಕುಳಿತುಕೊಳ್ಳಿ ಬೇಗ,6,Emotional Support,kn
-i got injured exercising,1,Pain,en
-i have a cut on my foot that became infected from using the showers at the gym.,2,Medication,en
-i have a hard pain in my stomach,1,Pain,en
-can you close the curtains,8,Other,en
-my shoulder aches when i try to lift five pounds.,1,Pain,en
-तुरंत डॉक्टर को बुलाओ please,0,Emergency,hi
-can i get a fresh gown,5,Hygiene,en
-my mouth is dry i need water,3,Food/Water,en
-i have an indigestion,1,Pain,en
-the bed is wet please change it,5,Hygiene,en
-ದಯವಿಟ್ಟು ನನಗೆ ಕುಳಿತುಕೊಳ್ಳಲು ಸಹಾಯ ಮಾಡಿ ಬೇಗ,4,Mobility,kn
-i hve cut my finger because of playing football and i to apply pain relief cream but it does not help,1,Pain,en
-मुझे शौचालय जाना है कृपया,4,Mobility,hi
-मैं खुद से हिल नहीं सकता,4,Mobility,hi
-i have muscle pain in my left leg,1,Pain,en
-i can't see well,2,Medication,en
-my daughter had her eyebrows threaded and it pulled an opening of skin in one of her brows that is now puffy and oozing.,2,Medication,en
-there is sharp pain in my stomach,1,Pain,en
-i have a problem in my middle ear made by infection,1,Pain,en
-ತಕ್ಷಣ ವೈದ್ಯರನ್ನು ಕರೆಯಿರಿ please,0,Emergency,kn
-ನಾನು ಸ್ವಂತವಾಗಿ ಚಲಿಸಲು ಆಗುತ್ತಿಲ್ಲ please,4,Mobility,kn
-ನನಗೆ ಚುಚ್ಚುಮದ್ದು ಬೇಕು please,2,Medication,kn
-कृपया दरवाज़ा बंद कर दीजिए शोर है,8,Other,hi
-मेरा पूरा शरीर दर्द कर रहा है,1,Pain,hi
-i must see a doctor i have an open wound,2,Medication,en
-मुझे बाथरूम जाने में मदद चाहिए,4,Mobility,hi
-chronic disease of hair follicles and sebaceous glands.,2,Medication,en
-मैं अपने हाथ धोना चाहता हूँ कृपया,5,Hygiene,hi
-i stopped sports because i get injury from sports,1,Pain,en
-अभी क्या समय हुआ है जल्दी,7,Information,hi
-ನನಗೆ ಉಸಿರಾಡಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ,0,Emergency,kn
-क्या कोई मुझे खड़े होने में मदद करेगा कृपया,4,Mobility,hi
-oh my heart hurts me i tried to be calm and i can't,0,Emergency,en
-ಸ್ನಾನ ಮಾಡಲು ನನಗೆ ಸಹಾಯ ಮಾಡುವಿರಾ ದಯವಿಟ್ಟು,5,Hygiene,kn
-ನಾನು ಮೂರ್ಛೆ ಹೋಗುತ್ತೇನೆ ಅನಿಸುತ್ತಿದೆ,0,Emergency,kn
-after an hard working day i have foot ache,1,Pain,en
-ನಾನು ಹಾಸಿಗೆಯಿಂದ ಏಳಬೇಕು ಬೇಗ,4,Mobility,kn
-there is a constant tickle in my throat,2,Medication,en
-ಸ್ವಚ್ಛ ಬಟ್ಟೆ ಧರಿಸಲು ಸಹಾಯ ಮಾಡಿ please,5,Hygiene,kn
-मेरी गर्दन में दर्द है please,1,Pain,hi
-ಹಾಸಿಗೆಯಲ್ಲಿ ತಿರುಗಲು ನನಗೆ ಸಹಾಯ ಬೇಕು ದಯವಿಟ್ಟು,4,Mobility,kn
-i'm having a hard time hearing.,1,Pain,en
-ನನ್ನ ಮುಂದಿನ ಭೇಟಿ ಯಾವಾಗ,7,Information,kn
-ನಾನು ದಿನವಿಡೀ ಏನೂ ತಿಂದಿಲ್ಲ please,3,Food/Water,kn
-i spilled water on my sheets please change them,5,Hygiene,en
-i feel great pressure in my chest,0,Emergency,en
-कृपया मुझे एक गिलास पानी दीजिए जल्दी,3,Food/Water,hi
-कमरा बहुत गर्म है जल्दी,8,Other,hi
-मुझे बाथरूम जाने में मदद चाहिए कृपया,4,Mobility,hi
-ನನ್ನ ಕನ್ನಡಕ ಕೊಡಬಹುದೇ,8,Other,kn
-i was playing football and injuried with joint pain.,1,Pain,en
-i had an accident and my wound was open when i arrived to hospital,2,Medication,en
-when i wake up i am feeling cold,6,Emotional Support,en
-कृपया मुझे किसी से बात करनी है कृपया,6,Emotional Support,hi
-is there a cure for acne?,2,Medication,en
-कृपया मुझे कुर्सी तक ले जाओ कृपया,4,Mobility,hi
-मैं घर कब जा सकता हूँ,7,Information,hi
-ನನ್ನ ಕೀಲುಗಳಲ್ಲಿ ನೋವಾಗುತ್ತಿದೆ please,1,Pain,kn
-मेरे सीने में बहुत दर्द हो रहा है,0,Emergency,hi
-ನನ್ನ ತಲೆ ನೋಯುತ್ತಿದೆ please,1,Pain,kn
-i have a cold and it makes me cough alot,2,Medication,en
-i am starving when is dinner,3,Food/Water,en
-मैं खुद से हिल नहीं सकता please,4,Mobility,hi
-मुझे कुछ खाना चाहिए,3,Food/Water,hi
-ಕಿಟಕಿ ತೆರೆಯಬಹುದೇ ದಯವಿಟ್ಟು,8,Other,kn
-ದಯವಿಟ್ಟು ನನ್ನ ಔಷಧಿ ಕೊಡಿ please,2,Medication,kn
-ನನಗೆ ಇನ್ನೊಂದು ದಿಂಬು ಬೇಕು,8,Other,kn
-ನನ್ನನ್ನು ಸ್ವಚ್ಛಗೊಳಿಸಬೇಕು ಬೇಗ,5,Hygiene,kn
-ನನ್ನ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ ಯಾವಾಗ ಬೇಗ,7,Information,kn
-ದಯವಿಟ್ಟು ದೀಪ ಆರಿಸಿ please,8,Other,kn
-"it's hard to stand up, and i'm moving very slowly",1,Pain,en
-ನನಗೆ ನೋವು ನಿವಾರಕ ಮಾತ್ರೆ ಬೇಕು ದಯವಿಟ್ಟು,2,Medication,kn
-call the doctor immediately,0,Emergency,en
-i am dizzy and about to collapse,0,Emergency,en
-my skin is itching.,2,Medication,en
-my back hurts a lot when i bend,1,Pain,en
-i complain alot with skin allergy,2,Medication,en
-my shoulder hurts when i try to reach something above my head.,1,Pain,en
-i need to be cleaned up please,5,Hygiene,en
-my son has a lot of acne.,2,Medication,en
-ದಯವಿಟ್ಟು ನನ್ನ ನೀರಿನ ಜಗ್ ತುಂಬಿಸಿ ಬೇಗ,3,Food/Water,kn
-my ankle is hurting me,1,Pain,en
-मुझे भूख लगी है कुछ खाने को मिल सकता है please,3,Food/Water,hi
-the knee feels like it rusted and i suddenly cannot bend it anymore.,1,Pain,en
-i think i overdid it when i carried all that lumber from the yard. my lower back is killing me.,1,Pain,en
-ನನ್ನ ಪರೀಕ್ಷಾ ಫಲಿತಾಂಶ ಹೇಳಬಹುದೇ ದಯವಿಟ್ಟು,7,Information,kn
-ನನ್ನ ಬೆನ್ನಿನಲ್ಲಿ ತುಂಬಾ ನೋವಾಗುತ್ತಿದೆ please,1,Pain,kn
-i feel dizzy and out of sight,0,Emergency,en
-"my hair is falling without a reason, i can see a lot of hair on my working desk.",2,Medication,en
-i got acne when i ate chili,2,Medication,en
-ನಾನು ಇಲ್ಲಿ ಎಷ್ಟು ದಿನ ಇರಬೇಕು,7,Information,kn
-discomfort or pain that is felt at some point along the front of the body between the neck and upper abdomen.,1,Pain,en
-i feel muscle pain every time i make an extra effort.,1,Pain,en
-my hair is falling out after i take a shower.,2,Medication,en
-ದಯವಿಟ್ಟು ನನ್ನ ನೀರಿನ ಜಗ್ ತುಂಬಿಸಿ ದಯವಿಟ್ಟು,3,Food/Water,kn
-ನನ್ನ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ ಯಾವಾಗ please,7,Information,kn
-ನನ್ನ ಹೊಟ್ಟೆಯಲ್ಲಿ ತೀವ್ರ ನೋವಿದೆ,1,Pain,kn
-मेरा पूरा शरीर दर्द कर रहा है please,1,Pain,hi
-क्या आप मुझे मेरा चश्मा दे सकते हैं कृपया,8,Other,hi
-मुझे बिस्तर से उठना है please,4,Mobility,hi
-कृपया मेरी गोलियाँ लाइए कृपया,2,Medication,hi
-मदद करो मुझे खून बह रहा है जल्दी,0,Emergency,hi
-क्या आप मेरी एंटीबायोटिक ला सकते हैं,2,Medication,hi
-कृपया लाइट बंद कर दीजिए please,8,Other,hi
-i have acne in my face and other problems in my derma like itching,2,Medication,en
-the wound is still open,2,Medication,en
-hearing any loud sounds makes my ear aches,1,Pain,en
-कृपया मुझे किसी से बात करनी है जल्दी,6,Emotional Support,hi
-his infected wound was beginning to rot.,2,Medication,en
-ದಯವಿಟ್ಟು ನನ್ನ ದಿಂಬು ಸರಿಪಡಿಸಿ ದಯವಿಟ್ಟು,8,Other,kn
-i think i am having a heart attack,0,Emergency,en
-मैंने पूरे दिन कुछ नहीं खाया please,3,Food/Water,hi
-"my heart hurts while i'm sad, why?",0,Emergency,en
-i have cloudy eyes,2,Medication,en
-i feel abdominal pain,1,Pain,en
-i feel cold,6,Emotional Support,en
-बहुत ठंड है कृपया एसी ठीक कर दीजिए,8,Other,hi
-my clothes are soiled please change them,5,Hygiene,en
-i travelled by plane a few days ago and this time during landing my ears remained clogged and painful.,1,Pain,en
-my legs are stuck help me move,4,Mobility,en
-i have some pain when i'm walking around my knees,1,Pain,en
-my shower drain is full of hair every time.,2,Medication,en
-i have blurry vision after i used a wrong medicine.,2,Medication,en
-it feels like someone stuck a knife into my shoulder,1,Pain,en
-मेरा दम घुट रहा है जल्दी करो जल्दी,0,Emergency,hi
-i feel pain in my back,1,Pain,en
-please close the door it is noisy,8,Other,en
-मेरा रोने का मन कर रहा है कृपया रुको कृपया,6,Emotional Support,hi
-कृपया दरवाज़ा बंद कर दीजिए शोर है जल्दी,8,Other,hi
-ನನಗೆ ಹಸಿವಾಗಿದೆ ತಿನ್ನಲು ಏನಾದರೂ ಸಿಗಬಹುದೇ please,3,Food/Water,kn
-"i was diagnosed with b12-deficiency anemia, which explains why i always felt cold.",6,Emotional Support,en
-ಹಾಸಿಗೆಯಲ್ಲಿ ತಿರುಗಲು ನನಗೆ ಸಹಾಯ ಬೇಕು please,4,Mobility,kn
-"i am worried how cold intolerant i am, i am always shivering, even out in the sun.",6,Emotional Support,en
-मदद करो मुझे खून बह रहा है,0,Emergency,hi
-the room is too hot,8,Other,en
-i have some terrible problems when i'm breathing during the night.,2,Medication,en
-i want to freshen up,5,Hygiene,en
-i can hardly move my neck. it hurts.,1,Pain,en
-my hair is falling out in huge amount,2,Medication,en
-ದಯವಿಟ್ಟು ನನ್ನ ದಿಂಬು ಸರಿಪಡಿಸಿ ಬೇಗ,8,Other,kn
-ಬೇಗ ಬನ್ನಿ ಏನೋ ತಪ್ಪಾಗಿದೆ,0,Emergency,kn
-ನನಗೆ ಸ್ವಲ್ಪ ಆಹಾರ ಬೇಕು please,3,Food/Water,kn
-i am gasping for air,0,Emergency,en
-my leg hurts when i move,1,Pain,en
-i cannot move on my own,4,Mobility,en
-मेरी पीठ में बहुत दर्द हो रहा है जल्दी,1,Pain,hi
-कृपया मुझे कुछ पीने को लाइए please,3,Food/Water,hi
-ನನಗೆ ಗಾಲಿಕುರ್ಚಿ ತರಬಹುದೇ ಬೇಗ,4,Mobility,kn
-i feel deep tingling when i touch acne followed by bad sensation,2,Medication,en
-बिस्तर गीला है कृपया बदल दीजिए जल्दी,5,Hygiene,hi
-i'm not good i'm feeling so cold,6,Emotional Support,en
-मुझे भूख लगी है कुछ खाने को मिल सकता है,3,Food/Water,hi
-i feel shoulder pain at intervals of time.,1,Pain,en
-i'm disappointed,6,Emotional Support,en
-when can i go home,7,Information,en
-ನಾನು ಯಾವ ಔಷಧಿ ತೆಗೆದುಕೊಳ್ಳುತ್ತಿದ್ದೇನೆ ದಯವಿಟ್ಟು,7,Information,kn
-"my mind feels very sad, as if it hurts. the way i feel in my head is awful and when i think about my break-up, i cry with sadness.",6,Emotional Support,en
-"i hardly have enough stength to get up,",1,Pain,en
-my ear ache when i'm listening to music.,1,Pain,en
-i feel so depressed today,6,Emotional Support,en
-मुझे एक और तकिया चाहिए कृपया,8,Other,hi
-"i have a foot ache in winter, or when it feels cold, why?",1,Pain,en
-मैं घबराया हुआ हूँ कोई मेरे पास बैठे,6,Emotional Support,hi
-ತಕ್ಷಣ ವೈದ್ಯರನ್ನು ಕರೆಯಿರಿ,0,Emergency,kn
-ನನಗೆ ಶೌಚಾಲಯಕ್ಕೆ ಹೋಗಲು ಸಹಾಯ ಬೇಕು,4,Mobility,kn
-कमरा बहुत गर्म है,8,Other,hi
-मेरा पूरा शरीर दर्द कर रहा है जल्दी,1,Pain,hi
-i love to garden but i get a terrible twinge in my lower back when i lean over.,1,Pain,en
-my neck hurts me and i can't look down or up,1,Pain,en
-"i get tired too fast, i can barely put on my clothes in the morning.",1,Pain,en
-ಇಂದು ನನ್ನ ದಾದಿ ಯಾರು,7,Information,kn
-in the morning my respiration is loud.,0,Emergency,en
-i can't work good i have a pain in my knee,1,Pain,en
-मुझे इंसुलिन चाहिए,2,Medication,hi
-i got a divorce last year and i just can't stop dwelling on how to get revenge on my ex husband.,6,Emotional Support,en
-i feel pain in my ears with tinnitus,1,Pain,en
-i have cut my finger because of playing football and i have to apply pain relief cream but it does not help,1,Pain,en
-i need help getting to the bathroom,4,Mobility,en
-ಇಂದು ನನ್ನ ದಾದಿ ಯಾರು ಬೇಗ,7,Information,kn
-मैं घबराया हुआ हूँ कोई मेरे पास बैठे कृपया,6,Emotional Support,hi
-"i can't stand up, i feel my brain is moving inside my skull.",1,Pain,en
-ನನಗೆ ಹೃದಯಾಘಾತ ಆಗುತ್ತಿದೆ,0,Emergency,kn
-i feel increased heart rate with prick,0,Emergency,en
-i have a great stomach ache and i can't eat any thing,1,Pain,en
-कृपया मेरा पानी का जग भर दीजिए जल्दी,3,Food/Water,hi
-there is too much pain when i move my arm,0,Emergency,en
-"when i drink a lot, i get a headache",1,Pain,en
-i have a scab on the back of my hand that just won't go away.,2,Medication,en
-can i get my pain relief medication,2,Medication,en
-i used alot of pain killer to get better but i still feel the same back pain,1,Pain,en
-i think there's fluid in my ears.,1,Pain,en
-i have a very rash sensation close to my arms,2,Medication,en
-ನನಗೆ ಇನ್ಸುಲಿನ್ ಬೇಕು,2,Medication,kn
-मुझे साफ करने की जरूरत है जल्दी,5,Hygiene,hi
-when my grand father died i felt a hard emotional pain,6,Emotional Support,en
-ದಯವಿಟ್ಟು ನನಗೆ ಕುಳಿತುಕೊಳ್ಳಲು ಸಹಾಯ ಮಾಡಿ,4,Mobility,kn
-my face break out badly every month around my cycle.,2,Medication,en
-i am having problems seeing things feel like a cloud on my eyes everything is blurry,2,Medication,en
-ಈ ಮಾತ್ರೆಗಳು ಯಾವುದಕ್ಕೆ,7,Information,kn
-मुझे कुछ खाना चाहिए कृपया,3,Food/Water,hi
-my entire body is freezing.,6,Emotional Support,en
-मुझे अकेलापन लग रहा है कुछ देर रुको कृपया,6,Emotional Support,hi
-the pain in my ear is unbearable.,1,Pain,en
-मेरा दम घुट रहा है जल्दी करो कृपया,0,Emergency,hi
-ನನ್ನ ಎದೆ ಬಿಗಿಯಾಗಿದೆ ಉಸಿರಾಡಲು ಆಗುತ್ತಿಲ್ಲ please,0,Emergency,kn
-कृपया मुझे कुछ पीने को लाइए,3,Food/Water,hi
-i have a blurry vision after my head was hit yesterday.,2,Medication,en
-ನನಗೆ ಸ್ವಲ್ಪ ಜ್ಯೂಸ್ ಸಿಗಬಹುದೇ ದಯವಿಟ್ಟು,3,Food/Water,kn
-"i have a blurry vision during my swimming training in the pool, why?",2,Medication,en
-कृपया मुझे मेरी दवा दीजिए please,2,Medication,hi
-मुझे बाथरूम जाने में मदद चाहिए जल्दी,4,Mobility,hi
-when is my next meal coming,3,Food/Water,en
-मेरी पीठ में बहुत दर्द हो रहा है,1,Pain,hi
-ನನಗೆ ಒಂಟಿತನ ಅನಿಸುತ್ತಿದೆ ಸ್ವಲ್ಪ ಹೊತ್ತು ಇರಿ ದಯವಿಟ್ಟು,6,Emotional Support,kn
-मेरी चादर गंदी है इसे बदल दीजिए कृपया,5,Hygiene,hi
-i have the impression of having no strength in my body,1,Pain,en
-कृपया मेरा तकिया ठीक कर दीजिए please,8,Other,hi
-मुझे बिस्तर पर करवट लेने में मदद चाहिए,4,Mobility,hi
-i have a rash and it itches very bad.,2,Medication,en
-"there is an extreme pressure below my belly button at the right, which i feel every time i go out for a jog.",1,Pain,en
-i haven't eaten anything all day,3,Food/Water,en
-"i fell through a window while i was cleaning it and i have a shard of glass stuck in my left eye, i think it is pretty serious, please help!",2,Medication,en
-मुझे दर्द की गोली चाहिए जल्दी,2,Medication,hi
-i don't have problems taking in breath but out breath is so heavy,0,Emergency,en
-i have a sharp pain in my neck,1,Pain,en
-मुझे कुछ खाना चाहिए जल्दी,3,Food/Water,hi
-i can't rotate my neck,1,Pain,en
-कृपया मेरा पानी का जग भर दीजिए please,3,Food/Water,hi
-i can't get a girlfriend because of my acne.,2,Medication,en
-my throught is so sore.,1,Pain,en
-can you tell me the day today,7,Information,en
-मैं कौन सी दवा ले रहा हूँ please,7,Information,hi
-is it time for lunch yet,3,Food/Water,en
-ದಯವಿಟ್ಟು ನನಗೆ ಯಾರೊಂದಿಗಾದರೂ ಮಾತನಾಡಬೇಕು please,6,Emotional Support,kn
-when i go to sleep i am feeling cold,6,Emotional Support,en
-i'm not good i feel dizzy,0,Emergency,en
-i am having trouble breathing,0,Emergency,en
-क्या आप मुझे मेरा चश्मा दे सकते हैं please,8,Other,hi
-ನನಗೆ ಒಂದು ಹೊದಿಕೆ ತರಬಹುದೇ ದಯವಿಟ್ಟು,8,Other,kn
-ನಾನು ಮೂರ್ಛೆ ಹೋಗುತ್ತೇನೆ ಅನಿಸುತ್ತಿದೆ please,0,Emergency,kn
-can you turn off the lights please,8,Other,en
-i need to go to the washroom,4,Mobility,en
-ನಾನು ಮೂರ್ಛೆ ಹೋಗುತ್ತೇನೆ ಅನಿಸುತ್ತಿದೆ ದಯವಿಟ್ಟು,0,Emergency,kn
-there's swelling in my neck and it hurts.,1,Pain,en
-ನನಗೆ ತುಂಬಾ ಭಯ ಮತ್ತು ಒಂಟಿತನ ಅನಿಸುತ್ತಿದೆ please,6,Emotional Support,kn
-ನಾನು ಮನೆಗೆ ಯಾವಾಗ ಹೋಗಬಹುದು ದಯವಿಟ್ಟು,7,Information,kn
-when i'm tired i feel my head heavy,1,Pain,en
-i can't see the sign i have a blurry vision,2,Medication,en
-my knee hurts when i walk,1,Pain,en
-can you bring me a blanket,8,Other,en
-ನನ್ನ ಮುಂದಿನ ಭೇಟಿ ಯಾವಾಗ ದಯವಿಟ್ಟು,7,Information,kn
-मुझे सीने में दर्द महसूस हो रहा है जल्दी,1,Pain,hi
-i have a feeling like my whole body is complaining,1,Pain,en
-can you pass me my glasses,8,Other,en
-क्या मुझे थोड़ा जूस मिल सकता है,3,Food/Water,hi
-मुझे स्पंज बाथ चाहिए कृपया,5,Hygiene,hi
-when get up i found that i have a stomach ache and i tried to take medecine but my stomach still hurting me,1,Pain,en
-ನನಗೆ ಸ್ವಲ್ಪ ಆಹಾರ ಬೇಕು ಬೇಗ,3,Food/Water,kn
-my skin is very dry and peeling.,2,Medication,en
-मेरा मुँह सूख रहा है मुझे पानी चाहिए कृपया,3,Food/Water,hi
-my son nicked his neck with an old razor and that spot has become inflamed and looks like it is infected.,2,Medication,en
-ಈಗ ಸಮಯ ಎಷ್ಟು,7,Information,kn
-i want to go for a short walk,4,Mobility,en
-मेरा दम घुट रहा है जल्दी करो please,0,Emergency,hi
-i have constant stomach pain and bloating.,1,Pain,en
-ಯಾರಾದರೂ ನನಗೆ ಎದ್ದೇಳಲು ಸಹಾಯ ಮಾಡಿ ಬೇಗ,4,Mobility,kn
-कृपया लाइट बंद कर दीजिए,8,Other,hi
-ನನ್ನ ಔಷಧಿಯ ಸಮಯವಾಗಿದೆ,2,Medication,kn
-i had a cold the last time i travelled by plane and i still have a discomfort in my ears.,1,Pain,en
-i can't really jump on my left foot because my triple fracture of the ankle left me with neverending pains.,1,Pain,en
-my wound was infected when i was planting some flowers in my garden,2,Medication,en
-my hair always falls out and i have lost a lot of hair lately,2,Medication,en
-ದಯವಿಟ್ಟು ನನಗೆ ಯಾರೊಂದಿಗಾದರೂ ಮಾತನಾಡಬೇಕು,6,Emotional Support,kn
-when i get out of bed in the morning my body feels very weak.,1,Pain,en
-could you get me some warm water,3,Food/Water,en
-i have acne in my face and other problema in my derma like itching,2,Medication,en
-ದಯವಿಟ್ಟು ನನಗೆ ಯಾರೊಂದಿಗಾದರೂ ಮಾತನಾಡಬೇಕು ದಯವಿಟ್ಟು,6,Emotional Support,kn
-i feel pain when i think of her,6,Emotional Support,en
-कृपया मुझे साफ कपड़े पहनने में मदद करो,5,Hygiene,hi
-sometimes my body feels week without reason,1,Pain,en
-my muscles feel tired,1,Pain,en
-my shoulder hurts me so much,1,Pain,en
-i have a dull ache in my stomach. it gets worse after i eat.,1,Pain,en
-i feel a sharp pain in the stomach after eating,1,Pain,en
-ನನ್ನ ಹಾಸಿಗೆ ಹೊದಿಕೆ ಕೊಳಕಾಗಿದೆ ಬದಲಾಯಿಸಿ ಬೇಗ,5,Hygiene,kn
-i'm injured i can't play sports,1,Pain,en
-these red spots on my cheeks are new. what is it?,2,Medication,en
-ದಯವಿಟ್ಟು ನನ್ನ ಔಷಧಿ ಕೊಡಿ ದಯವಿಟ್ಟು,2,Medication,kn
-there are lots of hairs on my pillow in the morning.,2,Medication,en
-when i play football i have joint pain.,1,Pain,en
-my shoulder muscle hurts when i try to reach up.,1,Pain,en
-ನನಗೆ ತುಂಬಾ ಭಯ ಮತ್ತು ಒಂಟಿತನ ಅನಿಸುತ್ತಿದೆ,6,Emotional Support,kn
-ನನ್ನ ಬಟ್ಟೆ ಕೊಳಕಾಗಿದೆ ದಯವಿಟ್ಟು ಬದಲಾಯಿಸಿ ದಯವಿಟ್ಟು,5,Hygiene,kn
-i have a dry throat,2,Medication,en
-my chest break out with red pimples and whiteheads.,2,Medication,en
-ನನ್ನ ಕುತ್ತಿಗೆಯಲ್ಲಿ ನೋವಿದೆ please,1,Pain,kn
-मेरी गोली का समय हो गया है,2,Medication,hi
-my medicine is due now,2,Medication,en
-i m feeling cold though the temperature is high,6,Emotional Support,en
-there pain in my foot,1,Pain,en
-in highschool i had a lot of acne.,2,Medication,en
-बिस्तर गीला है कृपया बदल दीजिए please,5,Hygiene,hi
-मेरी चादर गंदी है इसे बदल दीजिए please,5,Hygiene,hi
-ದಯವಿಟ್ಟು ನನ್ನ ಮಾತ್ರೆಗಳನ್ನು ತನ್ನಿ please,2,Medication,kn
-my ankle joint throbs when i put pressure on my foot.,1,Pain,en
-ದಯವಿಟ್ಟು ಶೌಚಾಲಯಕ್ಕೆ ನಡೆಯಲು ಸಹಾಯ ಮಾಡಿ please,4,Mobility,kn
-ನನ್ನ ಬಟ್ಟೆ ಕೊಳಕಾಗಿದೆ ದಯವಿಟ್ಟು ಬದಲಾಯಿಸಿ ಬೇಗ,5,Hygiene,kn
-please help this is urgent,0,Emergency,en
-i wake up with a stiff neck every morning. massage helps but then a couple of days later it's back again.,1,Pain,en
-yesterday i had a shouder pain,1,Pain,en
-i cannot get warm no matter how much i wrap up or how high i put the heating on,6,Emotional Support,en
-ದಯವಿಟ್ಟು ನನ್ನ ಔಷಧಿ ಕೊಡಿ,2,Medication,kn
-क्या आप मुझे एक कंबल ला सकते हैं जल्दी,8,Other,hi
-ನನಗೆ ಶೌಚಾಲಯಕ್ಕೆ ಹೋಗಲು ಸಹಾಯ ಬೇಕು ಬೇಗ,4,Mobility,kn
-ನನಗೆ ತುಂಬಾ ಬಾಯಾರಿಕೆಯಾಗಿದೆ ದಯವಿಟ್ಟು,3,Food/Water,kn
-ಹಾಸಿಗೆಯ ತಲೆಭಾಗ ಎತ್ತರಿಸಬಹುದೇ,8,Other,kn
-मेरे सिर में दर्द हो रहा है जल्दी,1,Pain,hi
-मुझे बहुत डर लग रहा है और मैं अकेला हूँ please,6,Emotional Support,hi
-every time i look to left i feel a sharp pain in my neck.,1,Pain,en
-i feel a pain in my back when i sit on a chair for long.,1,Pain,en
-मुझसे साँस नहीं ली जा रही कृपया,0,Emergency,hi
-मुझे यहाँ कितने दिन रहना है,7,Information,hi
-i cannot breathe because of this dull ache below my left shoulder.,0,Emergency,en
-please help me change my position,4,Mobility,en
-i have a pain in my joint,1,Pain,en
-i feel joint pain every time i move,1,Pain,en
-"my child has cough all night, she can't sleep",2,Medication,en
-my heart hurts me,0,Emergency,en
-ದಯವಿಟ್ಟು ಬಾಗಿಲು ಮುಚ್ಚಿ ಗದ್ದಲವಿದೆ,8,Other,kn
-ನನ್ನ ಬಾಯಿ ಒಣಗಿದೆ ನನಗೆ ನೀರು ಬೇಕು ದಯವಿಟ್ಟು,3,Food/Water,kn
-can you help me take a bath,5,Hygiene,en
-when i tried to take care if my hair i found that it is falling out,2,Medication,en
-my muscles in my lower back are aching,2,Medication,en
-ನನ್ನ ಔಷಧಿಯ ಸಮಯವಾಗಿದೆ please,2,Medication,kn
-ಚಲಿಸಿದಾಗ ನನ್ನ ಕಾಲು ನೋಯುತ್ತದೆ ದಯವಿಟ್ಟು,1,Pain,kn
-i have a foot ache after running 500m with my running shoes.,1,Pain,en
-the acne was causing me to feel embarrassed.,2,Medication,en
-ದಯವಿಟ್ಟು ಶೌಚಾಲಯಕ್ಕೆ ನಡೆಯಲು ಸಹಾಯ ಮಾಡಿ ದಯವಿಟ್ಟು,4,Mobility,kn
-कृपया मेरा पानी का जग भर दीजिए,3,Food/Water,hi
-मुझे भूख लगी है कुछ खाने को मिल सकता है जल्दी,3,Food/Water,hi
-मुझे इंजेक्शन चाहिए please,2,Medication,hi
-मुझे बहुत प्यास लगी है जल्दी,3,Food/Water,hi
-when i was washing my hair it was falling out heavily,2,Medication,en
-ನನ್ನ ಔಷಧಿಯ ಸಮಯವಾಗಿದೆ ಬೇಗ,2,Medication,kn
-ತುಂಬಾ ಚಳಿಯಿದೆ ದಯವಿಟ್ಟು ಎಸಿ ಸರಿಪಡಿಸಿ,8,Other,kn
-कृपया मुझे मेरी दवा दीजिए कृपया,2,Medication,hi
-ನನ್ನ ಎದೆಯ ಭಾಗದಲ್ಲಿ ನೋವಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
-can you bring me the wheelchair,4,Mobility,en
-when i eat too much sugar my body gets weak and dizzy.,1,Pain,en
-i feel great pain in my feet after playing one of the sports games,1,Pain,en
-तुरंत डॉक्टर को बुलाओ,0,Emergency,hi
-i feel a sharp pain in my stomach,1,Pain,en
-"it started as a tinnitus, but today the pain is throbbing and unbearable.",1,Pain,en
-i get an ear ache when it is cold,1,Pain,en
-please hurry something is very wrong,0,Emergency,en
-ನನಗೆ ಒಂದು ಹೊದಿಕೆ ತರಬಹುದೇ please,8,Other,kn
-ದಯವಿಟ್ಟು ನನ್ನನ್ನು ಕುರ್ಚಿಗೆ ಸಾಗಿಸಿ,4,Mobility,kn
-mr hair is falling out just by combing it.,2,Medication,en
-ತುಂಬಾ ಚಳಿಯಿದೆ ದಯವಿಟ್ಟು ಎಸಿ ಸರಿಪಡಿಸಿ ಬೇಗ,8,Other,kn
-ಹಾಸಿಗೆ ಒದ್ದೆಯಾಗಿದೆ ದಯವಿಟ್ಟು ಬದಲಾಯಿಸಿ ಬೇಗ,5,Hygiene,kn
-"my left ear is ok, but the right one feels like it's being stabbed with a nail.",1,Pain,en
-ದಯವಿಟ್ಟು ಬಾಗಿಲು ಮುಚ್ಚಿ ಗದ್ದಲವಿದೆ please,8,Other,kn
-my joints are paining,1,Pain,en
-i have shoulder pain when i try to carry my groceries.,1,Pain,en
-मेरे जोड़ों में दर्द हो रहा है please,1,Pain,hi
-मेरे कपड़े गंदे हैं कृपया बदल दीजिए कृपया,5,Hygiene,hi
-ನನ್ನ ಸ್ಥಿತಿಯ ಬಗ್ಗೆ ಚಿಂತೆಯಾಗಿದೆ,6,Emotional Support,kn
-मुझे लगता है मैं बेहोश हो जाऊँगा,0,Emergency,hi
-i have tried to make massage on my foot but they still pain me,1,Pain,en
-i have a red rash that is itchy on my skin,2,Medication,en
-मुझे ऑपरेशन से डर लग रहा है,6,Emotional Support,hi
-मैं खुद से हिल नहीं सकता कृपया,4,Mobility,hi
-when i'm awake in the morning i feel strange and have vertigo,0,Emergency,en
-ನನ್ನ ಹೊಟ್ಟೆಯಲ್ಲಿ ತೀವ್ರ ನೋವಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
-ನನ್ನ ಬಾಯಿ ಒಣಗಿದೆ ನನಗೆ ನೀರು ಬೇಕು please,3,Food/Water,kn
-is my family allowed to visit now,7,Information,en
-i have a pain in my trapes,1,Pain,en
-मुझे सांस नहीं आ रही है मदद करो,0,Emergency,hi
-fell skull is cracked like nuts,1,Pain,en
-ಸಹಾಯ ಮಾಡಿ ನನಗೆ ರಕ್ತ ಸೋರುತ್ತಿದೆ please,0,Emergency,kn
-ನನಗೆ ಉಸಿರಾಡಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ please,0,Emergency,kn
-मुझे सांस नहीं आ रही है मदद करो please,0,Emergency,hi
-क्या आप मुझे मेरा चश्मा दे सकते हैं जल्दी,8,Other,hi
-i feel a huge emotional pain after i broke up with my girlfriend.,6,Emotional Support,en
-हिलने पर मेरे पैर में दर्द होता है please,1,Pain,hi
-ಬೇಗ ಬನ್ನಿ ಏನೋ ತಪ್ಪಾಗಿದೆ please,0,Emergency,kn
-i have an internal pain i cannot describe,1,Pain,en
-i always feel like i have menstrual pains even if i don't have my period.,1,Pain,en
-मुझे निराशा और दुख महसूस हो रहा है,6,Emotional Support,hi
-"when i stand up, i feel like i'm going to fall down instantly",0,Emergency,en
-ನನ್ನ ಸ್ಥಿತಿಯ ಬಗ್ಗೆ ಚಿಂತೆಯಾಗಿದೆ ಬೇಗ,6,Emotional Support,kn
-i get terrible headaches every few months and when i get them my vision is affected.,1,Pain,en
-ದಯವಿಟ್ಟು ನನ್ನ ಮಾತ್ರೆಗಳನ್ನು ತನ್ನಿ ದಯವಿಟ್ಟು,2,Medication,kn
-i have a problem in seeing objects it is too difficult to see,2,Medication,en
-मेरे पेट में तेज़ दर्द है please,1,Pain,hi
-i have blurred vision.,2,Medication,en
-when i sneeze very hard i feel ear ache,1,Pain,en
-ದಯವಿಟ್ಟು ಬಾಗಿಲು ಮುಚ್ಚಿ ಗದ್ದಲವಿದೆ ಬೇಗ,8,Other,kn
-i feel fluid trying to come up when i cough.,2,Medication,en
-i read a book for along time and when i finished reading i feel head ache,1,Pain,en
-मुझे बहुत डर लग रहा है और मैं अकेला हूँ जल्दी,6,Emotional Support,hi
-क्या आप मेरे लिए व्हीलचेयर ला सकते हैं कृपया,4,Mobility,hi
-मेरे सीने में बहुत दर्द हो रहा है कृपया,0,Emergency,hi
-ಯಾರಾದರೂ ನನಗೆ ಎದ್ದೇಳಲು ಸಹಾಯ ಮಾಡಿ please,4,Mobility,kn
-ನನಗೆ ನೋವು ನಿವಾರಕ ಮಾತ್ರೆ ಬೇಕು please,2,Medication,kn
-my heart feels like it's going to explode.,0,Emergency,en
-i feel sad,6,Emotional Support,en
-"laceration, rupture or opening in the skin",2,Medication,en
-ನಾನು ದಿನವಿಡೀ ಏನೂ ತಿಂದಿಲ್ಲ ಬೇಗ,3,Food/Water,kn
-please i need something to drink now,3,Food/Water,en
-"there are times when i feel crushed under a huge weight and no air passing to my lungs, it actually scares the hell out of me when it happens.",0,Emergency,en
-ನಾನು ಇನ್ನೂ ಔಷಧಿ ತೆಗೆದುಕೊಂಡಿಲ್ಲ,2,Medication,kn
-my body feels weak and i think that my face is fade and i can't sleep well,1,Pain,en
-ನನ್ನ ಡಯಾಪರ್ ಬದಲಾಯಿಸಬೇಕು please,5,Hygiene,kn
-i have an open wound in my arm,2,Medication,en
-क्या आप मुझे नहाने में मदद करेंगे जल्दी,5,Hygiene,hi
-ನನ್ನ ಎದೆಯಲ್ಲಿ ತುಂಬಾ ನೋವಾಗುತ್ತಿದೆ ದಯವಿಟ್ಟು,0,Emergency,kn
-ನಾನು ಯಾವ ಔಷಧಿ ತೆಗೆದುಕೊಳ್ಳುತ್ತಿದ್ದೇನೆ ಬೇಗ,7,Information,kn
-i do not feel better in my muscles,1,Pain,en
-ದಯವಿಟ್ಟು ನನ್ನ ಔಷಧಿ ಕೊಡಿ ಬೇಗ,2,Medication,kn
-i have pain but i can't specify place,1,Pain,en
-i have a painful cramp in my feet,1,Pain,en
-ನನ್ನ ಬೆನ್ನಿನಲ್ಲಿ ತುಂಬಾ ನೋವಾಗುತ್ತಿದೆ ಬೇಗ,1,Pain,kn
-ये गोलियाँ किस लिए हैं कृपया,7,Information,hi
-मुझे ऑपरेशन से डर लग रहा है कृपया,6,Emotional Support,hi
-ನನ್ನ ಮಾತ್ರೆಯ ಸಮಯವಾಗಿದೆ ದಯವಿಟ್ಟು,2,Medication,kn
-please bring my tablets,2,Medication,en
-my neck is annoying me i can't sleep bacause of it,1,Pain,en
-ದಯವಿಟ್ಟು ದೀಪ ಆರಿಸಿ,8,Other,kn
-बिस्तर गीला है कृपया बदल दीजिए,5,Hygiene,hi
-कृपया मेरी गोलियाँ लाइए,2,Medication,hi
-when i was young i had an injury from sports in my knee.,1,Pain,en
-मेरे पेट में तेज़ दर्द है जल्दी,1,Pain,hi
-कृपया मुझे साफ कपड़े पहनने में मदद करो please,5,Hygiene,hi
-मेरा रोने का मन कर रहा है कृपया रुको please,6,Emotional Support,hi
-i feel pain in my foot,1,Pain,en
-i cant stop coughing.,2,Medication,en
-i tried to put my glasses to see more clear but cant find any change,2,Medication,en
-i can't move my shoulder because of pain,1,Pain,en
-can i know my blood pressure reading,7,Information,en
-i have shooting pains up and down my back.,1,Pain,en
-मैं अभी बहुत घबराया हुआ हूँ,6,Emotional Support,hi
-ಈ ಮಾತ್ರೆಗಳು ಯಾವುದಕ್ಕೆ ಬೇಗ,7,Information,kn
-क्या कोई मुझे खड़े होने में मदद करेगा,4,Mobility,hi
-ದಯವಿಟ್ಟು ನನಗೆ ಕುಳಿತುಕೊಳ್ಳಲು ಸಹಾಯ ಮಾಡಿ ದಯವಿಟ್ಟು,4,Mobility,kn
 when i do hard exercises i feel great pain in my muscles.,1,Pain,en
-i feel head ache,1,Pain,en
-i have pain in my colon and my stomach like something cutting it,1,Pain,en
-मुझे लगता है मैं बेहोश हो जाऊँगा कृपया,0,Emergency,hi
-क्या आप बिस्तर का सिरहाना ऊँचा कर सकते हैं please,8,Other,hi
-मैंने पूरे दिन कुछ नहीं खाया,3,Food/Water,hi
-"it is hard to breath when i am in the underground metro station, why?",0,Emergency,en
-my knee doesn't want to bend well.,1,Pain,en
-please help me move to the chair,4,Mobility,en
-कृपया लाइट बंद कर दीजिए कृपया,8,Other,hi
-i have a strong shoulder pain,1,Pain,en
+ನಾನು ಇಲ್ಲಿ ಎಷ್ಟು ದಿನ ಇರಬೇಕು,7,Information,kn
+i got a divorce last year and i just can't stop dwelling on how to get revenge on my ex husband.,6,Emotional Support,en
+"laceration, rupture or opening in the skin",2,Medication,en
+ये गोलियाँ किस लिए हैं कृपया,7,Information,hi
+when i brush my hair i notice big clumps of hair coming out in the brush.,2,Medication,en
+is pimples a skin disease?,2,Medication,en
+ನನ್ನ ಔಷಧಿಯ ಸಮಯವಾಗಿದೆ ದಯವಿಟ್ಟು,2,Medication,kn
+the knee feels like it rusted and i suddenly cannot bend it anymore.,1,Pain,en
+i haven't eaten anything all day,3,Food/Water,en
+i feel dizzy whenever i stand up.,0,Emergency,en
+मेरी पीठ में बहुत दर्द हो रहा है जल्दी,1,Pain,hi
+mr hair is falling out just by combing it.,2,Medication,en
+ನನ್ನ ಉಸಿರು ಕಟ್ಟುತ್ತಿದೆ ಬೇಗ ಬನ್ನಿ ದಯವಿಟ್ಟು,0,Emergency,kn
+my head is spinning when i get up.,0,Emergency,en
+"my child has cough all night, she can't sleep",2,Medication,en
+i don't have full range of motion with my arms,1,Pain,en
+whenever i stand up i feel dizzy.,0,Emergency,en
 my head is so heavy can't think normally,1,Pain,en
-i have a pain in my elbow joint,1,Pain,en
-ನನ್ನ ಕನ್ನಡಕ ಕೊಡಬಹುದೇ ದಯವಿಟ್ಟು,8,Other,kn
-i feel a great pain in my shoulder when i try to lift something heavy,1,Pain,en
-i feel cold when the night comes,6,Emotional Support,en
-ನಾನು ಶೌಚಾಲಯ ಬಳಸಬೇಕು please,4,Mobility,kn
-ಕಿಟಕಿ ತೆರೆಯಬಹುದೇ please,8,Other,kn
-my nose is congested all the time and there's this gluey secretion in my throat that makes it impossible for me to sleep. i often have to nap sitting down.,0,Emergency,en
-ನನಗೆ ಸ್ಪಂಜ್ ಸ್ನಾನ ಬೇಕು please,5,Hygiene,kn
-"i can't move my leg, there is pain in the joint",1,Pain,en
-my skin is itchy and inflamed,2,Medication,en
-ನನ್ನ ಹೊಟ್ಟೆಯಲ್ಲಿ ತೀವ್ರ ನೋವಿದೆ ಬೇಗ,1,Pain,kn
-i was watching tv and suddenly have blurry vision,2,Medication,en
-डॉक्टर कब आएंगे please,7,Information,hi
-my chest hurts when i smoke,1,Pain,en
-i have pain in my chest that saddens me.,0,Emergency,en
-ಕಿಟಕಿ ತೆರೆಯಬಹುದೇ ಬೇಗ,8,Other,kn
-my neck feels stiff,1,Pain,en
-when i raise my hand i feel pain in my shoulder.,1,Pain,en
-"my husband left me for another woman, my heart hurts so badly to the point i can't eat or sleep.",0,Emergency,en
-i have a lot of knee pain whenever i go running.,1,Pain,en
-क्या आप मुझे मेरी जाँच के नतीजे बता सकते हैं कृपया,7,Information,hi
-मेरा डायपर बदलने की जरूरत है जल्दी,5,Hygiene,hi
-my lower back hurts but it improves if i stretch it,1,Pain,en
-क्या कोई मुझे खड़े होने में मदद करेगा please,4,Mobility,hi
-ದಯವಿಟ್ಟು ನನ್ನ ಮಾತ್ರೆಗಳನ್ನು ತನ್ನಿ ಬೇಗ,2,Medication,kn
-कृपया मुझे एक गिलास पानी दीजिए please,3,Food/Water,hi
-मुझे इंजेक्शन चाहिए कृपया,2,Medication,hi
-क्या मुझे अभी दवा मिल सकती है,2,Medication,hi
-मेरा अगला भोजन कब आएगा please,3,Food/Water,hi
-मैं अभी बहुत घबराया हुआ हूँ जल्दी,6,Emotional Support,hi
-ನನ್ನ ಕೀಲುಗಳಲ್ಲಿ ನೋವಾಗುತ್ತಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
-ಈ ಮಾತ್ರೆಗಳು ಯಾವುದಕ್ಕೆ please,7,Information,kn
-i feel dizzy when i make sudden movements,0,Emergency,en
-क्या मुझे अभी दवा मिल सकती है कृपया,2,Medication,hi
-ಕೋಣೆ ತುಂಬಾ ಬಿಸಿಯಾಗಿದೆ ದಯವಿಟ್ಟು,8,Other,kn
-ದಯವಿಟ್ಟು ಹಲ್ಲು ಉಜ್ಜಲು ಸಹಾಯ ಮಾಡಿ ದಯವಿಟ್ಟು,5,Hygiene,kn
-"when i walk up a flight of stairs, my right knee hurts.",1,Pain,en
-chronic disease of hair follicles and sebaceous glands,2,Medication,en
-my muscles in my lower back are aching.,1,Pain,en
-the warming system of my house is broken and feel so cold,6,Emotional Support,en
-ನನಗೆ ನೋವು ನಿವಾರಕ ಮಾತ್ರೆ ಬೇಕು ಬೇಗ,2,Medication,kn
-ನಾನು ಇಲ್ಲಿ ಎಷ್ಟು ದಿನ ಇರಬೇಕು please,7,Information,kn
-my right shoulder clicks when i move my arm.,1,Pain,en
-can i get some water please,3,Food/Water,en
-there is so much pain when i move my arm.,1,Pain,en
-ನನ್ನ ಕುತ್ತಿಗೆಯಲ್ಲಿ ನೋವಿದೆ ಬೇಗ,1,Pain,kn
-ದಯವಿಟ್ಟು ಕುಡಿಯಲು ಏನಾದರೂ ತನ್ನಿ please,3,Food/Water,kn
-there is an injured person,2,Medication,en
-my arm hurts when i stretch,1,Pain,en
-my infected wound caused a fever,2,Medication,en
-ಹಾಸಿಗೆ ಒದ್ದೆಯಾಗಿದೆ ದಯವಿಟ್ಟು ಬದಲಾಯಿಸಿ please,5,Hygiene,kn
-अभी क्या समय हुआ है please,7,Information,hi
-i have a bad pain in my knee,1,Pain,en
-i feel pain in my throat,2,Medication,en
-मुझे स्पंज बाथ चाहिए,5,Hygiene,hi
-क्या आप खिड़की खोल सकते हैं,8,Other,hi
-डॉक्टर कब आएंगे जल्दी,7,Information,hi
-मेरा पूरा शरीर दर्द कर रहा है कृपया,1,Pain,hi
-क्या आप मुझे एक कंबल ला सकते हैं कृपया,8,Other,hi
-मेरा डायपर बदलने की जरूरत है कृपया,5,Hygiene,hi
-i feel something hurt me in taking breath and i cant take my breath,0,Emergency,en
-i feel aching on my insides.,1,Pain,en
-i was playing soccer and i twisted my ankle,1,Pain,en
-मेरा मुँह सूख रहा है मुझे पानी चाहिए जल्दी,3,Food/Water,hi
-"my hair is coming out in chunks, especially when i wash it",2,Medication,en
-मुझे सीने में दर्द महसूस हो रहा है कृपया,1,Pain,hi
-i felt my heart hurts when i ran for along distance,0,Emergency,en
-मेरे घुटने में बहुत दर्द है जल्दी,1,Pain,hi
-i have issue with my skin,2,Medication,en
-how long do i have to stay here,7,Information,en
-my grandson cut his foot on a seashell in the ocean and now the foot is turning gray and is puffy.,2,Medication,en
-i have muscle pain at my left leg.,1,Pain,en
-मुझे बिस्तर पर करवट लेने में मदद चाहिए please,4,Mobility,hi
-can you lower the bed,8,Other,en
-मेरे घुटने में बहुत दर्द है कृपया,1,Pain,hi
-ನನಗೆ ಉಸಿರಾಡಲು ಆಗುತ್ತಿಲ್ಲ ಸಹಾಯ ಮಾಡಿ ದಯವಿಟ್ಟು,0,Emergency,kn
-i have terrible pain in my heart,0,Emergency,en
-क्या आप मेरी एंटीबायोटिक ला सकते हैं जल्दी,2,Medication,hi
-ದಯವಿಟ್ಟು ಹಲ್ಲು ಉಜ್ಜಲು ಸಹಾಯ ಮಾಡಿ please,5,Hygiene,kn
-i wake up at night feeling cold,6,Emotional Support,en
-i need my bedsheets changed they are dirty,5,Hygiene,en
+i cant sleep because of cough,2,Medication,en
+i have a great pain in my thorax from heart injury,0,Emergency,en
+मैं खुद से हिल नहीं सकता जल्दी,4,Mobility,hi
+ನನ್ನ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ ಯಾವಾಗ ದಯವಿಟ್ಟು,7,Information,kn
+sometimes i feel like a claw on my chest that leaves me breathless.,0,Emergency,en
+bitte helfen sie mir beim zähneputzen,5,Hygiene,de
+कृपया मुझे मेरी दवा दीजिए,2,Medication,hi
+heavy breath with fatigue,6,Emotional Support,en
+"i feel hurt, lot of pain in my heart",6,Emotional Support,en
+ich habe starke schmerzen im knie schnell,1,Pain,de
+i feel very scared and alone,6,Emotional Support,en
+मेरा दम घुट रहा है जल्दी करो कृपया,0,Emergency,hi
+wie spät ist es jetzt,7,Information,de
+ich bin gerade sehr nervös bitte,6,Emotional Support,de
+ich hätte gerne etwas zu essen,3,Food/Water,de
+"my mind feels very sad, as if it hurts. the way i feel in my head is awful and when i think about my break-up, i cry with sadness.",6,Emotional Support,en
+ich hätte gerne etwas zu essen bitte,3,Food/Water,de
+my hair always falls out and i have lost a lot of hair lately,2,Medication,en
+ದಯವಿಟ್ಟು ನನ್ನ ಮಾತ್ರೆಗಳನ್ನು ತನ್ನಿ ದಯವಿಟ್ಟು,2,Medication,kn
+es ist zu kalt können sie die klimaanlage einstellen schnell,8,Other,de
+ನನ್ನ ಮುಂದಿನ ಭೇಟಿ ಯಾವಾಗ please,7,Information,kn
+sometimes i cough because i'm a smoker,2,Medication,en
+i have a wound between my toes that gets better overnight and then reopens ever day when i wear dress shoes to work.,2,Medication,en
+my husband has a spot on his lip that he though was cold sore but now it has broken open and leaks fluid all day.,2,Medication,en
+ನಾನು ಮನೆಗೆ ಯಾವಾಗ ಹೋಗಬಹುದು please,7,Information,kn
+ನನಗೆ ಸ್ಪಂಜ್ ಸ್ನಾನ ಬೇಕು ಬೇಗ,5,Hygiene,kn
+मेरी दवा का समय हो गया है,2,Medication,hi
+my clothes are soiled please change them,5,Hygiene,en
+having difficulty moving my knee,1,Pain,en
+मुझे यहाँ कितने दिन रहना है जल्दी,7,Information,hi
+i have a rash on my skin,2,Medication,en
+ದಯವಿಟ್ಟು ನನಗೆ ಒಂದು ಲೋಟ ನೀರು ಕೊಡಿ,3,Food/Water,kn
+ದಯವಿಟ್ಟು ಬಾಗಿಲು ಮುಚ್ಚಿ ಗದ್ದಲವಿದೆ,8,Other,kn
+ich kann nicht atmen,0,Emergency,de
+there is pain in my neck,1,Pain,en
+ich habe angst vor der operation schnell,6,Emotional Support,de
 i love to walk and be outside but the bottoms of my feet get sore so quickly.,1,Pain,en
-i hit myself and the would doesn't want to heal,2,Medication,en
-मेरा डायपर बदलने की जरूरत है,5,Hygiene,hi
-ನನ್ನ ಹೊಟ್ಟೆಯಲ್ಲಿ ತೀವ್ರ ನೋವಿದೆ please,1,Pain,kn
-ಯಾರಾದರೂ ನನಗೆ ಎದ್ದೇಳಲು ಸಹಾಯ ಮಾಡಿ,4,Mobility,kn
-when i stand up too quick my vision is blurry.,2,Medication,en
-i need help with my personal hygiene,5,Hygiene,en
-मेरे सीने में बहुत दर्द हो रहा है please,0,Emergency,hi
-i had a sharp pain in my stomach,1,Pain,en
-ನನಗೆ ತುಂಬಾ ಬಾಯಾರಿಕೆಯಾಗಿದೆ please,3,Food/Water,kn
-my ear is ringing.,1,Pain,en
-ನನ್ನ ಭುಜದಲ್ಲಿ ತೀವ್ರ ನೋವಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
-ನನ್ನ ಕುತ್ತಿಗೆಯಲ್ಲಿ ನೋವಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
-मेरे घुटने में बहुत दर्द है please,1,Pain,hi
-मुझे इंसुलिन चाहिए please,2,Medication,hi
-ನನಗೆ ಹೃದಯಾಘಾತ ಆಗುತ್ತಿದೆ ಬೇಗ,0,Emergency,kn
-my diaper needs changing,5,Hygiene,en
-ನನಗೆ ಸ್ವಲ್ಪ ಆಹಾರ ಬೇಕು ದಯವಿಟ್ಟು,3,Food/Water,kn
-मेरा रोने का मन कर रहा है कृपया रुको,6,Emotional Support,hi
+my foot had been aching since last tuesday.,1,Pain,en
+मेरी गोली का समय हो गया है please,2,Medication,hi
+my stomach feels starts hurting but then it feels better after i eat something mild.,1,Pain,en
+bitte beeilen sie sich etwas stimmt nicht danke,0,Emergency,de
+i suffered a deep wound in my hand and i can not stop the bleeding,2,Medication,en
+ನಾನು ಇನ್ನೂ ಔಷಧಿ ತೆಗೆದುಕೊಂಡಿಲ್ಲ ದಯವಿಟ್ಟು,2,Medication,kn
+ich fühle mich heute so niedergeschlagen schnell,6,Emotional Support,de
+können sie mir meine testergebnisse sagen danke,7,Information,de
+ich brauche mein insulin danke,2,Medication,de
+i cut myself and i'm bleeding.,2,Medication,en
+मेरी चादर गंदी है इसे बदल दीजिए जल्दी,5,Hygiene,hi
+i feel cold although we are in summer.,6,Emotional Support,en
+ದಯವಿಟ್ಟು ಕುಡಿಯಲು ಏನಾದರೂ ತನ್ನಿ ದಯವಿಟ್ಟು,3,Food/Water,kn
+i have found some issues in my skin and tried to use cream but it doesn't get better,2,Medication,en
+ನನ್ನ ಹೊಟ್ಟೆಯಲ್ಲಿ ತೀವ್ರ ನೋವಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
+can you bring my antibiotics,2,Medication,en
+मुझे अपनी हालत की चिंता है कृपया,6,Emotional Support,hi
+ich brauche mein insulin schnell,2,Medication,de
+i feel lonely can you stay a while,6,Emotional Support,en
+können sie mein antibiotikum bringen danke,2,Medication,de
+i hve cut my finger because of playing football and i to apply pain relief cream but it does not help,1,Pain,en
+ich habe hunger kann ich etwas zu essen bekommen schnell,3,Food/Water,de
+मैं अभी बहुत घबराया हुआ हूँ,6,Emotional Support,hi
+i'm not feeling good i get infection wound,2,Medication,en
+मुझे लगता है मैं बेहोश हो जाऊँगा,0,Emergency,hi
+bitte helfen sie mir zum stuhl zu kommen,4,Mobility,de
+bitte bringen sie mir etwas zu trinken danke,3,Food/Water,de
+surgical wound infections,2,Medication,en
+ನನಗೆ ಉಸಿರಾಡಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ,0,Emergency,kn
 my body aches on the inside between my hips and shoulders.,1,Pain,en
-don't cry,1,Pain,en
-i tried alot of cream but i still feel the same skin problem,2,Medication,en
+ನನ್ನ ಉಸಿರು ಕಟ್ಟುತ್ತಿದೆ ಬೇಗ ಬನ್ನಿ please,0,Emergency,kn
+मैं घबराया हुआ हूँ कोई मेरे पास बैठे जल्दी,6,Emotional Support,hi
+my stomach has been sore since yesterday.,1,Pain,en
+he was discovered to have an open wound.,2,Medication,en
+my chest break out with red pimples and whiteheads.,2,Medication,en
+das zimmer ist zu heiß bitte,8,Other,de
+ದಯವಿಟ್ಟು ಕುಡಿಯಲು ಏನಾದರೂ ತನ್ನಿ ಬೇಗ,3,Food/Water,kn
+meine medizin ist jetzt fällig schnell,2,Medication,de
+dr. i feel a strange and powerful pain inside my rib cage,0,Emergency,en
+ನನಗೆ ಹಸಿವಾಗಿದೆ ತಿನ್ನಲು ಏನಾದರೂ ಸಿಗಬಹುದೇ,3,Food/Water,kn
+helfen sie mir bitte beim aufsetzen bitte,4,Mobility,de
+i feel suicidal.,6,Emotional Support,en
+मेरे पेट में तेज़ दर्द है,1,Pain,hi
+i have a pain in my elbow joint,1,Pain,en
+what's the symptoms of appendicitis?,1,Pain,en
+ಸ್ವಚ್ಛ ಬಟ್ಟೆ ಧರಿಸಲು ಸಹಾಯ ಮಾಡಿ ಬೇಗ,5,Hygiene,kn
+i have pain in my stomach,1,Pain,en
+क्या आप खिड़की खोल सकते हैं कृपया,8,Other,hi
+i can't see well,2,Medication,en
+ich muss sauber gemacht werden bitte,5,Hygiene,de
+können sie das fenster öffnen schnell,8,Other,de
+can i have my medicine now,2,Medication,en
+using hair tonic,2,Medication,en
+ದಯವಿಟ್ಟು ನನ್ನ ನೀರಿನ ಜಗ್ ತುಂಬಿಸಿ please,3,Food/Water,kn
+wofür sind diese tabletten danke,7,Information,de
+the water jug is empty please refill it,3,Food/Water,en
+मुझे बहुत डर लग रहा है और मैं अकेला हूँ जल्दी,6,Emotional Support,hi
+can you bring clean towels,5,Hygiene,en
+bitte schließen sie die tür es ist laut danke,8,Other,de
+my acne gets worse when it is hot,2,Medication,en
+ich habe starke schmerzen in der schulter schnell,1,Pain,de
+meine medizin ist jetzt fällig danke,2,Medication,de
+my daughter had her ears pierced and one of her ear lobes is bright red and burning hot.,2,Medication,en
+bitte helfen sie mir zur toilette zu gehen bitte,4,Mobility,de
+ನನಗೆ ಇನ್ನೊಂದು ದಿಂಬು ಬೇಕು,8,Other,kn
+please i just need someone to talk to,6,Emotional Support,en
+मुझे स्पंज बाथ चाहिए,5,Hygiene,hi
+my abdominal muscles have great pain since i was at gym,1,Pain,en
+ನಾನು ಸ್ವಂತವಾಗಿ ಚಲಿಸಲು ಆಗುತ್ತಿಲ್ಲ,4,Mobility,kn
+können sie das kopfende des bettes anheben danke,8,Other,de
+मुझे निराशा और दुख महसूस हो रहा है please,6,Emotional Support,hi
+i feel a bone-on-bone pain in my knees when i climb stairs.,1,Pain,en
+können sie mir den rollstuhl bringen danke,4,Mobility,de
+mein kopf tut weh bitte,1,Pain,de
+bitte beeilen sie sich etwas stimmt nicht bitte,0,Emergency,de
+ಹಾಸಿಗೆ ಒದ್ದೆಯಾಗಿದೆ ದಯವಿಟ್ಟು ಬದಲಾಯಿಸಿ,5,Hygiene,kn
+my back is hurting so much.,1,Pain,en
+after eating i have burning sensation inside of me.,1,Pain,en
+my face is all broken out with pimples.,2,Medication,en
+i have a painful cramp in my feet,1,Pain,en
+i get big patches of irritated pimples on my back and they hurt.,2,Medication,en
+das zimmer ist zu heiß,8,Other,de
+please help me brush my teeth,5,Hygiene,en
+my heart feels like it's going to explode.,0,Emergency,en
+कृपया मेरी गोलियाँ लाइए,2,Medication,hi
+i feel pain when i think of her,6,Emotional Support,en
+कृपया मुझे एक गिलास पानी दीजिए कृपया,3,Food/Water,hi
+कमरा बहुत गर्म है जल्दी,8,Other,hi
+wann kommt der arzt bitte,7,Information,de
+i have a dull ache in my stomach. it gets worse after i eat.,1,Pain,en
+bitte helfen sie mir beim zähneputzen danke,5,Hygiene,de
+मेरा ऑपरेशन कब है जल्दी,7,Information,hi
+bitte ich brauche einfach jemanden zum reden danke,6,Emotional Support,de
+ನನ್ನ ಕುತ್ತಿಗೆಯಲ್ಲಿ ನೋವಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
+ನನ್ನ ಕನ್ನಡಕ ಕೊಡಬಹುದೇ,8,Other,kn
+i need my insulin shot,2,Medication,en
+wofür sind diese tabletten schnell,7,Information,de
+it is hard to breathe,0,Emergency,en
+मुझे सीने में दर्द महसूस हो रहा है कृपया,1,Pain,hi
+ich brauche noch ein kissen bitte,8,Other,de
+ನನಗೆ ಒಂಟಿತನ ಅನಿಸುತ್ತಿದೆ ಸ್ವಲ್ಪ ಹೊತ್ತು ಇರಿ please,6,Emotional Support,kn
+i feel fluid trying to come up when i cough.,2,Medication,en
+बिस्तर गीला है कृपया बदल दीजिए जल्दी,5,Hygiene,hi
+ಹಾಸಿಗೆಯಲ್ಲಿ ತಿರುಗಲು ನನಗೆ ಸಹಾಯ ಬೇಕು ದಯವಿಟ್ಟು,4,Mobility,kn
+मुझे ऑपरेशन से डर लग रहा है,6,Emotional Support,hi
+मैं अपने हाथ धोना चाहता हूँ जल्दी,5,Hygiene,hi
+ನನಗೆ ಅಳು ಬರುತ್ತಿದೆ ದಯವಿಟ್ಟು ಇರಿ ಬೇಗ,6,Emotional Support,kn
+i feel pain in my back,1,Pain,en
+my ear ache when i'm listening to music.,1,Pain,en
+कृपया मेरा पानी का जग भर दीजिए please,3,Food/Water,hi
+मुझे इंजेक्शन चाहिए please,2,Medication,hi
+ನನಗೆ ಶೌಚಾಲಯಕ್ಕೆ ಹೋಗಲು ಸಹಾಯ ಬೇಕು ಬೇಗ,4,Mobility,kn
+bitte schließen sie die tür es ist laut bitte,8,Other,de
+i feel that it's hard to breath for me specially after running or making any effort,0,Emergency,en
+मेरी गोली का समय हो गया है कृपया,2,Medication,hi
+i have a dry throat,2,Medication,en
+ich brauche meine schmerztablette bitte,2,Medication,de
+ನನ್ನ ಮೊಣಕಾಲಿನಲ್ಲಿ ತುಂಬಾ ನೋವಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
+ich ersticke bitte helfen sie schnell schnell,0,Emergency,de
+i feel a pain in my neck,1,Pain,en
+my infected wound cause fever,2,Medication,en
+ದಯವಿಟ್ಟು ನನ್ನನ್ನು ಕುರ್ಚಿಗೆ ಸಾಗಿಸಿ,4,Mobility,kn
+कृपया मेरी गोलियाँ लाइए जल्दी,2,Medication,hi
+मुझे कुछ खाना चाहिए please,3,Food/Water,hi
+when i tried to be warm and wear more clothes i found that i was still cold,6,Emotional Support,en
+i am gasping for air,0,Emergency,en
+कृपया मुझे एक गिलास पानी दीजिए जल्दी,3,Food/Water,hi
 ನನ್ನ ಇಡೀ ದೇಹ ನೋಯುತ್ತಿದೆ ಬೇಗ,1,Pain,kn
-ದಯವಿಟ್ಟು ಶೌಚಾಲಯಕ್ಕೆ ನಡೆಯಲು ಸಹಾಯ ಮಾಡಿ ಬೇಗ,4,Mobility,kn
-i lose a lot of my hair,1,Pain,en
-i feel like i am going to faint,0,Emergency,en
-मेरी अगली अपॉइंटमेंट कब है please,7,Information,hi
-my left side aches much,1,Pain,en
-my back is hurting a lot,1,Pain,en
-ನಾನು ದಿನವಿಡೀ ಏನೂ ತಿಂದಿಲ್ಲ ದಯವಿಟ್ಟು,3,Food/Water,kn
-there is this pain that radiates from my chest up to my left arm.,0,Emergency,en
-standing less than five minutes and my back start to ache,1,Pain,en
-i feel a great amount of pressure on the sides of my neck,1,Pain,en
+ಹಾಸಿಗೆ ಒದ್ದೆಯಾಗಿದೆ ದಯವಿಟ್ಟು ಬದಲಾಯಿಸಿ please,5,Hygiene,kn
+मुझे सीने में दर्द महसूस हो रहा है please,1,Pain,hi
+there is a sharp pain in my bicep,1,Pain,en
+bitte beeilen sie sich etwas stimmt nicht,0,Emergency,de
+my knees seem to grind as i go up or down stairs.,1,Pain,en
+i wake up at night feeling cold,6,Emotional Support,en
+wie lange muss ich hier bleiben bitte,7,Information,de
+ದಯವಿಟ್ಟು ನನಗೆ ಯಾರೊಂದಿಗಾದರೂ ಮಾತನಾಡಬೇಕು ದಯವಿಟ್ಟು,6,Emotional Support,kn
+wann gibt es meine nächste mahlzeit danke,3,Food/Water,de
+chronic bone disease at the level of the doubles of the lower estremidades,1,Pain,en
+i have a pain in my trapes,1,Pain,en
+ಈಗ ನನಗೆ ಔಷಧಿ ಸಿಗಬಹುದೇ ಬೇಗ,2,Medication,kn
+मुझसे साँस नहीं ली जा रही कृपया,0,Emergency,hi
+i feel dizzy after doing a muscular effort.,0,Emergency,en
+i have an ear ache when showering,1,Pain,en
+ಹಾಸಿಗೆಯ ತಲೆಭಾಗ ಎತ್ತರಿಸಬಹುದೇ please,8,Other,kn
+i've noticed my hair falling out a lot lately.,2,Medication,en
+rufen sie sofort den arzt bitte,0,Emergency,de
+कृपया मुझे साफ कपड़े पहनने में मदद करो,5,Hygiene,hi
+i feel a sharp pain in the stomach after eating,1,Pain,en
+welche medikamente nehme ich schnell,7,Information,de
+my sore isn't healing well and it's been like this for two weeks.,2,Medication,en
+there are lots of hairs on my pillow in the morning.,2,Medication,en
 i've always been very active but now i just don't have the strength or energy to go for even a short walk.,1,Pain,en
-ನನ್ನ ಭುಜದಲ್ಲಿ ತೀವ್ರ ನೋವಿದೆ ಬೇಗ,1,Pain,kn
-i have a migrain and i took panadol but it doesnït help,1,Pain,en
-when i walk it's hard to breath.,0,Emergency,en
-my son squeezed a pimple and it broke open only to scab over and now looks like it is infected.,2,Medication,en
-i wish this excruciating feeling of loss could go away.,6,Emotional Support,en
+मेरा ऑपरेशन कब है कृपया,7,Information,hi
+ನನ್ನ ಹಾಸಿಗೆ ಹೊದಿಕೆ ಕೊಳಕಾಗಿದೆ ಬದಲಾಯಿಸಿ please,5,Hygiene,kn
+ನನಗೆ ಉಸಿರಾಡಲು ಆಗುತ್ತಿಲ್ಲ ಸಹಾಯ ಮಾಡಿ,0,Emergency,kn
+ಈ ಮಾತ್ರೆಗಳು ಯಾವುದಕ್ಕೆ ದಯವಿಟ್ಟು,7,Information,kn
+ನನಗೆ ಸ್ವಲ್ಪ ಜ್ಯೂಸ್ ಸಿಗಬಹುದೇ please,3,Food/Water,kn
+ನನಗೆ ಗಾಲಿಕುರ್ಚಿ ತರಬಹುದೇ please,4,Mobility,kn
+ನನ್ನ ಮೊಣಕಾಲಿನಲ್ಲಿ ತುಂಬಾ ನೋವಿದೆ please,1,Pain,kn
+i have severe pain in my shoulder,1,Pain,en
+i feel a sharp pain in my head when i think too hard.,1,Pain,en
+i can't move my head up and down.,1,Pain,en
+when can i go home,7,Information,en
+मुझे बहुत डर लग रहा है और मैं अकेला हूँ,6,Emotional Support,hi
+there is a sharp pain in my calve.,1,Pain,en
+könnte ich bitte ein glas wasser haben bitte,3,Food/Water,de
+ich spüre schmerzen in der brust schnell,1,Pain,de
+i feel pain in my joint after an injury in the last football match i played.,1,Pain,en
+ನನಗೆ ಹೃದಯಾಘಾತ ಆಗುತ್ತಿದೆ,0,Emergency,kn
+i have a blurry vision after my head was hit yesterday.,2,Medication,en
+ನನಗೆ ಶೌಚಾಲಯಕ್ಕೆ ಹೋಗಲು ಸಹಾಯ ಬೇಕು,4,Mobility,kn
+my neck feels stiff,1,Pain,en
+when i wake up in the morning i feel a soreness in my body,1,Pain,en
+please bring me something to drink,3,Food/Water,en
+i have muscle pain at my left leg.,1,Pain,en
+can i know my blood pressure reading,7,Information,en
+मुझे सांस नहीं आ रही है मदद करो जल्दी,0,Emergency,hi
+my television and computer seem out of focus even though i have new glasses.,2,Medication,en
+"my husband left me for another woman, my heart hurts so badly to the point i can't eat or sleep.",0,Emergency,en
+können sie bitte das licht ausschalten schnell,8,Other,de
+when i force my eyes to view i have blurry vision.,2,Medication,en
+मुझे सीने में दर्द महसूस हो रहा है जल्दी,1,Pain,hi
+i'm very worried that i'll go bald soon. am i very sick?,2,Medication,en
+मुझसे साँस नहीं ली जा रही जल्दी,0,Emergency,hi
+क्या आप मुझे नहाने में मदद करेंगे,5,Hygiene,hi
+i have acne in my face and other problema in my derma like itching,2,Medication,en
+mir ist zum weinen bitte bleiben sie bitte,6,Emotional Support,de
+ಇಂದು ನನ್ನ ದಾದಿ ಯಾರು ದಯವಿಟ್ಟು,7,Information,kn
+i need a shower please,5,Hygiene,en
+my back hurts so much i can't bend down to tie my shoelaces.,1,Pain,en
+मैंने अभी तक दवा नहीं ली है please,2,Medication,hi
+i'm having a hard time reading because the letters are all fuzzy,2,Medication,en
+ನಾನು ಯಾವ ಔಷಧಿ ತೆಗೆದುಕೊಳ್ಳುತ್ತಿದ್ದೇನೆ please,7,Information,kn
+i missed my medication dose,2,Medication,en
+ನನ್ನ ತಲೆ ನೋಯುತ್ತಿದೆ ಬೇಗ,1,Pain,kn
+ich fühle mich hoffnungslos und traurig bitte,6,Emotional Support,de
+ದಯವಿಟ್ಟು ಹಲ್ಲು ಉಜ್ಜಲು ಸಹಾಯ ಮಾಡಿ,5,Hygiene,kn
+i have a pain in my joint,1,Pain,en
+my entire body is freezing.,6,Emotional Support,en
+ich habe meine medizin noch nicht genommen,2,Medication,de
 ನಾನು ಇನ್ನೂ ಔಷಧಿ ತೆಗೆದುಕೊಂಡಿಲ್ಲ please,2,Medication,kn
-i had a pain in my knee when i was swimming,1,Pain,en
-मेरी गर्दन में दर्द है जल्दी,1,Pain,hi
-how do you know if you have a torn meniscus in your knee?,1,Pain,en
-i'm in need for a treatment for my hair fall,2,Medication,en
-severe pain in the ear,1,Pain,en
-i have pimples in patches along with a lot of redness on my face.,2,Medication,en
-ನನಗೆ ಸ್ವಲ್ಪ ಆಹಾರ ಬೇಕು,3,Food/Water,kn
-i have a sharp pain in my lower stomach.,1,Pain,en
-ನನಗೆ ಒಂದು ಹೊದಿಕೆ ತರಬಹುದೇ ಬೇಗ,8,Other,kn
+मैं खुद से हिल नहीं सकता,4,Mobility,hi
+wann ist meine operation geplant danke,7,Information,de
+"i am worried for my driving, because i can barely focus when i am at the wheel, my eyes feel teary.",2,Medication,en
+ich fühle mich hoffnungslos und traurig,6,Emotional Support,de
+मेरे कंधे में तेज़ दर्द है जल्दी,1,Pain,hi
+"i think there's something wrong with my wound, it does not seem to heal like it should.",2,Medication,en
+i visited many doctors but they can't find the right treatment toget my hair back,2,Medication,en
+डॉक्टर कब आएंगे,7,Information,hi
+ನನ್ನ ಎದೆಯ ಭಾಗದಲ್ಲಿ ನೋವಿದೆ,1,Pain,kn
+my kneecap feels like it is grating bone on bone when i walk.,1,Pain,en
+ತಕ್ಷಣ ವೈದ್ಯರನ್ನು ಕರೆಯಿರಿ ದಯವಿಟ್ಟು,0,Emergency,kn
+कृपया लाइट बंद कर दीजिए please,8,Other,hi
+ich habe starke schmerzen in der schulter danke,1,Pain,de
+the pain in my back dwwls like a sharp knife in it,1,Pain,en
+the worst headache was during a hangover in my twenties i sincerely thought i was going to die from brain inflammation.,1,Pain,en
+there feels like a swollen knot at my shoulderblade with pain shooting from that,1,Pain,en
+ನನ್ನ ಡಯಾಪರ್ ಬದಲಾಯಿಸಬೇಕು,5,Hygiene,kn
+ich möchte aus dem bett aufstehen schnell,4,Mobility,de
+what did the doctor say about my reports,7,Information,en
+ನನಗೆ ಒಂದು ಹೊದಿಕೆ ತರಬಹುದೇ please,8,Other,kn
+wann ist meine operation geplant schnell,7,Information,de
+what helps cuts heal faster?,2,Medication,en
+i feel weak,1,Pain,en
+ನನಗೆ ಇನ್ಸುಲಿನ್ ಬೇಕು ಬೇಗ,2,Medication,kn
+bitte ich brauche einfach jemanden zum reden,6,Emotional Support,de
+मेरी अगली अपॉइंटमेंट कब है जल्दी,7,Information,hi
+ನನ್ನ ಭುಜದಲ್ಲಿ ತೀವ್ರ ನೋವಿದೆ please,1,Pain,kn
+ಇಂದು ನನ್ನ ದಾದಿ ಯಾರು,7,Information,kn
+ನನ್ನ ಸ್ಥಿತಿಯ ಬಗ್ಗೆ ಚಿಂತೆಯಾಗಿದೆ ಬೇಗ,6,Emotional Support,kn
+ನನ್ನ ಪ್ರತಿಜೀವಕ ಔಷಧಿ ತರಬಹುದೇ,2,Medication,kn
+my leg hurts when i move,1,Pain,en
+i need my painkiller tablet,2,Medication,en
+wann kann ich nach hause gehen bitte,7,Information,de
+i want to eat something,3,Food/Water,en
+i break out on my face very frequently,2,Medication,en
+ನನ್ನ ಇಡೀ ದೇಹ ನೋಯುತ್ತಿದೆ,1,Pain,kn
+help i am having chest pain,0,Emergency,en
+"when i get up, i feel dizzy and fall down.",0,Emergency,en
+mein mund ist trocken ich brauche wasser danke,3,Food/Water,de
+ನಾನು ಸ್ವಂತವಾಗಿ ಚಲಿಸಲು ಆಗುತ್ತಿಲ್ಲ please,4,Mobility,kn
+my body feels weak and i think that my face is fade and i can't sleep well,1,Pain,en
+ನನ್ನನ್ನು ಸ್ವಚ್ಛಗೊಳಿಸಬೇಕು ದಯವಿಟ್ಟು,5,Hygiene,kn
+ನನ್ನ ಬಾಯಿ ಒಣಗಿದೆ ನನಗೆ ನೀರು ಬೇಕು please,3,Food/Water,kn
+मुझे बाथरूम जाने में मदद चाहिए please,4,Mobility,hi
+i get i joint pain when i try to bend my leg or my arm,1,Pain,en
+my chest acne breaks out and never clears up.,2,Medication,en
+क्या आप मुझे मेरा चश्मा दे सकते हैं कृपया,8,Other,hi
+können sie mir meine brille reichen,8,Other,de
+there is a sharp pain in my ear whenever i do this.,1,Pain,en
+when i get out of bed in the morning my body feels very weak.,1,Pain,en
+i don't have the energy to do the things that i used to,1,Pain,en
+wann kommt der arzt,7,Information,de
+i have a cut that is red and swollen.,2,Medication,en
+ನನಗೆ ಶೌಚಾಲಯಕ್ಕೆ ಹೋಗಲು ಸಹಾಯ ಬೇಕು please,4,Mobility,kn
+क्या आप मुझे एक कंबल ला सकते हैं please,8,Other,hi
+मुझे शौचालय जाना है please,4,Mobility,hi
+मदद करो मुझे खून बह रहा है,0,Emergency,hi
+i have difficulty in breathing in crowded places.,0,Emergency,en
+ದಯವಿಟ್ಟು ನನ್ನ ಔಷಧಿ ಕೊಡಿ ದಯವಿಟ್ಟು,2,Medication,kn
+heart aches so much,0,Emergency,en
+i used alot of pain killer to get better but i still feel the same back pain,1,Pain,en
+i'm suffering from sharp cough accompanied by phlegm,2,Medication,en
+when i eat too much sugar my body gets weak and dizzy.,1,Pain,en
+"when i stand up, i feel like i'm going to fall down instantly",0,Emergency,en
+ನನ್ನ ಮುಂದಿನ ಭೇಟಿ ಯಾವಾಗ ಬೇಗ,7,Information,kn
+कृपया मुझे किसी से बात करनी है जल्दी,6,Emotional Support,hi
+हिलने पर मेरे पैर में दर्द होता है कृपया,1,Pain,hi
+मुझे कुछ खाना चाहिए जल्दी,3,Food/Water,hi
+ತಕ್ಷಣ ವೈದ್ಯರನ್ನು ಕರೆಯಿರಿ please,0,Emergency,kn
+जल्दी करो कुछ गड़बड़ है जल्दी,0,Emergency,hi
+i have a back pain since i fell on the floor.,1,Pain,en
+i spilled water on my sheets please change them,5,Hygiene,en
+i have not taken my medicine yet,2,Medication,en
+मुझे यहाँ कितने दिन रहना है कृपया,7,Information,hi
+it hurts when i bent my arm,1,Pain,en
+my knees swell right below the knee cap and hurt when i put weight on them.,1,Pain,en
+i was playing football and injuried with joint pain.,1,Pain,en
+assist me to the bathroom please,4,Mobility,en
+bitte helfen sie mir zum stuhl zu kommen schnell,4,Mobility,de
+कृपया मुझे बैठने में मदद करो,4,Mobility,hi
+"my hair is falling without a reason, i can see a lot of hair on my working desk.",2,Medication,en
+ich brauche meine schmerztablette danke,2,Medication,de
+ನನಗೆ ಸ್ವಲ್ಪ ಜ್ಯೂಸ್ ಸಿಗಬಹುದೇ,3,Food/Water,kn
+"you won't believe me, but this infected wound on my hand is from a paper cut i didn't take seriously.",2,Medication,en
+my shoulder hurts me so much,1,Pain,en
+मुझे लगता है मैं बेहोश हो जाऊँगा कृपया,0,Emergency,hi
+i have a problem in seeing objects it is too difficult to see,2,Medication,en
+ನನ್ನ ಬಟ್ಟೆ ಕೊಳಕಾಗಿದೆ ದಯವಿಟ್ಟು ಬದಲಾಯಿಸಿ please,5,Hygiene,kn
+i feel like the world goes round and round,0,Emergency,en
+i feel dizzy when i make sudden movements,0,Emergency,en
+i think i overdid it when i carried all that lumber from the yard. my lower back is killing me.,1,Pain,en
+ich habe stechende schmerzen im bauch schnell,1,Pain,de
+can i get my pain relief medication,2,Medication,en
+ದಯವಿಟ್ಟು ನನಗೆ ಯಾರೊಂದಿಗಾದರೂ ಮಾತನಾಡಬೇಕು please,6,Emotional Support,kn
+my heart hurts when i exercise,0,Emergency,en
+is my cut infected or just healing?,2,Medication,en
+i have a knee pain when i walk a lot,1,Pain,en
+मेरी पीठ में बहुत दर्द हो रहा है कृपया,1,Pain,hi
+i feel weak all over.,1,Pain,en
+ಸಹಾಯ ಮಾಡಿ ನನಗೆ ರಕ್ತ ಸೋರುತ್ತಿದೆ ಬೇಗ,0,Emergency,kn
+there are some pimples on my face that bother me a lot,2,Medication,en
+"surgical wounds red, firing pus, painful and hot to the touch",2,Medication,en
+"i fell through a window while i was cleaning it and i have a shard of glass stuck in my left eye, i think it is pretty serious, please help!",2,Medication,en
+i have front head pain and when i get it the light bothers me.,1,Pain,en
+i sliced myself deeply with a knife while i was cooking,2,Medication,en
+ನನಗೆ ಒಂದು ಹೊದಿಕೆ ತರಬಹುದೇ ದಯವಿಟ್ಟು,8,Other,kn
+when i eat sugar i notice my vision blurs.,2,Medication,en
+sterilizer for the eye,2,Medication,en
+ich habe starke schmerzen im knie danke,1,Pain,de
+ದಯವಿಟ್ಟು ಹಲ್ಲು ಉಜ್ಜಲು ಸಹಾಯ ಮಾಡಿ please,5,Hygiene,kn
+when my grand father died i felt a hard emotional pain,6,Emotional Support,en
+कृपया मुझे साफ कपड़े पहनने में मदद करो कृपया,5,Hygiene,hi
+wann kommt der arzt danke,7,Information,de
+my joints are paining,1,Pain,en
+kann mir jemand beim aufstehen helfen bitte,4,Mobility,de
+i need help turning over in bed,4,Mobility,en
+the area around my heart doesn't feel good.,0,Emergency,en
+bitte ich brauche einfach jemanden zum reden bitte,6,Emotional Support,de
+i have a scab on the back of my hand that just won't go away.,2,Medication,en
+my nose is congested all the time and there's this gluey secretion in my throat that makes it impossible for me to sleep. i often have to nap sitting down.,0,Emergency,en
+ich bin unruhig kann jemand bei mir sitzen danke,6,Emotional Support,de
+मेरी पीठ में बहुत दर्द हो रहा है,1,Pain,hi
+das bett ist nass bitte wechseln sie es,5,Hygiene,de
+i was playing soccer and i twisted my ankle,1,Pain,en
+ನನಗೆ ಹೃದಯಾಘಾತ ಆಗುತ್ತಿದೆ ಬೇಗ,0,Emergency,kn
+i feel cold when the night comes,6,Emotional Support,en
+ಸ್ವಚ್ಛ ಬಟ್ಟೆ ಧರಿಸಲು ಸಹಾಯ ಮಾಡಿ,5,Hygiene,kn
+हिलने पर मेरे पैर में दर्द होता है जल्दी,1,Pain,hi
+i feel pain in my eyes i can see fog,2,Medication,en
+ದಯವಿಟ್ಟು ಬಾಗಿಲು ಮುಚ್ಚಿ ಗದ್ದಲವಿದೆ please,8,Other,kn
+कृपया मुझे कुर्सी तक ले जाओ,4,Mobility,hi
+मुझसे साँस नहीं ली जा रही,0,Emergency,hi
+please bring my tablets,2,Medication,en
+i feel strong pain in my knee after it was hit during the football match.,1,Pain,en
+कृपया मुझे शौचालय तक चलने में मदद करो please,4,Mobility,hi
+the crushing sensation on my heart leaves me breathless.,0,Emergency,en
+please give me my prescribed pills,2,Medication,en
+it is time for my pills,2,Medication,en
+how is my recovery going,7,Information,en
+ich ersticke bitte helfen sie schnell danke,0,Emergency,de
+मुझे कुछ खाना चाहिए,3,Food/Water,hi
+ದಯವಿಟ್ಟು ನನ್ನ ನೀರಿನ ಜಗ್ ತುಂಬಿಸಿ ದಯವಿಟ್ಟು,3,Food/Water,kn
+ನನಗೆ ಹಸಿವಾಗಿದೆ ತಿನ್ನಲು ಏನಾದರೂ ಸಿಗಬಹುದೇ ಬೇಗ,3,Food/Water,kn
+i broke my ankle while doing rock climbing in the carpathians.,1,Pain,en
+ich bekomme keine luft bitte helfen sie,0,Emergency,de
+ich fühle mich heute so niedergeschlagen danke,6,Emotional Support,de
+ich habe starke schmerzen im knie,1,Pain,de
+wofür sind diese tabletten bitte,7,Information,de
+ಶಸ್ತ್ರಚಿಕಿತ್ಸೆಯ ಬಗ್ಗೆ ನನಗೆ ಭಯವಾಗಿದೆ please,6,Emotional Support,kn
+ये गोलियाँ किस लिए हैं,7,Information,hi
+i just can't seem to get warm. even when everyone around me is warm i always feel cold.,6,Emotional Support,en
+मुझे इंजेक्शन चाहिए कृपया,2,Medication,hi
+मुझे स्पंज बाथ चाहिए please,5,Hygiene,hi
+ನನ್ನ ಎದೆಯ ಭಾಗದಲ್ಲಿ ನೋವಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
+ich ersticke bitte helfen sie schnell bitte,0,Emergency,de
+i feel hurts in my heart,0,Emergency,en
+ನನ್ನ ಹೊಟ್ಟೆಯಲ್ಲಿ ತೀವ್ರ ನೋವಿದೆ ಬೇಗ,1,Pain,kn
+my medicine is due now,2,Medication,en
+i feel cold and chills even though my clothes are heavy,6,Emotional Support,en
+ನನ್ನ ಪ್ರತಿಜೀವಕ ಔಷಧಿ ತರಬಹುದೇ please,2,Medication,kn
+can you raise the head of the bed,8,Other,en
+i read a book for along time and when i finished reading i feel head ache,1,Pain,en
+i need my bedsheets changed they are dirty,5,Hygiene,en
+können sie mir eine decke bringen,8,Other,de
+i must see a doctor i have an open wound,2,Medication,en
+"i am worried how cold intolerant i am, i am always shivering, even out in the sun.",6,Emotional Support,en
+after an hard working day i have foot ache,1,Pain,en
+when i wake up in the morning i feel dizzy,0,Emergency,en
+"i am struggling to bear weight on my knee, when i stand straight i feel and hear a loud popping noise.",1,Pain,en
+i can't work good i have a pain in my knee,1,Pain,en
+i could not exercise because of my knee pain,1,Pain,en
+ಯಾರಾದರೂ ನನಗೆ ಎದ್ದೇಳಲು ಸಹಾಯ ಮಾಡಿ ಬೇಗ,4,Mobility,kn
+i have a pain in my stomach,1,Pain,en
+ನನ್ನ ಪರೀಕ್ಷಾ ಫಲಿತಾಂಶ ಹೇಳಬಹುದೇ ದಯವಿಟ್ಟು,7,Information,kn
+ich fühle mich einsam können sie eine weile bleiben,6,Emotional Support,de
+is it time for lunch yet,3,Food/Water,en
+मेरी छाती जकड़ रही है साँस नहीं आ रही,0,Emergency,hi
+i feel pain in my heart when i wake up,0,Emergency,en
+"i couldn't stop shaking or unclench my jaw, that's how cold i was.",6,Emotional Support,en
+ದಯವಿಟ್ಟು ನನ್ನ ದಿಂಬು ಸರಿಪಡಿಸಿ,8,Other,kn
+मैं घबराया हुआ हूँ कोई मेरे पास बैठे कृपया,6,Emotional Support,hi
+when is my next meal coming,3,Food/Water,en
+when i stand up too quickly i feel as though i'm going to faint.,0,Emergency,en
+i feel deep tingling when i touch acne followed by bad sensation,2,Medication,en
+ich glaube ich werde ohnmächtig schnell,0,Emergency,de
+ನನ್ನ ಮುಂದಿನ ಊಟ ಯಾವಾಗ please,3,Food/Water,kn
+ich habe starke schmerzen in der brust,0,Emergency,de
+there is pain in the muscles i do not know caused,1,Pain,en
+i have a sharp pain in my ear,1,Pain,en
+können sie das kopfende des bettes anheben,8,Other,de
+"annoyance starts suddenly, often after an injury or exercise.",1,Pain,en
+bitte geben sie mir meine verschriebenen tabletten danke,2,Medication,de
+the pain feels like it's right below the skin,1,Pain,en
+my hand open wound got infected,2,Medication,en
+ನಾನು ದಿನವಿಡೀ ಏನೂ ತಿಂದಿಲ್ಲ,3,Food/Water,kn
+kann ich jetzt meine medizin bekommen schnell,2,Medication,de
+मैं घबराया हुआ हूँ कोई मेरे पास बैठे,6,Emotional Support,hi
+meine kleidung ist beschmutzt bitte wechseln sie sie schnell,5,Hygiene,de
+when i'm too high i start to feel dizzy,0,Emergency,en
+i often get a sharp pain in my chest and i can't tell what i'm doing that might be triggering it.,0,Emergency,en
+anytime i play tennis i feel a shoulder pain,1,Pain,en
+क्या आप बिस्तर का सिरहाना ऊँचा कर सकते हैं,8,Other,hi
+मेरी अगली अपॉइंटमेंट कब है कृपया,7,Information,hi
+wann ist mein nächster termin bitte,7,Information,de
+मैं अभी बहुत घबराया हुआ हूँ जल्दी,6,Emotional Support,hi
+कृपया मुझे बैठने में मदद करो कृपया,4,Mobility,hi
+my biceps started aching after i went to the gym,1,Pain,en
+können sie bitte das licht ausschalten bitte,8,Other,de
+ನಾನು ಕೈ ತೊಳೆಯಬೇಕು ದಯವಿಟ್ಟು,5,Hygiene,kn
+i have severe shoulder pain,1,Pain,en
+meine kleidung ist beschmutzt bitte wechseln sie sie bitte,5,Hygiene,de
+ich kann mich nicht alleine bewegen bitte,4,Mobility,de
+मेरे सिर में दर्द हो रहा है,1,Pain,hi
+glass broken and wound my leg badly the wound is so wide,2,Medication,en
+ನನಗೆ ಸ್ಪಂಜ್ ಸ್ನಾನ ಬೇಕು,5,Hygiene,kn
+कृपया मेरा तकिया ठीक कर दीजिए कृपया,8,Other,hi
+i am having running nose,6,Emotional Support,en
+i feel a soreness in my knees when i walk,1,Pain,en
+i have muscle pain in my left leg,1,Pain,en
+i am anxious can someone sit with me,6,Emotional Support,en
+ich bin gerade sehr nervös danke,6,Emotional Support,de
+i always feel like i have menstrual pains even if i don't have my period.,1,Pain,en
+i've been feeling very sad lately,6,Emotional Support,en
+i carried a heavy bag yesterday and when i get up today i felt a great shoulder pain.,1,Pain,en
+ನನ್ನ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ ಯಾವಾಗ please,7,Information,kn
+ತುಂಬಾ ಚಳಿಯಿದೆ ದಯವಿಟ್ಟು ಎಸಿ ಸರಿಪಡಿಸಿ ಬೇಗ,8,Other,kn
+i feel pain in my body,1,Pain,en
+there is so much pain when i move my arm.,1,Pain,en
+ನನಗೆ ಇನ್ಸುಲಿನ್ ಬೇಕು ದಯವಿಟ್ಟು,2,Medication,kn
+ಈಗ ಸಮಯ ಎಷ್ಟು,7,Information,kn
+मेरे जोड़ों में दर्द हो रहा है please,1,Pain,hi
+können sie das fenster öffnen danke,8,Other,de
+मेरा पूरा शरीर दर्द कर रहा है जल्दी,1,Pain,hi
+ನಾನು ಕೈ ತೊಳೆಯಬೇಕು,5,Hygiene,kn
+i think my body temperature is very low.,6,Emotional Support,en
+the wound is still open,2,Medication,en
+bitte schließen sie die tür es ist laut schnell,8,Other,de
+when i stand i feel dizzy i do not know why,0,Emergency,en
+i can't move my shoulder because of pain,1,Pain,en
+i have a mental suffering,6,Emotional Support,en
+ನನ್ನ ಹಾಸಿಗೆ ಹೊದಿಕೆ ಕೊಳಕಾಗಿದೆ ಬದಲಾಯಿಸಿ,5,Hygiene,kn
+मेरा दम घुट रहा है जल्दी करो please,0,Emergency,hi
+i have shoulder pain when i try to carry my groceries.,1,Pain,en
+मेरी गोली का समय हो गया है जल्दी,2,Medication,hi
+it feels like i can't take a deep breath,0,Emergency,en
+ich brauche meine spritze danke,2,Medication,de
+मैं खुद से हिल नहीं सकता कृपया,4,Mobility,hi
+"my head hurts and i lose the sensation in my face, then lose sight in my eye",1,Pain,en
+ನನಗೆ ಉಸಿರಾಡಲು ಆಗುತ್ತಿಲ್ಲ ಸಹಾಯ ಮಾಡಿ ಬೇಗ,0,Emergency,kn
+"there is an extreme pressure below my belly button at the right, which i feel every time i go out for a jog.",1,Pain,en
+ನನಗೆ ಸ್ವಲ್ಪ ಜ್ಯೂಸ್ ಸಿಗಬಹುದೇ ದಯವಿಟ್ಟು,3,Food/Water,kn
+i used to have acne when i was 15 years old,2,Medication,en
+आज मेरी नर्स कौन है जल्दी,7,Information,hi
+क्या आप खिड़की खोल सकते हैं जल्दी,8,Other,hi
+ಕೋಣೆ ತುಂಬಾ ಬಿಸಿಯಾಗಿದೆ ದಯವಿಟ್ಟು,8,Other,kn
+when i tried to take care if my hair i found that it is falling out,2,Medication,en
+helfen sie mir bitte beim aufsetzen danke,4,Mobility,de
+"my stomach aches when i eat hot food, why?",1,Pain,en
+können sie mir meine brille reichen schnell,8,Other,de
+मुझे बहुत प्यास लगी है कृपया,3,Food/Water,hi
+kann mir jemand beim aufstehen helfen,4,Mobility,de
+मुझे निराशा और दुख महसूस हो रहा है जल्दी,6,Emotional Support,hi
+i hit my head at the basketball game. could i have a concussion?,1,Pain,en
+ನನಗೆ ಸ್ಪಂಜ್ ಸ್ನಾನ ಬೇಕು ದಯವಿಟ್ಟು,5,Hygiene,kn
+ದಯವಿಟ್ಟು ಹಲ್ಲು ಉಜ್ಜಲು ಸಹಾಯ ಮಾಡಿ ಬೇಗ,5,Hygiene,kn
+i don't know why i'm constantly sad.,6,Emotional Support,en
+"when i walk up a flight of stairs, my right knee hurts.",1,Pain,en
+मेरे पेट में तेज़ दर्द है कृपया,1,Pain,hi
+i have a foot ache although i don't walk a lot.,1,Pain,en
+"i have a foot ache in winter, or when it feels cold, why?",1,Pain,en
+kann ich etwas saft bekommen danke,3,Food/Water,de
+i can't walk because i have a great foot ache,1,Pain,en
+मेरे घुटने में बहुत दर्द है कृपया,1,Pain,hi
+when i was young i had an injury from sports in my knee.,1,Pain,en
+can i get some juice,3,Food/Water,en
+mein rücken tut sehr weh schnell,1,Pain,de
+क्या आप मुझे नहाने में मदद करेंगे जल्दी,5,Hygiene,hi
+ich spüre schmerzen in der brust danke,1,Pain,de
+ನನ್ನ ಪರೀಕ್ಷಾ ಫಲಿತಾಂಶ ಹೇಳಬಹುದೇ please,7,Information,kn
+bitte bringen sie meine tabletten,2,Medication,de
+बहुत ठंड है कृपया एसी ठीक कर दीजिए,8,Other,hi
+बहुत ठंड है कृपया एसी ठीक कर दीजिए जल्दी,8,Other,hi
+when is my next meal,3,Food/Water,en
+my son has a lot of acne.,2,Medication,en
+मुझे एक और तकिया चाहिए,8,Other,hi
+मेरी पीठ में बहुत दर्द हो रहा है please,1,Pain,hi
+i get a knee pain when i walk a lot,1,Pain,en
+i feel a burning sensation in my guts about 2 hours after each meal.,1,Pain,en
+ತಕ್ಷಣ ವೈದ್ಯರನ್ನು ಕರೆಯಿರಿ,0,Emergency,kn
+मैं कौन सी दवा ले रहा हूँ कृपया,7,Information,hi
+when i'm doing sport i have pain under my skin,1,Pain,en
+i cant breathe,2,Medication,en
+क्या आप खिड़की खोल सकते हैं,8,Other,hi
+my hair is falling out in bunches.,2,Medication,en
+ich habe starke schmerzen in der schulter bitte,1,Pain,de
+ich brauche hilfe um zur toilette zu kommen bitte,4,Mobility,de
+ich möchte aus dem bett aufstehen,4,Mobility,de
+können sie mir beim baden helfen schnell,5,Hygiene,de
+"i was playing basketball yesterday, i have sprained ankle",1,Pain,en
+ich habe den ganzen tag nichts gegessen danke,3,Food/Water,de
+i get an ear ache when it is cold,1,Pain,en
+i have not eaten all day,3,Food/Water,en
+the light is too bright,8,Other,en
+my ear hurts me badly,1,Pain,en
+i have disterbance in my emotion,6,Emotional Support,en
+ich habe den ganzen tag nichts gegessen schnell,3,Food/Water,de
+i feel cold,6,Emotional Support,en
+my mouth is dry i need water,3,Food/Water,en
+मैं कौन सी दवा ले रहा हूँ,7,Information,hi
+ನನ್ನನ್ನು ಸ್ವಚ್ಛಗೊಳಿಸಬೇಕು ಬೇಗ,5,Hygiene,kn
+मेरा दम घुट रहा है जल्दी करो,0,Emergency,hi
+ನಾನು ಆತಂಕಗೊಂಡಿದ್ದೇನೆ ಯಾರಾದರೂ ನನ್ನ ಜೊತೆ ಕುಳಿತುಕೊಳ್ಳಿ ಬೇಗ,6,Emotional Support,kn
+ನನಗೆ ಸ್ಪಂಜ್ ಸ್ನಾನ ಬೇಕು please,5,Hygiene,kn
+bitte bringen sie mir etwas zu trinken,3,Food/Water,de
+"i may have overdone it with the weightlifting, because i am afraid i may have torn a muscle on my back.",1,Pain,en
+"i have a blurry vision during my swimming training in the pool, why?",2,Medication,en
+ನನ್ನ ಕೀಲುಗಳಲ್ಲಿ ನೋವಾಗುತ್ತಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
+können sie mir beim baden helfen,5,Hygiene,de
+मेरा डायपर बदलने की जरूरत है जल्दी,5,Hygiene,hi
+wie spät ist es jetzt bitte,7,Information,de
+ನನ್ನನ್ನು ಸ್ವಚ್ಛಗೊಳಿಸಬೇಕು,5,Hygiene,kn
+मेरे कपड़े गंदे हैं कृपया बदल दीजिए कृपया,5,Hygiene,hi
+क्या मुझे थोड़ा जूस मिल सकता है कृपया,3,Food/Water,hi
+i am worried about my condition,6,Emotional Support,en
+mein bein tut weh wenn ich mich bewege danke,1,Pain,de
+ನಾನು ದಿನವಿಡೀ ಏನೂ ತಿಂದಿಲ್ಲ ಬೇಗ,3,Food/Water,kn
+ಈಗ ಸಮಯ ಎಷ್ಟು please,7,Information,kn
+when i think of my parents i feel pain,6,Emotional Support,en
+i am hungry can i get something to eat,3,Food/Water,en
+ನನ್ನ ಔಷಧಿಯ ಸಮಯವಾಗಿದೆ ಬೇಗ,2,Medication,kn
+i cut my hand a couple of weeks ago and even though i keep using an antibiotic cream it's not getting better.,2,Medication,en
+ನಾನು ಶೌಚಾಲಯ ಬಳಸಬೇಕು please,4,Mobility,kn
+कृपया मुझे किसी से बात करनी है कृपया,6,Emotional Support,hi
+ನನ್ನ ಎದೆಯಲ್ಲಿ ತುಂಬಾ ನೋವಾಗುತ್ತಿದೆ ದಯವಿಟ್ಟು,0,Emergency,kn
+ನನ್ನ ಮುಂದಿನ ಭೇಟಿ ಯಾವಾಗ,7,Information,kn
+my lower back hurts but it improves if i stretch it,1,Pain,en
+i had a cold the last time i travelled by plane and i still have a discomfort in my ears.,1,Pain,en
+the call button is not working,8,Other,en
+ದಯವಿಟ್ಟು ನನ್ನ ನೀರಿನ ಜಗ್ ತುಂಬಿಸಿ ಬೇಗ,3,Food/Water,kn
+ನನಗೆ ಸ್ವಲ್ಪ ಜ್ಯೂಸ್ ಸಿಗಬಹುದೇ ಬೇಗ,3,Food/Water,kn
+my knee feels weak and it gave way the other day at the top of the stairs. luckily there was a rail to hold on to.,1,Pain,en
+कृपया मेरा पानी का जग भर दीजिए जल्दी,3,Food/Water,hi
+when i play football i have muscle pain.,1,Pain,en
+ಹಾಸಿಗೆಯಲ್ಲಿ ತಿರುಗಲು ನನಗೆ ಸಹಾಯ ಬೇಕು please,4,Mobility,kn
+मेरा डायपर बदलने की जरूरत है,5,Hygiene,hi
+ನಾನು ಶೌಚಾಲಯ ಬಳಸಬೇಕು ದಯವಿಟ್ಟು,4,Mobility,kn
+my hair falling out,2,Medication,en
+helfen sie mir ich blute stark,0,Emergency,de
+ತುಂಬಾ ಚಳಿಯಿದೆ ದಯವಿಟ್ಟು ಎಸಿ ಸರಿಪಡಿಸಿ,8,Other,kn
+i am dizzy and about to collapse,0,Emergency,en
+"the pain is intense especially when i go down the stairs, it feels like something has snapped inside my knee.",1,Pain,en
+ich kann mich nicht alleine bewegen,4,Mobility,de
+i have a pain in my muscle,1,Pain,en
+क्या आप बिस्तर का सिरहाना ऊँचा कर सकते हैं please,8,Other,hi
+chronic disease of hair follicles and sebaceous glands,2,Medication,en
+i feel abdominal pain,1,Pain,en
+i cannot feel my arm this is an emergency,0,Emergency,en
+können sie mir den rollstuhl bringen schnell,4,Mobility,de
+ich fühle mich hoffnungslos und traurig schnell,6,Emotional Support,de
+"i can't hear out of my ear properly, i feel like there is something in it causing irritation.",1,Pain,en
+"my body feels weak after my first day in the gym, why?",1,Pain,en
+my son had his lip pierced and it is swollen and the skin inside on his lip is grey and looks infected.,2,Medication,en
+i noticed an important decrease in my vision when i try to look at things up close.,2,Medication,en
+it hurts when i raise my arm up,1,Pain,en
+since i went into the forest i have pain on my ear,1,Pain,en
+i'm disappointed,6,Emotional Support,en
+my muscle in my shoulder burns when i move my arm.,1,Pain,en
+ನನ್ನ ತಲೆ ನೋಯುತ್ತಿದೆ ದಯವಿಟ್ಟು,1,Pain,kn
+rufen sie sofort den arzt,0,Emergency,de
+wofür sind diese tabletten,7,Information,de
+i have a pain internal,1,Pain,en
+"after playing football, i have muscle pain with my both legs.",1,Pain,en
+कृपया मेरा पानी का जग भर दीजिए कृपया,3,Food/Water,hi
+ich glaube ich habe einen herzinfarkt schnell,0,Emergency,de
+ich bin gerade sehr nervös schnell,6,Emotional Support,de
+there is too much pain when i move my arm,0,Emergency,en
+क्या आप मुझे मेरी जाँच के नतीजे बता सकते हैं please,7,Information,hi
+i made lots and lots of analysis to know the main reason for my stomach ache,1,Pain,en
+bitte schließen sie die tür es ist laut,8,Other,de
+stomach pain after drinking milk,1,Pain,en
+i wake up with a stiff neck every morning. massage helps but then a couple of days later it's back again.,1,Pain,en
+i have a migrain and i took panadol but it doesnït help,1,Pain,en
+my joints feel swollen,1,Pain,en
+मेरा ऑपरेशन कब है please,7,Information,hi
+ಸ್ನಾನ ಮಾಡಲು ನನಗೆ ಸಹಾಯ ಮಾಡುವಿರಾ ದಯವಿಟ್ಟು,5,Hygiene,kn
+can you open the window,8,Other,en
+my calves feel like they are tight as knots and are throbbing,1,Pain,en
+ich fühle mich hoffnungslos und traurig danke,6,Emotional Support,de
+i have a ear ache when i go to the pool,1,Pain,en
+my infected wound caused a fever,2,Medication,en
+क्या मुझे थोड़ा जूस मिल सकता है जल्दी,3,Food/Water,hi
+i have injured myself during the soccer match,1,Pain,en
+क्या आप मुझे नहाने में मदद करेंगे कृपया,5,Hygiene,hi
+मुझे बाथरूम जाने में मदद चाहिए कृपया,4,Mobility,hi
+ich brauche eine waschung im bett danke,5,Hygiene,de
+ಕಿಟಕಿ ತೆರೆಯಬಹುದೇ ದಯವಿಟ್ಟು,8,Other,kn
+ದಯವಿಟ್ಟು ದೀಪ ಆರಿಸಿ please,8,Other,kn
+ತಕ್ಷಣ ವೈದ್ಯರನ್ನು ಕರೆಯಿರಿ ಬೇಗ,0,Emergency,kn
+mein mund ist trocken ich brauche wasser bitte,3,Food/Water,de
+मैं अपने हाथ धोना चाहता हूँ,5,Hygiene,hi
+i have shoulder pain after doing any home work.,1,Pain,en
+i am frightened about the surgery,6,Emotional Support,en
+ದಯವಿಟ್ಟು ನನ್ನನ್ನು ಕುರ್ಚಿಗೆ ಸಾಗಿಸಿ ದಯವಿಟ್ಟು,4,Mobility,kn
+help me i am bleeding a lot,0,Emergency,en
+क्या आप मेरी एंटीबायोटिक ला सकते हैं जल्दी,2,Medication,hi
+i feel pain in my neck while i'm working.,1,Pain,en
+my neck is annoying me i can't sleep bacause of it,1,Pain,en
+have severe cold and cough,2,Medication,en
+i feel hopeless and sad,6,Emotional Support,en
+मैंने पूरे दिन कुछ नहीं खाया जल्दी,3,Food/Water,hi
+मैंने पूरे दिन कुछ नहीं खाया,3,Food/Water,hi
+मुझे साफ करने की जरूरत है,5,Hygiene,hi
+what should i eat with this medication,7,Information,en
+my body feels weak and i tried to make it relax but it stills pain me,1,Pain,en
+i want to get out of bed,4,Mobility,en
+ದಯವಿಟ್ಟು ನನ್ನ ದಿಂಬು ಸರಿಪಡಿಸಿ ದಯವಿಟ್ಟು,8,Other,kn
+ನನಗೆ ಉಸಿರಾಡಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ ಬೇಗ,0,Emergency,kn
+बिस्तर गीला है कृपया बदल दीजिए कृपया,5,Hygiene,hi
+ನನ್ನ ಕನ್ನಡಕ ಕೊಡಬಹುದೇ ಬೇಗ,8,Other,kn
+i've had this cough for two weeks.,2,Medication,en
+can you hand me the newspaper,8,Other,en
+ನಾನು ದಿನವಿಡೀ ಏನೂ ತಿಂದಿಲ್ಲ ದಯವಿಟ್ಟು,3,Food/Water,kn
+तुरंत डॉक्टर को बुलाओ,0,Emergency,hi
+ನನಗೆ ತುಂಬಾ ಬಾಯಾರಿಕೆಯಾಗಿದೆ please,3,Food/Water,kn
+कृपया दरवाज़ा बंद कर दीजिए शोर है,8,Other,hi
+"i cough a lot when i smell perfume, what is wrong with my lungs?",2,Medication,en
+please hurry something is very wrong,0,Emergency,en
+my acne is really embarassing. it's so read.,2,Medication,en
+ये गोलियाँ किस लिए हैं जल्दी,7,Information,hi
+i am having problems seeing things feel like a cloud on my eyes everything is blurry,2,Medication,en
+मेरा अगला भोजन कब आएगा कृपया,3,Food/Water,hi
+कमरा बहुत गर्म है please,8,Other,hi
+my back hurts me a lot,1,Pain,en
+कृपया मेरी गोलियाँ लाइए please,2,Medication,hi
+ich bin gerade sehr nervös,6,Emotional Support,de
+i feel great pain in my feet after playing one of the sports games,1,Pain,en
+i cannot breathe please help,0,Emergency,en
+can someone help me lie down,4,Mobility,en
+meine kleidung ist beschmutzt bitte wechseln sie sie,5,Hygiene,de
+bitte richten sie mein kissen danke,8,Other,de
+ich habe meine medizin noch nicht genommen bitte,2,Medication,de
+मेरा मुँह सूख रहा है मुझे पानी चाहिए जल्दी,3,Food/Water,hi
+ನನ್ನ ಪರೀಕ್ಷಾ ಫಲಿತಾಂಶ ಹೇಳಬಹುದೇ ಬೇಗ,7,Information,kn
+i have a dull ache in my lower back which makes it difficult to move,1,Pain,en
+when i stand up too quick my vision is blurry.,2,Medication,en
+मुझे बिस्तर पर करवट लेने में मदद चाहिए,4,Mobility,hi
+"my stomach aches after i drink any soda drink, why?",1,Pain,en
+können sie mir beim baden helfen bitte,5,Hygiene,de
+ನಾನು ಮನೆಗೆ ಯಾವಾಗ ಹೋಗಬಹುದು ದಯವಿಟ್ಟು,7,Information,kn
 sharp pain and heavy breathing,1,Pain,en
-मुझे बिस्तर पर करवट लेने में मदद चाहिए कृपया,4,Mobility,hi
-"i feel chilly, like an ice cube. my sister said that she needs several blankets to cover her so that she is warm enough.",6,Emotional Support,en
-my chest hurts when i go to take a breath,0,Emergency,en
-मैं अभी बहुत घबराया हुआ हूँ please,6,Emotional Support,hi
-i have a neck pain when i sit in-front of my laptop.,1,Pain,en
+i feel emotionally crushed,6,Emotional Support,en
+i have a great pain in my foot like thrombing pain with relaxing my pain releif,1,Pain,en
+es ist zeit für meine tabletten,2,Medication,de
+कृपया मुझे कुछ पीने को लाइए please,3,Food/Water,hi
+ich möchte meine hände waschen bitte,5,Hygiene,de
+मुझे बिस्तर से उठना है कृपया,4,Mobility,hi
+my son squeezed a pimple and it broke open only to scab over and now looks like it is infected.,2,Medication,en
+ಸ್ವಚ್ಛ ಬಟ್ಟೆ ಧರಿಸಲು ಸಹಾಯ ಮಾಡಿ ದಯವಿಟ್ಟು,5,Hygiene,kn
+"i feel a pain on the left side of my chest, where my heart is",0,Emergency,en
+जल्दी करो कुछ गड़बड़ है please,0,Emergency,hi
+i have a problem in my back i cannot extend it,1,Pain,en
+बहुत ठंड है कृपया एसी ठीक कर दीजिए कृपया,8,Other,hi
+ನನ್ನ ಹಾಸಿಗೆ ಹೊದಿಕೆ ಕೊಳಕಾಗಿದೆ ಬದಲಾಯಿಸಿ ಬೇಗ,5,Hygiene,kn
+when i eat i feel my stomach hurts,1,Pain,en
+कृपया मुझे शौचालय तक चलने में मदद करो,4,Mobility,hi
+my shoulder hurts when i try to reach something above my head.,1,Pain,en
+please help me change into clean clothes,5,Hygiene,en
+i feel pain in my knee when i climb the stairs.,1,Pain,en
+bitte richten sie mein kissen schnell,8,Other,de
+मुझे दर्द की गोली चाहिए कृपया,2,Medication,hi
+"when i move my shoulder, it's like lightning is being sent through my shoulder",1,Pain,en
+मुझे इंसुलिन चाहिए,2,Medication,hi
+"i can't stand up, i feel my brain is moving inside my skull.",1,Pain,en
+i wish this excruciating feeling of loss could go away.,6,Emotional Support,en
+i have shooting pains up and down my back.,1,Pain,en
+my shoulder muscle hurts when i try to reach up.,1,Pain,en
+ಹಾಸಿಗೆಯ ತಲೆಭಾಗ ಎತ್ತರಿಸಬಹುದೇ ದಯವಿಟ್ಟು,8,Other,kn
+i feel like i've always got something in my throat,2,Medication,en
+"there are times when i feel crushed under a huge weight and no air passing to my lungs, it actually scares the hell out of me when it happens.",0,Emergency,en
+ನನ್ನ ಎದೆ ಬಿಗಿಯಾಗಿದೆ ಉಸಿರಾಡಲು ಆಗುತ್ತಿಲ್ಲ please,0,Emergency,kn
+severe pain in the ear,1,Pain,en
+i am very nervous right now,6,Emotional Support,en
+i have the impression of having no strength in my body,1,Pain,en
+मेरा रोने का मन कर रहा है कृपया रुको कृपया,6,Emotional Support,hi
+ದಯವಿಟ್ಟು ನನ್ನ ಔಷಧಿ ಕೊಡಿ please,2,Medication,kn
+तुरंत डॉक्टर को बुलाओ please,0,Emergency,hi
+the severe pain in the stomach i feel,1,Pain,en
+wie lange muss ich hier bleiben,7,Information,de
+i can't stand with this horrible feeling in my stomach,1,Pain,en
+i have a strong shoulder pain,1,Pain,en
+ich brauche hilfe um zur toilette zu kommen danke,4,Mobility,de
+ದಯವಿಟ್ಟು ನನ್ನನ್ನು ಕುರ್ಚಿಗೆ ಸಾಗಿಸಿ ಬೇಗ,4,Mobility,kn
+can you turn off the lights please,8,Other,en
+मुझे दिल का दौरा पड़ रहा है,0,Emergency,hi
+when will my results be ready,7,Information,en
+können sie mein antibiotikum bringen schnell,2,Medication,de
+i feel dizzy after severe diarrhea,0,Emergency,en
+i feel pain in the knee when walking,1,Pain,en
+ನನ್ನ ಕುತ್ತಿಗೆಯಲ್ಲಿ ನೋವಿದೆ,1,Pain,kn
+मेरे सिर में दर्द हो रहा है जल्दी,1,Pain,hi
+"i was diagnosed with b12-deficiency anemia, which explains why i always felt cold.",6,Emotional Support,en
+क्या आप मुझे मेरा चश्मा दे सकते हैं जल्दी,8,Other,hi
+"i started taking swimming lessons and i guess i swallowed too much water through my nose, because this sinusitis is killing me now.",1,Pain,en
+my back hurts me and i can't bend it or walk,1,Pain,en
+my ankle is hurting me,1,Pain,en
+मुझे बहुत डर लग रहा है और मैं अकेला हूँ please,6,Emotional Support,hi
+i'm injured i can't play sports,1,Pain,en
+i complain alot with skin allergy,2,Medication,en
+ich muss sauber gemacht werden schnell,5,Hygiene,de
+"i am feeling so dizzy, body is so fragile.",1,Pain,en
+i have a very rash sensation close to my arms,2,Medication,en
+i think i sprained my ankle it really hurts.,1,Pain,en
+bitte füllen sie meinen wasserkrug nach schnell,3,Food/Water,de
+standing less than five minutes and my back start to ache,1,Pain,en
+every time i take a deep breath i start coughing,2,Medication,en
+"can't do any exercise, i feel weak",1,Pain,en
+i need to be cleaned up,5,Hygiene,en
+i feel shoulder pain at intervals of time.,1,Pain,en
+i usually have a bad cough when i get flu.,2,Medication,en
+ನನ್ನ ಭುಜದಲ್ಲಿ ತೀವ್ರ ನೋವಿದೆ ಬೇಗ,1,Pain,kn
+my hair isn't well,2,Medication,en
+मुझे बिस्तर से उठना है जल्दी,4,Mobility,hi
+my shoulder is hurting me,1,Pain,en
+i have pimples on my back.,2,Medication,en
+ich möchte meine hände waschen schnell,5,Hygiene,de
+help me sit up please,4,Mobility,en
+कृपया मुझे कुछ पीने को लाइए जल्दी,3,Food/Water,hi
+i have a powerful pain inside my neck,1,Pain,en
+my ear hurts when i touch it.,1,Pain,en
+आज मैं बहुत उदास महसूस कर रहा हूँ please,6,Emotional Support,hi
+ಇಂದು ನಾನು ತುಂಬಾ ಖಿನ್ನನಾಗಿದ್ದೇನೆ ದಯವಿಟ್ಟು,6,Emotional Support,kn
+i have pain but i can't specify place,1,Pain,en
+ನನ್ನ ಕೀಲುಗಳಲ್ಲಿ ನೋವಾಗುತ್ತಿದೆ ಬೇಗ,1,Pain,kn
+कृपया मेरा तकिया ठीक कर दीजिए please,8,Other,hi
+मैं घर कब जा सकता हूँ please,7,Information,hi
+kann ich etwas saft bekommen,3,Food/Water,de
+"i've tried reading books, but nothing can cheer me up.",6,Emotional Support,en
+कृपया मुझे दाँत साफ करने में मदद करो जल्दी,5,Hygiene,hi
+can someone help me stand up,4,Mobility,en
+ಈ ಮಾತ್ರೆಗಳು ಯಾವುದಕ್ಕೆ ಬೇಗ,7,Information,kn
+मेरे जोड़ों में दर्द हो रहा है जल्दी,1,Pain,hi
+ಈಗ ನನಗೆ ಔಷಧಿ ಸಿಗಬಹುದೇ please,2,Medication,kn
+i'm not feeling good i can't take my breath,0,Emergency,en
+ನಾನು ಇಲ್ಲಿ ಎಷ್ಟು ದಿನ ಇರಬೇಕು please,7,Information,kn
+i have a problem in my middle ear made by infection,1,Pain,en
+das bett ist nass bitte wechseln sie es schnell,5,Hygiene,de
+मेरा ऑपरेशन कब है,7,Information,hi
+ich habe angst vor der operation danke,6,Emotional Support,de
+this long scar on my left buttock is from falling off my mountain bike.,1,Pain,en
+ನಾನು ಹಾಸಿಗೆಯಿಂದ ಏಳಬೇಕು ದಯವಿಟ್ಟು,4,Mobility,kn
+ನನ್ನ ಕುತ್ತಿಗೆಯಲ್ಲಿ ನೋವಿದೆ please,1,Pain,kn
+bitte helfen sie mir in saubere kleidung schnell,5,Hygiene,de
+i feel pain inside and i can not identify it,1,Pain,en
+मुझे दिल का दौरा पड़ रहा है जल्दी,0,Emergency,hi
+bitte bringen sie mir etwas zu trinken bitte,3,Food/Water,de
+मैं घर कब जा सकता हूँ कृपया,7,Information,hi
+i'm having a hard time hearing.,1,Pain,en
+i travelled by plane a few days ago and this time during landing my ears remained clogged and painful.,1,Pain,en
+even though i'm an adult my face keeps breaking out in pimples.,2,Medication,en
+ಹಾಸಿಗೆಯ ತಲೆಭಾಗ ಎತ್ತರಿಸಬಹುದೇ,8,Other,kn
+könnte ich bitte ein glas wasser haben,3,Food/Water,de
+i feel increased heart rate with prick,0,Emergency,en
+क्या मुझे थोड़ा जूस मिल सकता है,3,Food/Water,hi
+कृपया मुझे बैठने में मदद करो please,4,Mobility,hi
+i felt my heart hurts when i ran for along distance,0,Emergency,en
+i have a cut on my foot that became infected from using the showers at the gym.,2,Medication,en
+ನಾನು ಮೂರ್ಛೆ ಹೋಗುತ್ತೇನೆ ಅನಿಸುತ್ತಿದೆ ಬೇಗ,0,Emergency,kn
+ನನ್ನ ಉಸಿರು ಕಟ್ಟುತ್ತಿದೆ ಬೇಗ ಬನ್ನಿ ಬೇಗ,0,Emergency,kn
+ನನ್ನ ಬಾಯಿ ಒಣಗಿದೆ ನನಗೆ ನೀರು ಬೇಕು ಬೇಗ,3,Food/Water,kn
+my back is hurting a lot,1,Pain,en
+ich brauche hilfe mich im bett umzudrehen schnell,4,Mobility,de
+my shoulder aches when i try to lift five pounds.,1,Pain,en
+können sie mir meine testergebnisse sagen schnell,7,Information,de
+i feel pain in my throat,2,Medication,en
+i'm not hearing well i have problem with my ear,1,Pain,en
+ನನಗೆ ತುಂಬಾ ಬಾಯಾರಿಕೆಯಾಗಿದೆ ಬೇಗ,3,Food/Water,kn
+the room is too hot,8,Other,en
+ವೈದ್ಯರು ಯಾವಾಗ ಬರುತ್ತಾರೆ please,7,Information,kn
+i feel like the room is spinning,0,Emergency,en
+ich habe den ganzen tag nichts gegessen bitte,3,Food/Water,de
+my left side aches much,1,Pain,en
+ನನ್ನ ಕೀಲುಗಳಲ್ಲಿ ನೋವಾಗುತ್ತಿದೆ,1,Pain,kn
+कृपया मुझे बैठने में मदद करो जल्दी,4,Mobility,hi
+अभी क्या समय हुआ है जल्दी,7,Information,hi
+longitudinal burning line across back with hard respiratory movements,1,Pain,en
+मेरा रोने का मन कर रहा है कृपया रुको,6,Emotional Support,hi
+können sie mir meine testergebnisse sagen,7,Information,de
+i have a foot ache after running 500m with my running shoes.,1,Pain,en
+i feel a great amount of pressure of my head.,1,Pain,en
+ನಾನು ಈಗ ತುಂಬಾ ಆತಂಕದಲ್ಲಿದ್ದೇನೆ ದಯವಿಟ್ಟು,6,Emotional Support,kn
+my hair is falling when i am combing it.,2,Medication,en
+क्या कोई मुझे खड़े होने में मदद करेगा,4,Mobility,hi
+ich muss sauber gemacht werden,5,Hygiene,de
+ನನ್ನ ಭುಜದಲ್ಲಿ ತೀವ್ರ ನೋವಿದೆ,1,Pain,kn
+ವೈದ್ಯರು ಯಾವಾಗ ಬರುತ್ತಾರೆ ದಯವಿಟ್ಟು,7,Information,kn
+मैं घबराया हुआ हूँ कोई मेरे पास बैठे please,6,Emotional Support,hi
+i have pimples in patches along with a lot of redness on my face.,2,Medication,en
+ನನ್ನ ಔಷಧಿಯ ಸಮಯವಾಗಿದೆ please,2,Medication,kn
+ich brauche eine waschung im bett,5,Hygiene,de
+मेरी चादर गंदी है इसे बदल दीजिए please,5,Hygiene,hi
+कृपया लाइट बंद कर दीजिए जल्दी,8,Other,hi
+can you explain what this medicine does,7,Information,en
+मेरे घुटने में बहुत दर्द है,1,Pain,hi
+ಈಗ ಸಮಯ ಎಷ್ಟು ದಯವಿಟ್ಟು,7,Information,kn
+ich habe stechende schmerzen im bauch danke,1,Pain,de
+क्या कोई मुझे खड़े होने में मदद करेगा कृपया,4,Mobility,hi
+ನನಗೆ ಸ್ವಲ್ಪ ಆಹಾರ ಬೇಕು ಬೇಗ,3,Food/Water,kn
+my son nicked his neck with an old razor and that spot has become inflamed and looks like it is infected.,2,Medication,en
+ನನ್ನ ಪರೀಕ್ಷಾ ಫಲಿತಾಂಶ ಹೇಳಬಹುದೇ,7,Information,kn
+ಈ ಮಾತ್ರೆಗಳು ಯಾವುದಕ್ಕೆ,7,Information,kn
+मुझे यहाँ कितने दिन रहना है please,7,Information,hi
+ich brauche meine spritze bitte,2,Medication,de
+pain in the large neck,1,Pain,en
+i had a sharp pain in my stomach,1,Pain,en
+the bed is wet please change it,5,Hygiene,en
+ನನ್ನ ತಲೆ ನೋಯುತ್ತಿದೆ please,1,Pain,kn
+wer ist heute meine pflegekraft danke,7,Information,de
+मेरी गर्दन में दर्द है जल्दी,1,Pain,hi
+कृपया मुझे कुर्सी तक ले जाओ जल्दी,4,Mobility,hi
+ನನ್ನ ಮಾತ್ರೆಯ ಸಮಯವಾಗಿದೆ ದಯವಿಟ್ಟು,2,Medication,kn
+जल्दी करो कुछ गड़बड़ है कृपया,0,Emergency,hi
+i have acne in my face and other problems in my derma like itching,2,Medication,en
+why is my shoulder aching when i try to pick up the laundry?,1,Pain,en
+mein ganzer körper tut weh danke,1,Pain,de
+the fan is too strong please reduce it,8,Other,en
+ದಯವಿಟ್ಟು ಹಲ್ಲು ಉಜ್ಜಲು ಸಹಾಯ ಮಾಡಿ ದಯವಿಟ್ಟು,5,Hygiene,kn
+ನನ್ನ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ ಯಾವಾಗ,7,Information,kn
+there is this pain that radiates from my chest up to my left arm.,0,Emergency,en
+everything looks like beeing in a smoky area.,2,Medication,en
+i can't carry anything i have a pain in my shoulder,1,Pain,en
+können sie bitte das licht ausschalten danke,8,Other,de
+"the last time i clipped my toenails, i cut them too short and now i have an infected nail.",2,Medication,en
+ನನಗೆ ಉಸಿರಾಡಲು ಆಗುತ್ತಿಲ್ಲ ಸಹಾಯ ಮಾಡಿ please,0,Emergency,kn
+can you tell me my test results,7,Information,en
+meine medizin ist jetzt fällig bitte,2,Medication,de
+मैंने पूरे दिन कुछ नहीं खाया please,3,Food/Water,hi
+i need help getting to the bathroom,4,Mobility,en
+ich bekomme keine luft bitte helfen sie danke,0,Emergency,de
+ನಾನು ಕೈ ತೊಳೆಯಬೇಕು ಬೇಗ,5,Hygiene,kn
+können sie das kopfende des bettes anheben bitte,8,Other,de
+my head hurts whenever i try to do something.,1,Pain,en
+"i cut my finger opening a can, it won't stop bleeding and the wound is gaping and open",2,Medication,en
+i feel pain in my right shoulder after the tennis match.,1,Pain,en
+ಕೋಣೆ ತುಂಬಾ ಬಿಸಿಯಾಗಿದೆ,8,Other,kn
+मुझे दर्द की गोली चाहिए,2,Medication,hi
+i have a strange rash on my arm,1,Pain,en
+i feel a sharp pain in my stomach,1,Pain,en
+wer ist heute meine pflegekraft bitte,7,Information,de
+it feels like someone stuck a knife into my shoulder,1,Pain,en
+कृपया दरवाज़ा बंद कर दीजिए शोर है जल्दी,8,Other,hi
+i've got a hard time to breath- am i having a heart attack?,0,Emergency,en
+ich brauche hilfe mich im bett umzudrehen,4,Mobility,de
+ನನ್ನ ಸ್ಥಿತಿಯ ಬಗ್ಗೆ ಚಿಂತೆಯಾಗಿದೆ,6,Emotional Support,kn
+meine bettwäsche ist schmutzig bitte wechseln sie sie bitte,5,Hygiene,de
+i have an ear ache that won't go away. i don't have a cold or headache or any other symptoms. just an earache.,1,Pain,en
+ನನಗೆ ಅಳು ಬರುತ್ತಿದೆ ದಯವಿಟ್ಟು ಇರಿ ದಯವಿಟ್ಟು,6,Emotional Support,kn
+bitte helfen sie mir zur toilette zu gehen schnell,4,Mobility,de
+ಬೇಗ ಬನ್ನಿ ಏನೋ ತಪ್ಪಾಗಿದೆ,0,Emergency,kn
+ದಯವಿಟ್ಟು ನನ್ನ ಔಷಧಿ ಕೊಡಿ ಬೇಗ,2,Medication,kn
+hearing any loud sounds makes my ear aches,1,Pain,en
+ದಯವಿಟ್ಟು ದೀಪ ಆರಿಸಿ,8,Other,kn
+i get terrible headaches every few months and when i get them my vision is affected.,1,Pain,en
+wann gibt es meine nächste mahlzeit schnell,3,Food/Water,de
+my heart is racing i feel faint,0,Emergency,en
+ನಾನು ಮನೆಗೆ ಯಾವಾಗ ಹೋಗಬಹುದು,7,Information,kn
+my ear hurts and it's worse when i swallow. my ear is very painful and tylenol hasn't helped.,1,Pain,en
+ich glaube ich werde ohnmächtig bitte,0,Emergency,de
+ich habe meine medizin noch nicht genommen schnell,2,Medication,de
+i have a problem in the expiration because i have abronchial asthma,0,Emergency,en
+ich habe schmerzen im nacken schnell,1,Pain,de
+fell skull is cracked like nuts,1,Pain,en
+mein bein tut weh wenn ich mich bewege schnell,1,Pain,de
+i can't ride my car at night because i have blurry vision.,2,Medication,en
+i feel pain in my shoulders when i write on the keyboard.,1,Pain,en
+can i have juice instead of water,3,Food/Water,en
+क्या आप मेरे लिए व्हीलचेयर ला सकते हैं please,4,Mobility,hi
+können sie mir den rollstuhl bringen bitte,4,Mobility,de
+my daughter had her eyebrows threaded and it pulled an opening of skin in one of her brows that is now puffy and oozing.,2,Medication,en
+meine windel muss gewechselt werden,5,Hygiene,de
+मुझे सांस नहीं आ रही है मदद करो please,0,Emergency,hi
+my cut yellow or greenish-colored pus,2,Medication,en
+ich habe hunger kann ich etwas zu essen bekommen bitte,3,Food/Water,de
+i have pain in my chest that saddens me.,0,Emergency,en
+i can't sleep i have a hard cough,2,Medication,en
+i tried to put my glasses to see more clear but cant find any change,2,Medication,en
+क्या मुझे थोड़ा जूस मिल सकता है please,3,Food/Water,hi
+ತುಂಬಾ ಚಳಿಯಿದೆ ದಯವಿಟ್ಟು ಎಸಿ ಸರಿಪಡಿಸಿ please,8,Other,kn
+ತುಂಬಾ ಚಳಿಯಿದೆ ದಯವಿಟ್ಟು ಎಸಿ ಸರಿಪಡಿಸಿ ದಯವಿಟ್ಟು,8,Other,kn
+ich habe wirklich durst schnell,3,Food/Water,de
+i have a great stomach ache and i can't eat any thing,1,Pain,en
+ये गोलियाँ किस लिए हैं please,7,Information,hi
+ನನ್ನ ಮುಂದಿನ ಊಟ ಯಾವಾಗ ದಯವಿಟ್ಟು,3,Food/Water,kn
+bitte beeilen sie sich etwas stimmt nicht schnell,0,Emergency,de
+क्या कोई मुझे खड़े होने में मदद करेगा जल्दी,4,Mobility,hi
+i complain alot with my neck pain and i really need to be better,1,Pain,en
+मुझे दर्द की गोली चाहिए जल्दी,2,Medication,hi
+i feel hungry it has been hours,3,Food/Water,en
+क्या आप मुझे नहाने में मदद करेंगे please,5,Hygiene,hi
+i have pain in my colon and my stomach like something cutting it,1,Pain,en
+könnte ich bitte ein glas wasser haben schnell,3,Food/Water,de
+ich muss auf die toilette schnell,4,Mobility,de
+i feel very hard to breathe,0,Emergency,en
+my hair is falling out after i take a shower.,2,Medication,en
+my back got injured while i was lifting at the gym,1,Pain,en
+my legs are stuck help me move,4,Mobility,en
+मेरे घुटने में बहुत दर्द है जल्दी,1,Pain,hi
+ಇಂದು ನಾನು ತುಂಬಾ ಖಿನ್ನನಾಗಿದ್ದೇನೆ,6,Emotional Support,kn
+ನನಗೆ ಇನ್ನೊಂದು ದಿಂಬು ಬೇಕು ಬೇಗ,8,Other,kn
+ich glaube ich habe einen herzinfarkt bitte,0,Emergency,de
+bitte bringen sie meine tabletten bitte,2,Medication,de
+ich habe stechende schmerzen im bauch,1,Pain,de
+i have general discomfort in my torso.,1,Pain,en
+मैं घर कब जा सकता हूँ,7,Information,hi
+bitte helfen sie mir in saubere kleidung bitte,5,Hygiene,de
+i have this strange rash on my arm.,2,Medication,en
+bitte füllen sie meinen wasserkrug nach danke,3,Food/Water,de
+i am not able to breathe,0,Emergency,en
+ದಯವಿಟ್ಟು ನನಗೆ ಕುಳಿತುಕೊಳ್ಳಲು ಸಹಾಯ ಮಾಡಿ ಬೇಗ,4,Mobility,kn
+ich muss auf die toilette danke,4,Mobility,de
+bitte helfen sie mir zur toilette zu gehen danke,4,Mobility,de
+i feel like l fell in hot water,2,Medication,en
+i need to use the restroom,4,Mobility,en
+i cannot move on my own,4,Mobility,en
+i have a cold and it makes me cough alot,2,Medication,en
+i have a pain that radiates up from my right hip to my rib cage. it is at it's worst when i urinate.,1,Pain,en
+when i stand up too quickly i start to feel dizzy and light-headed,0,Emergency,en
+मुझे अकेलापन लग रहा है कुछ देर रुको कृपया,6,Emotional Support,hi
+there is a red stain in my skin,2,Medication,en
+मेरी गर्दन में दर्द है,1,Pain,hi
+मैं घर कब जा सकता हूँ जल्दी,7,Information,hi
+in highschool i had a lot of acne.,2,Medication,en
+ನನ್ನ ಮಾತ್ರೆಯ ಸಮಯವಾಗಿದೆ ಬೇಗ,2,Medication,kn
+मेरी छाती जकड़ रही है साँस नहीं आ रही कृपया,0,Emergency,hi
+i got acne when i ate chili,2,Medication,en
+कृपया दरवाज़ा बंद कर दीजिए शोर है please,8,Other,hi
+can you bring me a blanket,8,Other,en
+i have blurred vision.,2,Medication,en
+das bett ist nass bitte wechseln sie es danke,5,Hygiene,de
+a terrible fall in hair,2,Medication,en
+my back hurts a lot when i bend,1,Pain,en
+sometimes my body feels week without reason,1,Pain,en
+i have internal pain whenever i come down with a cold.,1,Pain,en
+i've been over my cold for weeks but still cough every day.,2,Medication,en
+"after playing tennis, i had a powerful sensation close to my neck",1,Pain,en
+कृपया मुझे शौचालय तक चलने में मदद करो जल्दी,4,Mobility,hi
+मुझे बहुत प्यास लगी है जल्दी,3,Food/Water,hi
+ich bekomme keine luft bitte helfen sie schnell,0,Emergency,de
+मेरा डायपर बदलने की जरूरत है कृपया,5,Hygiene,hi
+क्या आप मुझे एक कंबल ला सकते हैं,8,Other,hi
+the arches of my feet hurt when i wear heels,1,Pain,en
+i often get a stomach ache after i eat. i haven't been able to pinpoint which foods might be the trigger.,1,Pain,en
+i want to go for a short walk,4,Mobility,en
+कृपया मुझे साफ कपड़े पहनने में मदद करो जल्दी,5,Hygiene,hi
+meine gelenke schmerzen bitte,1,Pain,de
+when will the doctor come,7,Information,en
+is my family allowed to visit now,7,Information,en
+"my daughter was bit by her cat and now her hand is sore, red and swollen and the wound is oozing liquid.",2,Medication,en
+kann ich jetzt meine medizin bekommen,2,Medication,de
+क्या आप बिस्तर का सिरहाना ऊँचा कर सकते हैं जल्दी,8,Other,hi
+मेरे कंधे में तेज़ दर्द है please,1,Pain,hi
+wann ist meine operation geplant,7,Information,de
+i have a skin rash after eating an ice-cream.,2,Medication,en
+मुझे बाथरूम जाने में मदद चाहिए,4,Mobility,hi
+i have a throbbing in my joints,1,Pain,en
+i would like some food,3,Food/Water,en
+my phone charger is not reaching,8,Other,en
+i feel pain in my neck,1,Pain,en
+ich brauche noch ein kissen danke,8,Other,de
+when i played football i dislocated my shoulder,1,Pain,en
+mein rücken tut sehr weh,1,Pain,de
+मेरे सिर में दर्द हो रहा है कृपया,1,Pain,hi
+i was watching tv and suddenly have blurry vision,2,Medication,en
+my cough is very heavy and i have mucus.,2,Medication,en
+ich habe hunger kann ich etwas zu essen bekommen,3,Food/Water,de
+क्या आप मेरे लिए व्हीलचेयर ला सकते हैं जल्दी,4,Mobility,hi
+when will the doctor come to see me,7,Information,en
+i get clusters of pimples on my face that never go away.,2,Medication,en
+ನನಗೆ ನಿರಾಶೆ ಮತ್ತು ದುಃಖ ಅನಿಸುತ್ತಿದೆ ದಯವಿಟ್ಟು,6,Emotional Support,kn
+ich spüre schmerzen in der brust,1,Pain,de
+i feel great pressure in my chest,0,Emergency,en
+feel like something is being jabbed into my joints,1,Pain,en
+"it's hard to stand up, and i'm moving very slowly",1,Pain,en
+my neck hurts me and i can't look down or up,1,Pain,en
+ನನ್ನ ಕನ್ನಡಕ ಕೊಡಬಹುದೇ ದಯವಿಟ್ಟು,8,Other,kn
+ನಾನು ಈಗ ತುಂಬಾ ಆತಂಕದಲ್ಲಿದ್ದೇನೆ please,6,Emotional Support,kn
+my knee is hurting so badly.,1,Pain,en
+every morning when i wake up my neck feels like i slept on in wrong.,1,Pain,en
+when i walk it's hard to breath.,0,Emergency,en
+कृपया मुझे साफ कपड़े पहनने में मदद करो please,5,Hygiene,hi
+i was kicked in the head playing soccer last night.,1,Pain,en
+i feel pain in my neck after waking up,1,Pain,en
+ich brauche meine spritze schnell,2,Medication,de
+मुझे शौचालय जाना है कृपया,4,Mobility,hi
+मेरे सीने में बहुत दर्द हो रहा है जल्दी,0,Emergency,hi
+my right shoulder clicks when i move my arm.,1,Pain,en
+ದಯವಿಟ್ಟು ನನಗೆ ಕುಳಿತುಕೊಳ್ಳಲು ಸಹಾಯ ಮಾಡಿ ದಯವಿಟ್ಟು,4,Mobility,kn
+मेरा मुँह सूख रहा है मुझे पानी चाहिए,3,Food/Water,hi
+मुझे इंसुलिन चाहिए कृपया,2,Medication,hi
+i cut my hand a couple of days ago and although i didn't think i needed it stitches it hasn't closed up.,2,Medication,en
+i can't really jump on my left foot because my triple fracture of the ankle left me with neverending pains.,1,Pain,en
+ಶಸ್ತ್ರಚಿಕಿತ್ಸೆಯ ಬಗ್ಗೆ ನನಗೆ ಭಯವಾಗಿದೆ ದಯವಿಟ್ಟು,6,Emotional Support,kn
+मेरा मुँह सूख रहा है मुझे पानी चाहिए कृपया,3,Food/Water,hi
+ನನ್ನ ಉಸಿರು ಕಟ್ಟುತ್ತಿದೆ ಬೇಗ ಬನ್ನಿ,0,Emergency,kn
+i have difficulty moving my neck,1,Pain,en
+i feel a pain in my back when i sit on a chair for long.,1,Pain,en
+ನನ್ನ ಬೆನ್ನಿನಲ್ಲಿ ತುಂಬಾ ನೋವಾಗುತ್ತಿದೆ please,1,Pain,kn
+i feel pain in the knee,1,Pain,en
+ದಯವಿಟ್ಟು ನನಗೆ ಒಂದು ಲೋಟ ನೀರು ಕೊಡಿ please,3,Food/Water,kn
+मेरी चादर गंदी है इसे बदल दीजिए कृपया,5,Hygiene,hi
+i need a kind of cream wich make my muscles more relaxed,1,Pain,en
+my knee catches and hurts when i first stand up after sitting.,1,Pain,en
+bitte richten sie mein kissen bitte,8,Other,de
+i think there's fluid in my ears.,1,Pain,en
+my shoulder has agreat pain,1,Pain,en
+the warming system of my house is broken and feel so cold,6,Emotional Support,en
+मेरे सीने में बहुत दर्द हो रहा है please,0,Emergency,hi
+हिलने पर मेरे पैर में दर्द होता है please,1,Pain,hi
+"it started as a tinnitus, but today the pain is throbbing and unbearable.",1,Pain,en
+i get chills and aches all over.,6,Emotional Support,en
+bitte geben sie mir meine verschriebenen tabletten schnell,2,Medication,de
+मेरा रोने का मन कर रहा है कृपया रुको please,6,Emotional Support,hi
+कृपया मुझे दाँत साफ करने में मदद करो please,5,Hygiene,hi
+ನನಗೆ ಗಾಲಿಕುರ್ಚಿ ತರಬಹುದೇ ಬೇಗ,4,Mobility,kn
+i feel like i went to an acupuncture's practice and had 100 needles in my shoulder,1,Pain,en
+ich brauche meine schmerztablette schnell,2,Medication,de
+मैं खुद से हिल नहीं सकता please,4,Mobility,hi
+ich habe schmerzen im nacken,1,Pain,de
+i feel congestion in my chest,2,Medication,en
+i need another pillow,8,Other,en
+i need help with my personal hygiene,5,Hygiene,en
+ich bin unruhig kann jemand bei mir sitzen,6,Emotional Support,de
+es ist zu kalt können sie die klimaanlage einstellen danke,8,Other,de
+मुझे लगता है मैं बेहोश हो जाऊँगा जल्दी,0,Emergency,hi
+ಹಾಸಿಗೆಯಲ್ಲಿ ತಿರುಗಲು ನನಗೆ ಸಹಾಯ ಬೇಕು,4,Mobility,kn
+is there a cure for acne?,2,Medication,en
+मुझे अकेलापन लग रहा है कुछ देर रुको,6,Emotional Support,hi
+ನನಗೆ ಶೌಚಾಲಯಕ್ಕೆ ಹೋಗಲು ಸಹಾಯ ಬೇಕು ದಯವಿಟ್ಟು,4,Mobility,kn
+it feels like someone is hitting my head with a hammer. i feel pain on the top of my head and it throbs.,1,Pain,en
+मुझे स्पंज बाथ चाहिए कृपया,5,Hygiene,hi
+i cannot move on my own i need help,4,Mobility,en
+wann gibt es meine nächste mahlzeit bitte,3,Food/Water,de
+bitte helfen sie mir zum stuhl zu kommen bitte,4,Mobility,de
+my knee doesn't want to bend well.,1,Pain,en
+आज मेरी नर्स कौन है please,7,Information,hi
+i feel aching on my insides.,1,Pain,en
+ನನ್ನ ಎದೆಯಲ್ಲಿ ತುಂಬಾ ನೋವಾಗುತ್ತಿದೆ please,0,Emergency,kn
+मेरे जोड़ों में दर्द हो रहा है,1,Pain,hi
+ನನಗೆ ಒಂಟಿತನ ಅನಿಸುತ್ತಿದೆ ಸ್ವಲ್ಪ ಹೊತ್ತು ಇರಿ ದಯವಿಟ್ಟು,6,Emotional Support,kn
+ನನ್ನ ಎದೆ ಬಿಗಿಯಾಗಿದೆ ಉಸಿರಾಡಲು ಆಗುತ್ತಿಲ್ಲ ದಯವಿಟ್ಟು,0,Emergency,kn
+my stomach feels full and upset and bloating after big meals.,1,Pain,en
+es ist zeit für meine tabletten bitte,2,Medication,de
+ದಯವಿಟ್ಟು ನನ್ನ ದಿಂಬು ಸರಿಪಡಿಸಿ ಬೇಗ,8,Other,kn
+ನನಗೆ ಒಂದು ಹೊದಿಕೆ ತರಬಹುದೇ ಬೇಗ,8,Other,kn
+there is a sharp pain in my bicep. i have tried to apply pain relief cream but it does not help.,1,Pain,en
+मुझे इंजेक्शन चाहिए जल्दी,2,Medication,hi
+welche medikamente nehme ich danke,7,Information,de
+ಇಂದು ನಾನು ತುಂಬಾ ಖಿನ್ನನಾಗಿದ್ದೇನೆ ಬೇಗ,6,Emotional Support,kn
+कृपया मुझे दाँत साफ करने में मदद करो कृपया,5,Hygiene,hi
+please help me walk to the toilet,4,Mobility,en
+i have a head pain every single day.,1,Pain,en
+मेरी छाती जकड़ रही है साँस नहीं आ रही please,0,Emergency,hi
+i can't stand up or sit down i have a pain in my back that annoys me,1,Pain,en
+i have a sharp pain in my neck,1,Pain,en
+when i was washing my hair it was falling out heavily,2,Medication,en
+the feeling of coughing increases in winter's reach,2,Medication,en
+what time are visiting hours,7,Information,en
+मुझे बहुत डर लग रहा है और मैं अकेला हूँ कृपया,6,Emotional Support,hi
+आज मेरी नर्स कौन है,7,Information,hi
+ದಯವಿಟ್ಟು ನನಗೆ ಕುಳಿತುಕೊಳ್ಳಲು ಸಹಾಯ ಮಾಡಿ,4,Mobility,kn
+i have a bad pain in my knee,1,Pain,en
+मेरा रोने का मन कर रहा है कृपया रुको जल्दी,6,Emotional Support,hi
+there pain in my foot,1,Pain,en
+ನನ್ನ ಔಷಧಿಯ ಸಮಯವಾಗಿದೆ,2,Medication,kn
+ನನಗೆ ನಿರಾಶೆ ಮತ್ತು ದುಃಖ ಅನಿಸುತ್ತಿದೆ please,6,Emotional Support,kn
+ich möchte meine hände waschen,5,Hygiene,de
+how do you know if you have a torn meniscus in your knee?,1,Pain,en
+my head is aching,1,Pain,en
+मुझे अपनी हालत की चिंता है,6,Emotional Support,hi
+i feel pain in my stomach,1,Pain,en
+mein ganzer körper tut weh schnell,1,Pain,de
+in the morning my respiration is loud.,0,Emergency,en
+ich kann nicht atmen danke,0,Emergency,de

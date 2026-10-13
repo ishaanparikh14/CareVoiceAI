@@ -194,6 +194,14 @@ async def ack_alert(
     now = utcnow()
     logger.info("Alert %d acknowledged by %s", alert_id, body.ack_by)
 
+    # Resolve any dispatch request for this alert (cancels its 10s timer and
+    # clears the broadcast from other nurses' screens).
+    try:
+        from dispatch import on_alert_acknowledged
+        await on_alert_acknowledged(db, alert_id, body.ack_by)
+    except Exception as exc:
+        logger.warning("Dispatch resolve failed for alert %d: %s", alert_id, exc)
+
     return AckResponse(
         alert_id     = alert_id,
         acknowledged = True,

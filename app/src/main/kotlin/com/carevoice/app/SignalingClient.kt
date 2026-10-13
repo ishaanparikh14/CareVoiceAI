@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit
  * All callbacks are invoked on OkHttp's WebSocket thread; callers that touch UI
  * must post to the main thread themselves.
  *
- * @param serverUrl  Base HTTP(S) server URL (public Modal deployment or a
+ * @param serverUrl  Base HTTP(S) server URL (the hosted deployment or a
  *                   ward-local server, e.g. "https://host" or "http://host:8000").
  * @param token      JWT access token for the logged-in user.
  */

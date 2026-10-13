@@ -40,6 +40,7 @@ from routers import patient_ws as patient_ws_router
 from routers import admin as admin_router
 from routers import signal as signal_router
 from routers import voice_notes as voice_notes_router
+from routers import dispatch_router
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -51,6 +52,18 @@ logger = logging.getLogger(__name__)
 
 
 # ── Auto-escalation background loop ───────────────────────────────────────────
+
+async def _handle_nurse_offline(nurse: str):
+    """A nurse's last socket dropped (logout / crash / network). Re-broadcast any
+    assigned-but-unacked dispatch request she was holding so it isn't stranded."""
+    try:
+        from dispatch import reclaim_from_offline_nurse
+        async with aiosqlite.connect(settings.DB_PATH) as db:
+            db.row_factory = aiosqlite.Row
+            await reclaim_from_offline_nurse(db, nurse)
+    except Exception as exc:
+        logger.warning("Reclaim from offline nurse %s failed: %s", nurse, exc)
+
 
 async def _escalation_loop():
     """
@@ -119,16 +132,16 @@ async def lifespan(app: FastAPI):
 
     # Guard against unset security keys. config.py leaves these empty by
     # default; they must be provided via SECRET_KEY / NURSE_ADMIN_KEY env vars
-    # (or a Modal secret) before deploy.
+    # (or server/.env) before deploy.
     if not settings.SECRET_KEY:
         logger.critical(
             "SECRET_KEY is not set — JWT authentication will fail. "
-            "Set SECRET_KEY in your .env, environment, or Modal secret."
+            "Set SECRET_KEY in your .env or environment."
         )
     if not settings.NURSE_ADMIN_KEY:
         logger.warning(
             "NURSE_ADMIN_KEY is not set — nurse registration is disabled. "
-            "Set NURSE_ADMIN_KEY in your .env, environment, or Modal secret."
+            "Set NURSE_ADMIN_KEY in your .env or environment."
         )
 
     # SQLite — alerts/transcripts
@@ -145,6 +158,22 @@ async def lifespan(app: FastAPI):
     set_broadcaster(ws_router.manager.broadcast)
     set_nurse_broadcaster(ws_router.manager.broadcast)
     logger.info("WebSocket broadcaster wired to audio router and patient WS router")
+
+    # Wire the dispatch presence callback: when a nurse's last socket drops she
+    # becomes OFFLINE, which may trigger re-broadcast of a request she was
+    # holding. (The callback is sync; it schedules async work on the loop.)
+    def _on_presence_change(nurse: str, online: bool) -> None:
+        if online:
+            return
+        asyncio.create_task(_handle_nurse_offline(nurse))
+    ws_router.manager.set_presence_callback(_on_presence_change)
+
+    # Re-arm dispatch timers for any requests left mid-flight by a prior run.
+    try:
+        from dispatch import rearm_pending_timers
+        await rearm_pending_timers()
+    except Exception as exc:
+        logger.warning("Dispatch timer re-arm failed: %s", exc)
 
     # Start the auto-escalation background task (Urgent → Critical after timeout).
     escalation_task = asyncio.create_task(_escalation_loop())
@@ -222,6 +251,7 @@ app.include_router(auth_router.router)         # POST /auth/login, GET /auth/me,
 app.include_router(patient_ws_router.router)   # WS   /ws/patient  (always-on VAD streaming)
 app.include_router(signal_router.router)       # WS   /ws/signal   (WebRTC call signaling relay)
 app.include_router(voice_notes_router.router)  # POST /voice-notes, GET /voice-notes/latest, /{id}/audio
+app.include_router(dispatch_router.router)     # POST /dispatch/{id}/accept|decline|reassign, /dispatch/status
 
 # ── Static pages (registered BEFORE admin API router so /admin exact match ──
 # serves the HTML page while /admin/stats etc. route into the API)

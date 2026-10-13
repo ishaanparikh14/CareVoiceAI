@@ -31,7 +31,7 @@ def _register_cuda_dlls():
     faster-whisper (CTranslate2) can find them on Windows. These come from the
     nvidia-cublas-cu12 / nvidia-cudnn-cu12 wheels and are NOT on PATH by default.
 
-    On Linux (e.g. the Modal CUDA container) the CUDA libraries are already on
+    On Linux (e.g. a CUDA container/host) the CUDA libraries are already on
     the system library path and os.add_dll_directory does not exist, so we simply
     return True to allow the GPU path — no DLL registration is needed there.
     """

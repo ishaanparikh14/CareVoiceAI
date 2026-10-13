@@ -171,6 +171,21 @@
                     android:layout_weight="1" />
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAvailable"
+                    style="@style/Widget.CareVoice.Button.Outlined"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/nurse_available"
+                    android:textColor="@color/colorAcknowledged"
+                    android:textSize="13sp"
+                    app:icon="@drawable/ic_cv_check"
+                    app:iconSize="16dp"
+                    app:iconTint="@color/colorAcknowledged"
+                    app:strokeColor="@color/colorAcknowledged"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnCall"
                     style="@style/Widget.CareVoice.Button.Outlined"
                     android:layout_width="wrap_content"

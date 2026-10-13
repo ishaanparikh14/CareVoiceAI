@@ -24,7 +24,8 @@ import java.time.format.DateTimeFormatter
 class AlertAdapter(
     private val onAck: (alertId: Int, nurseName: String) -> Unit,
     private val onCall: (roomId: String) -> Unit = {},
-    private val onVoiceNotes: (roomId: String, alertId: Int) -> Unit = { _, _ -> }
+    private val onVoiceNotes: (roomId: String, alertId: Int) -> Unit = { _, _ -> },
+    private val onAvailable: () -> Unit = {}
 ) : ListAdapter<AlertModel, AlertAdapter.ViewHolder>(DIFF) {
 
     // Nurse name injected by NurseActivity after login
@@ -81,16 +82,23 @@ class AlertAdapter(
             // ── Voice notes (long-press the card) ─────────────────────────────
             b.root.setOnLongClickListener { onVoiceNotes(alert.roomId, alert.id); true }
 
+            // ── "I'm Available" (shown once acknowledged — tells the system
+            //     the nurse is free again; reflects on the admin board) ─────────
+            b.btnAvailable.setOnClickListener { onAvailable() }
+
             // ── ACK state ─────────────────────────────────────────────────────
             if (alert.acknowledged) {
                 b.btnAck.visibility  = View.GONE
-                b.tvAckedBy.visibility = View.VISIBLE
-                b.tvAckedBy.text = "✓ ${alert.ackedBy ?: "acknowledged"}"
+                // Keep the acked-by note compact so it doesn't crowd the two
+                // buttons; the "I'm Available" button's ✓ already signals state.
+                b.tvAckedBy.visibility = View.GONE
+                b.btnAvailable.visibility = View.VISIBLE   // free-up control next to Call Patient
                 // Dim the card background to de-emphasise resolved alerts
                 b.root.alpha = 0.6f
             } else {
                 b.btnAck.visibility  = View.VISIBLE
                 b.tvAckedBy.visibility = View.GONE
+                b.btnAvailable.visibility = View.GONE
                 b.root.alpha = 1f
 
                 b.btnAck.setOnClickListener {

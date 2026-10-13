@@ -47,6 +47,8 @@ server/server_error.log
 server/ml/_tts_tmp/
 server/ml/*.mp3
 server/ml/*.wav
+server/ml/ml_eval_result.txt
+server/ml/ml_prep_result.txt
 
 # ── Raw datasets (large; keep only prepared_ml CSVs) ─────────
 server/ml/data/*.csv

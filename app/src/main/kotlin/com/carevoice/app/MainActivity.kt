@@ -22,6 +22,9 @@ import com.carevoice.app.databinding.ActivityMainBinding
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -76,6 +79,50 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         super.onResume()
         // Reconnect signaling if it dropped while backgrounded.
         ensureCallSignaling()
+        startVoiceNotePoll()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        vnPollJob?.cancel()
+    }
+
+    // ── Voice-note arrival notification (patient side) ──────────────────────────
+
+    private val vnUploader by lazy { ServerUploader(this) }
+    private var vnPollJob: Job? = null
+    private var lastSeenVoiceNoteId = -1
+    private var vnBaselineSet = false
+
+    private fun startVoiceNotePoll() {
+        vnPollJob?.cancel()
+        vnPollJob = lifecycleScope.launch(Dispatchers.IO) {
+            while (isActive) {
+                try {
+                    val room = getSharedPreferences(ServerUploader.PREFS_NAME, Context.MODE_PRIVATE)
+                        .getString(ServerUploader.KEY_ROOM_ID, ServerUploader.DEFAULT_ROOM_ID)
+                        ?: ServerUploader.DEFAULT_ROOM_ID
+                    val notes = vnUploader.listVoiceNotes(room)
+                    // Patient receives notes sent by the nurse.
+                    val received = notes.filter { it.senderRole == "nurse" }
+                    val maxId = received.maxOfOrNull { it.id } ?: -1
+                    if (!vnBaselineSet) { lastSeenVoiceNoteId = maxId; vnBaselineSet = true }
+                    else if (maxId > lastSeenVoiceNoteId) {
+                        val newest = received.first { it.id == maxId }
+                        lastSeenVoiceNoteId = maxId
+                        withContext(Dispatchers.Main) {
+                            Notifier.voiceNote(
+                                this@MainActivity,
+                                "New voice note from your nurse",
+                                newest.senderName,
+                                ReceivedVoiceNotesActivity::class.java
+                            )
+                        }
+                    }
+                } catch (_: Exception) { /* offline/transient */ }
+                delay(15_000)
+            }
+        }
     }
 
     override fun onBackPressed() {

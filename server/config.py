@@ -90,7 +90,7 @@ class Settings(BaseSettings):
     # SQLite (DB_PATH above) is still used for alerts/transcripts.
     # WARNING: These are development defaults. In production, you MUST:
     # 1. Set PG_PASSWORD via environment variable
-    # 2. Use DATABASE_URL_OVERRIDE for cloud deployments (e.g., Neon)
+    # 2. Use DATABASE_URL_OVERRIDE for a managed/remote Postgres
     # 3. Never commit real credentials to version control
     PG_HOST:     str = "localhost"
     PG_PORT:     int = 5432
@@ -98,19 +98,19 @@ class Settings(BaseSettings):
     PG_PASSWORD: str = ""  # Must be set via PG_PASSWORD environment variable
     PG_DATABASE: str = "carevoice"
 
-    # Full connection string override. When set (e.g. a Neon/managed-Postgres
-    # URL for cloud deployment), it takes precedence over the PG_* parts above.
-    # Example: postgresql://user:pass@ep-xxx.aws.neon.tech/carevoice?sslmode=require
+    # Full connection string override. When set (e.g. a managed/remote Postgres
+    # URL), it takes precedence over the PG_* parts above.
+    # Example: postgresql://user:pass@your-db-host:5432/carevoice?sslmode=require
     DATABASE_URL_OVERRIDE: str = ""
 
     @property
     def DATABASE_URL(self) -> str:
         """asyncpg-compatible connection string.
 
-        Neon/managed URLs often carry libpq params (sslmode, channel_binding)
+        Managed-Postgres URLs often carry libpq params (sslmode, channel_binding)
         that asyncpg's DSN parser rejects. We strip those query params and rely
         on ssl being handled separately (see create_pool). SSL is still enforced
-        for Neon hosts via the pool's ssl argument.
+        via the pool's ssl argument (see DB_REQUIRES_SSL).
         """
         if self.DATABASE_URL_OVERRIDE:
             import urllib.parse as _up
@@ -126,9 +126,9 @@ class Settings(BaseSettings):
 
     @property
     def DB_REQUIRES_SSL(self) -> bool:
-        """True when the override URL points at a host that needs SSL (e.g. Neon)."""
+        """True when the override URL carries params indicating SSL is required."""
         u = (self.DATABASE_URL_OVERRIDE or "").lower()
-        return ("sslmode=require" in u) or ("neon.tech" in u) or ("channel_binding" in u)
+        return ("sslmode=require" in u) or ("channel_binding" in u)
 
     @property
     def DATABASE_URL_SYNC(self) -> str:

@@ -55,20 +55,44 @@ class ConnectionManager:
         # phone and a dashboard open at once). Enables targeted delivery.
         self._by_nurse: dict[str, Set[WebSocket]] = {}
         self._nurse_of: dict[WebSocket, str] = {}
+        # Admin dashboard sockets (so dispatch escalations can be pushed to the
+        # admin in real time). Admins also receive broadcasts for monitoring.
+        self._admins: Set[WebSocket] = set()
+        # Callback invoked (nurse_username, online) whenever a nurse's presence
+        # changes, so dispatch can react to a logout/disconnect. Injected by
+        # main.py to avoid a circular import.
+        self._presence_cb = None
 
-    async def connect(self, ws: WebSocket, nurse: str | None = None) -> None:
+    def set_presence_callback(self, cb) -> None:
+        self._presence_cb = cb
+
+    def _fire_presence(self, nurse: str, online: bool) -> None:
+        if self._presence_cb is None or not nurse:
+            return
+        try:
+            self._presence_cb(nurse, online)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning("Presence callback failed for %s: %s", nurse, exc)
+
+    async def connect(self, ws: WebSocket, nurse: str | None = None, is_admin: bool = False) -> None:
         await ws.accept()
         self._connections.add(ws)
         if nurse:
+            was_online = bool(self._by_nurse.get(nurse))
             self._by_nurse.setdefault(nurse, set()).add(ws)
             self._nurse_of[ws] = nurse
+            if not was_online:
+                self._fire_presence(nurse, True)
+        if is_admin:
+            self._admins.add(ws)
         logger.info(
-            "Nurse WebSocket connected (nurse=%s). Active connections: %d",
-            nurse or "?", len(self._connections),
+            "Nurse WebSocket connected (nurse=%s admin=%s). Active connections: %d",
+            nurse or "?", is_admin, len(self._connections),
         )
 
     def disconnect(self, ws: WebSocket) -> None:
         self._connections.discard(ws)
+        self._admins.discard(ws)
         nurse = self._nurse_of.pop(ws, None)
         if nurse:
             socks = self._by_nurse.get(nurse)
@@ -76,6 +100,8 @@ class ConnectionManager:
                 socks.discard(ws)
                 if not socks:
                     self._by_nurse.pop(nurse, None)
+                    # Last socket for this nurse closed → she is now OFFLINE.
+                    self._fire_presence(nurse, False)
         logger.info(
             "Nurse WebSocket disconnected. Active connections: %d",
             len(self._connections),
@@ -88,6 +114,19 @@ class ConnectionManager:
     @property
     def online_nurses(self) -> set[str]:
         return set(self._by_nurse.keys())
+
+    async def send_to_admins(self, message: str) -> None:
+        """Deliver a message to every connected admin dashboard socket."""
+        socks = list(self._admins)
+        if not socks:
+            return
+        results = await asyncio.gather(
+            *[ws.send_text(message) for ws in socks],
+            return_exceptions=True,
+        )
+        for ws, result in zip(socks, results):
+            if isinstance(result, Exception):
+                self.disconnect(ws)
 
     async def send_to_nurse(self, nurse: str, message: str) -> bool:
         """Deliver a message to all of one nurse's sockets. Returns True if at
@@ -142,11 +181,12 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-def _nurse_from_token(websocket: WebSocket) -> str | None:
-    """Return the nurse username from a Bearer header or ?token= query param.
+def _identity_from_token(websocket: WebSocket) -> tuple[str | None, str | None]:
+    """Return (username, role) from a Bearer header or ?token= query param.
 
-    Only nurse tokens are keyed (admins/patients watching the feed still get
-    broadcasts but are never targeted). Returns None if absent or invalid.
+    Nurse tokens are keyed for targeted delivery; admin tokens register as admin
+    dashboard sockets so dispatch escalations reach them. Returns (None, None)
+    if absent or invalid.
     """
     raw = None
     auth = websocket.headers.get("authorization", "")
@@ -155,15 +195,16 @@ def _nurse_from_token(websocket: WebSocket) -> str | None:
     if not raw:
         raw = websocket.query_params.get("token")
     if not raw:
-        return None
+        return None, None
     try:
         from auth import decode_token
         payload = decode_token(raw)
     except Exception:
-        return None
-    if payload.get("role") != "nurse":
-        return None
-    return payload.get("sub")
+        return None, None
+    role = payload.get("role")
+    if role not in ("nurse", "admin"):
+        return None, None
+    return payload.get("sub"), role
 
 
 # ── WebSocket route ───────────────────────────────────────────────────────────
@@ -191,12 +232,14 @@ async def nurse_ws(
     # targeted routing can address this socket by username. The Android app
     # sends the header; the web dashboard may pass ?token=. Fall back to the
     # legacy nurse_id query param only if no valid token is present.
-    nurse_username = _nurse_from_token(websocket)
-    if nurse_username is None and nurse_id != "unknown":
+    username, role = _identity_from_token(websocket)
+    is_admin = role == "admin"
+    nurse_username = username if role == "nurse" else None
+    if nurse_username is None and not is_admin and nurse_id != "unknown":
         nurse_username = nurse_id
-    await manager.connect(websocket, nurse=nurse_username)
-    nurse_id = nurse_username or nurse_id
-    logger.info("Nurse '%s' connected via WebSocket", nurse_id)
+    await manager.connect(websocket, nurse=nurse_username, is_admin=is_admin)
+    nurse_id = username or nurse_id
+    logger.info("Nurse WebSocket '%s' connected (role=%s)", nurse_id, role or "?")
 
     # Send an immediate welcome frame so the client knows the connection is live.
     await websocket.send_json({"event": "connected", "nurse_id": nurse_id})

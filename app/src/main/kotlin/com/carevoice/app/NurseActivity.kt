@@ -77,6 +77,14 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     // Empty set = not yet loaded → show all (fail-open so nothing is missed).
     private val myRooms = mutableSetOf<String>()
 
+    // Dispatch: alert_id → request_id for the offers currently on screen, and
+    // the set of alert_ids we've already shown an offer dialog for (so a poll or
+    // reconnect doesn't pop the dialog twice).
+    private val requestIdForAlert = mutableMapOf<Int, Int>()
+    private val offeredAlertIds = mutableSetOf<Int>()
+    private var currentOfferDialog: AlertDialog? = null
+    private var currentOfferAlertId: Int = -1
+
     // ── Accessors ─────────────────────────────────────────────────────────────
 
     private val serverUrl: String
@@ -163,6 +171,60 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         // Quick-action tiles
         binding.cardVnReceived.setOnClickListener { ReceivedVoiceNotesActivity.open(this) }
         binding.cardVnSend.setOnClickListener { SendVoiceNoteActivity.open(this) }
+
+        // My status toggle (Available ↔ Occupied)
+        renderStatusButton()
+        binding.btnMyStatus.setOnClickListener { toggleMyStatus() }
+    }
+
+    /** True = I'm occupied (manually busy). Starts available. */
+    private var iAmOccupied = false
+
+    private fun renderStatusButton() {
+        if (iAmOccupied) {
+            binding.btnMyStatus.text = getString(R.string.nurse_status_occupied)
+            binding.btnMyStatus.setIconResource(R.drawable.ic_cv_phone)
+            binding.btnMyStatus.backgroundTintList =
+                android.content.res.ColorStateList.valueOf(
+                    androidx.core.content.ContextCompat.getColor(this, R.color.cv_busy))
+        } else {
+            binding.btnMyStatus.text = getString(R.string.nurse_status_available)
+            binding.btnMyStatus.setIconResource(R.drawable.ic_cv_check)
+            binding.btnMyStatus.backgroundTintList =
+                android.content.res.ColorStateList.valueOf(
+                    androidx.core.content.ContextCompat.getColor(this, R.color.colorAcknowledged))
+        }
+    }
+
+    /** Flip my status and tell the server. Reflects on the admin dispatch board. */
+    private fun toggleMyStatus() {
+        val newOccupied = !iAmOccupied
+        binding.btnMyStatus.isEnabled = false
+        lifecycleScope.launch(Dispatchers.IO) {
+            var ok = false
+            try {
+                val body = JSONObject().put("busy", newOccupied).toString()
+                    .toRequestBody("application/json".toMediaType())
+                val req = Request.Builder()
+                    .url("$serverUrl/alerts/busy")
+                    .addHeader("Authorization", "Bearer $token")
+                    .post(body)
+                    .build()
+                ok = http.newCall(req).execute().use { it.code in 200..201 }
+            } catch (_: Exception) {}
+            withContext(Dispatchers.Main) {
+                binding.btnMyStatus.isEnabled = true
+                if (ok) {
+                    iAmOccupied = newOccupied
+                    renderStatusButton()
+                    Snackbar.make(binding.root,
+                        if (iAmOccupied) "You're now Occupied" else "You're now Available",
+                        Snackbar.LENGTH_SHORT).show()
+                } else {
+                    Snackbar.make(binding.root, "Could not update status", Snackbar.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     // Toolbar hamburger tap
@@ -429,7 +491,16 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
             .setTitle(getString(R.string.drawer_logout))
             .setMessage("Are you sure you want to log out?")
             .setPositiveButton("Log out") { _, _ ->
+                // Deterministically go OFFLINE on the server:
+                //  • stop auto-reconnect so the socket doesn't come back
+                //  • close the nurse-alert WS (presence is derived from this)
+                //  • tear down the signaling socket (calls) too
+                wsReconnectJob?.cancel()
+                pollJob?.cancel()
+                webSocket?.close(1000, "logout")
                 webSocket?.cancel()
+                webSocket = null
+                try { CallSession.shutdownSignaling() } catch (_: Exception) {}
                 UserSession.logout(this)
                 startActivity(
                     Intent(this, LoginActivity::class.java).apply {
@@ -444,7 +515,7 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     // ── RecyclerView ──────────────────────────────────────────────────────────
 
     private fun setupRecyclerView() {
-        adapter = AlertAdapter(onAck = ::ackAlert, onCall = ::callPatientInRoom, onVoiceNotes = ::openVoiceNotes)
+        adapter = AlertAdapter(onAck = ::ackAlert, onCall = ::callPatientInRoom, onVoiceNotes = ::openVoiceNotes, onAvailable = ::markAvailable)
         adapter.nurseName = nurseName
         binding.rvAlerts.layoutManager = LinearLayoutManager(this)
         binding.rvAlerts.adapter = adapter
@@ -659,7 +730,11 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                         submitFilteredList()
                         updateCountBadge()
                         refreshDrawerAlertCount()
-                        Snackbar.make(binding.root, getString(R.string.nurse_ack_success), Snackbar.LENGTH_SHORT).show()
+                        // After acking, let the nurse tell the system they're free again
+                        // (reflects as Available on the admin dispatch board).
+                        Snackbar.make(binding.root, getString(R.string.nurse_ack_success), Snackbar.LENGTH_LONG)
+                            .setAction("I'm available") { markAvailable() }
+                            .show()
                     } else {
                         submitFilteredList()
                         Snackbar.make(binding.root, getString(R.string.nurse_ack_failed), Snackbar.LENGTH_SHORT).show()
@@ -669,6 +744,39 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 withContext(Dispatchers.Main) {
                     submitFilteredList()
                     Snackbar.make(binding.root, getString(R.string.nurse_ack_failed), Snackbar.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    /**
+     * Tell the server this nurse is free again (clears the manual-busy flag).
+     * Reflects as "Available" on the admin dispatch board. Called from the
+     * "I'm available" action after acknowledging, or the menu.
+     */
+    private fun markAvailable() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val body = JSONObject().put("busy", false).toString()
+                    .toRequestBody("application/json".toMediaType())
+                val req = Request.Builder()
+                    .url("$serverUrl/alerts/busy")
+                    .addHeader("Authorization", "Bearer $token")
+                    .post(body)
+                    .build()
+                val code = http.newCall(req).execute().use { it.code }
+                withContext(Dispatchers.Main) {
+                    if (code == 200 || code == 201) {
+                        iAmOccupied = false
+                        renderStatusButton()
+                        Snackbar.make(binding.root, "You're now marked available", Snackbar.LENGTH_SHORT).show()
+                    } else {
+                        Snackbar.make(binding.root, "Could not update status", Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Snackbar.make(binding.root, "Could not update status", Snackbar.LENGTH_SHORT).show()
                 }
             }
         }
@@ -700,6 +808,160 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         } catch (_: Exception) {}
     }
 
+    // ── Dispatch (Uber-style incoming requests) ────────────────────────────────
+
+    /** Build an AlertModel from a dispatch WS frame (fields mirror new_alert). */
+    private fun alertFromDispatch(j: JSONObject): AlertModel {
+        val id = j.getInt("alert_id")
+        val prior = allAlerts.firstOrNull { it.id == id }
+        return AlertModel(
+            id            = id,
+            roomId        = j.optString("room_id"),
+            priority      = j.optString("priority", "Routine"),
+            intent        = j.optString("intent", "Other"),
+            distressScore = j.optDouble("distress_score", 0.0).toFloat(),
+            transcript    = j.optString("transcript"),
+            createdAt     = j.optString("created_at"),
+            acknowledged  = prior?.acknowledged ?: false,
+            ackedBy       = prior?.ackedBy,
+            escalated     = j.optBoolean("escalated", false),
+            patientName   = j.optString("patient_name").ifEmpty { null },
+            summary       = j.optString("summary").ifEmpty { null },
+            emotion       = j.optString("emotion").ifEmpty { null }
+        )
+    }
+
+    /**
+     * A request was offered to me. If [assigned] it is already mine (primary
+     * accept or admin reassignment / won claim) → render it as a normal card to
+     * acknowledge. Otherwise it's an open offer → show an Accept/Decline prompt.
+     *
+     * Dispatch offers IGNORE the my-rooms filter on purpose: a broadcast can
+     * come from any room, and the whole point is to pull in a free nurse.
+     */
+    private fun onDispatchOffer(j: JSONObject, assigned: Boolean) {
+        val requestId = j.optInt("request_id", -1)
+        val alert = alertFromDispatch(j)
+        if (requestId >= 0) requestIdForAlert[alert.id] = requestId
+
+        // Always surface the card so it's visible regardless of room filter.
+        allAlerts.removeAll { it.id == alert.id }
+        allAlerts.add(0, alert)
+        submitFilteredList()
+        updateCountBadge()
+        refreshDrawerAlertCount()
+        binding.rvAlerts.scrollToPosition(0)
+        if (!alert.acknowledged) chimeForAlert(alert.id, alert.priority)
+
+        if (assigned) {
+            // It's mine now — no prompt, just the normal ack flow.
+            offeredAlertIds.remove(alert.id)
+            Snackbar.make(binding.root, "Request assigned to you — Room ${alert.roomId}", Snackbar.LENGTH_SHORT).show()
+            return
+        }
+
+        // Open offer → prompt once.
+        if (!offeredAlertIds.add(alert.id)) return
+        showOfferDialog(requestId, alert)
+    }
+
+    private fun showOfferDialog(requestId: Int, alert: AlertModel) {
+        // Replace any existing prompt so we don't stack dialogs.
+        currentOfferDialog?.dismiss()
+        currentOfferAlertId = alert.id
+        val who = alert.patientName ?: "Patient"
+        val what = alert.summary ?: alert.intent
+        val msg = "Room ${alert.roomId} · ${alert.priority}\n$who: $what"
+        currentOfferDialog = AlertDialog.Builder(this)
+            .setTitle("Incoming request")
+            .setMessage(msg)
+            .setCancelable(false)
+            .setPositiveButton("Accept") { _, _ -> acceptDispatch(requestId, alert.id) }
+            .setNegativeButton("Decline") { _, _ -> promptDeclineReason(requestId, alert.id) }
+            .create()
+        currentOfferDialog?.setOnDismissListener {
+            if (currentOfferAlertId == alert.id) { currentOfferDialog = null; currentOfferAlertId = -1 }
+        }
+        currentOfferDialog?.show()
+    }
+
+    private fun promptDeclineReason(requestId: Int, alertId: Int) {
+        val reasons = arrayOf("Not available", "Engaged with another patient", "Other")
+        AlertDialog.Builder(this)
+            .setTitle("Decline — why?")
+            .setItems(reasons) { _, which -> declineDispatch(requestId, alertId, reasons[which]) }
+            .setOnCancelListener {
+                // Cancelling the reason picker re-opens the offer so the request
+                // isn't silently dropped from this nurse.
+                requestIdForAlert[alertId]?.let { rid ->
+                    allAlerts.firstOrNull { it.id == alertId }?.let { a ->
+                        offeredAlertIds.remove(alertId); showOfferDialog(rid, a)
+                    }
+                }
+            }
+            .show()
+    }
+
+    /** A request was cancelled for me (taken by another nurse, or I declined). */
+    private fun onDispatchCancelled(alertId: Int) {
+        if (alertId < 0) return
+        offeredAlertIds.remove(alertId)
+        requestIdForAlert.remove(alertId)
+        if (currentOfferAlertId == alertId) { currentOfferDialog?.dismiss(); currentOfferDialog = null; currentOfferAlertId = -1 }
+        // Remove the card unless it's already acked (keep a trace of handled ones).
+        val existing = allAlerts.firstOrNull { it.id == alertId }
+        if (existing != null && !existing.acknowledged) {
+            allAlerts.removeAll { it.id == alertId }
+            submitFilteredList(); updateCountBadge(); refreshDrawerAlertCount()
+        }
+    }
+
+    private fun acceptDispatch(requestId: Int, alertId: Int) {
+        if (requestId < 0) return
+        postDispatch("$serverUrl/dispatch/$requestId/accept", null) { code, _ ->
+            when (code) {
+                200, 201 -> Snackbar.make(binding.root, "You accepted the request", Snackbar.LENGTH_SHORT).show()
+                409 -> {
+                    Snackbar.make(binding.root, "Already taken by another nurse", Snackbar.LENGTH_SHORT).show()
+                    onDispatchCancelled(alertId)
+                }
+                else -> Snackbar.make(binding.root, "Could not accept (HTTP $code)", Snackbar.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun declineDispatch(requestId: Int, alertId: Int, reason: String) {
+        if (requestId < 0) return
+        val body = JSONObject().put("reason", reason).toString()
+        postDispatch("$serverUrl/dispatch/$requestId/decline", body) { code, _ ->
+            when (code) {
+                200, 201 -> Snackbar.make(binding.root, "Declined — reassigning", Snackbar.LENGTH_SHORT).show()
+                else -> Snackbar.make(binding.root, "Could not decline (HTTP $code)", Snackbar.LENGTH_SHORT).show()
+            }
+            onDispatchCancelled(alertId)
+        }
+    }
+
+    private fun postDispatch(url: String, jsonBody: String?, onResult: (Int, String?) -> Unit) {
+        val reqBuilder = Request.Builder()
+            .url(url)
+            .addHeader("Authorization", "Bearer $token")
+        if (jsonBody != null) reqBuilder.post(jsonBody.toRequestBody("application/json".toMediaType()))
+        else reqBuilder.post("".toRequestBody("application/json".toMediaType()))
+        val req = reqBuilder.build()
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val resp = http.newCall(req).execute()
+                val code = resp.code
+                val respBody = resp.body?.string()
+                resp.close()
+                withContext(Dispatchers.Main) { onResult(code, respBody) }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { onResult(-1, e.message) }
+            }
+        }
+    }
+
     // ── WebSocket ─────────────────────────────────────────────────────────────
 
     private fun connectWebSocket() {
@@ -729,6 +991,23 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 try {
                     val j = JSONObject(text)
                     val event = j.optString("event")
+
+                    // ── Uber-style dispatch events ───────────────────────────
+                    // dispatch_request   : offered to me (primary or broadcast) → show Accept/Decline
+                    // dispatch_assigned  : I won the claim → render as a normal card to ack
+                    // dispatch_cancelled : taken by someone else / I declined → remove the card
+                    when (event) {
+                        "dispatch_request", "dispatch_assigned" -> {
+                            runOnUiThread { onDispatchOffer(j, assigned = event == "dispatch_assigned") }
+                            return
+                        }
+                        "dispatch_cancelled" -> {
+                            val aid = j.optInt("alert_id", -1)
+                            runOnUiThread { onDispatchCancelled(aid) }
+                            return
+                        }
+                    }
+
                     // "new_alert" = freshly created; "alert_updated" = server-side
                     // change (e.g. Urgent auto-escalated to Critical).
                     if (event != "new_alert" && event != "alert_updated") return
@@ -811,8 +1090,38 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
             while (isActive) {
                 delay(15_000)
                 if (isActive) loadAlerts(showLoading = false)
+                if (isActive) checkNewVoiceNotes()
             }
         }
+    }
+
+    // ── Voice-note arrival notification ─────────────────────────────────────────
+
+    private val vnUploader by lazy { ServerUploader(this) }
+    private var lastSeenVoiceNoteId = -1
+    private var vnBaselineSet = false
+
+    /** Poll the nurse inbox; notify on a newly received note (sent by a patient). */
+    private suspend fun checkNewVoiceNotes() {
+        try {
+            val notes = vnUploader.inboxVoiceNotes()
+            // Only patient-sent notes are "received" by the nurse.
+            val received = notes.filter { it.senderRole != "nurse" }
+            val maxId = received.maxOfOrNull { it.id } ?: -1
+            if (!vnBaselineSet) { lastSeenVoiceNoteId = maxId; vnBaselineSet = true; return }
+            if (maxId > lastSeenVoiceNoteId) {
+                val newest = received.first { it.id == maxId }
+                lastSeenVoiceNoteId = maxId
+                withContext(Dispatchers.Main) {
+                    Notifier.voiceNote(
+                        this@NurseActivity,
+                        "New voice note",
+                        "${newest.senderName} · Room ${newest.roomId}",
+                        ReceivedVoiceNotesActivity::class.java
+                    )
+                }
+            }
+        } catch (_: Exception) { /* offline / transient — ignore */ }
     }
 
     // ── JSON helpers ──────────────────────────────────────────────────────────

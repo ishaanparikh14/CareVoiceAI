@@ -49,7 +49,7 @@ _pool: asyncpg.Pool | None = None
 async def create_pool() -> None:
     """Open the asyncpg connection pool. Called from main.py lifespan."""
     global _pool
-    # Managed Postgres (Neon) requires TLS. Since sslmode is stripped from the
+    # Managed Postgres typically requires TLS. Since sslmode is stripped from the
     # DSN for asyncpg, enable SSL explicitly here when the URL indicates it.
     ssl_arg = "require" if settings.DB_REQUIRES_SSL else None
     _pool = await asyncpg.create_pool(

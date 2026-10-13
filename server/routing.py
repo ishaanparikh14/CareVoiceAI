@@ -1,18 +1,22 @@
 """
-routing.py — connect alert ingestion to nurse delivery.
+routing.py — connect alert ingestion to nurse delivery (Uber-style dispatch).
 
-Simplified routing (no scheduler / no escalation):
-Both alert entry points (HTTP POST /audio/ingest and the patient WebSocket)
-call `route_alert`. It delivers the alert to the nurses ASSIGNED to the
-patient's room. If none of the assigned nurses are reachable (or the room has
-no assignment), it broadcasts to all nurses so the request is never dropped.
+Alerts enter here from both the HTTP POST /audio/ingest path and the manual
+call endpoint. `route_alert` now hands the alert to the dispatch engine
+(dispatch.py), which runs the state machine:
 
-The admin dispatcher can afterwards reassign a specific alert to a chosen nurse
-via `redirect_alert` (POST /alerts/{id}/redirect).
+    primary nurse → (decline / offline) → broadcast to FREE nurses
+                  → first FREE accept wins
+                  → no taker in 10s → notify admin → admin reassigns (FREE only)
 
-There is no acuity (ESI), competency matching, live-status gating, or
-primary→secondary→supervisor escalation — those were removed. "Busy" is tracked
-only as a manual admin toggle, surfaced on the dispatch board for visibility.
+This module keeps:
+  • presence/status helpers (presence = nurse-alert WebSocket ONLY, so logout is
+    authoritative and a logged-out nurse shows OFFLINE, never FREE),
+  • the manual "busy" toggle set,
+  • `nurse_availability` for the admin dispatch board (now reporting the explicit
+    available/busy/offline status),
+  • `redirect_alert`, which is the admin override and routes through the dispatch
+    engine so it can only land on an AVAILABLE nurse.
 """
 
 import logging
@@ -22,7 +26,7 @@ import aiosqlite
 logger = logging.getLogger(__name__)
 
 # Manual busy toggle: usernames a nurse (or admin) marked unavailable.
-# Advisory only — surfaced on the dispatch board; does not block delivery.
+# A manually-busy nurse is treated as BUSY and is skipped by the broadcast.
 MANUAL_BUSY: set[str] = set()
 
 
@@ -33,29 +37,31 @@ def set_manual_busy(nurse: str, busy: bool) -> None:
         MANUAL_BUSY.discard(nurse)
 
 
-def nurse_is_busy(nurse: str, active_counts: dict[str, int]) -> bool:
-    """Advisory 'busy' for the admin board: on a call, holding an unacked
-    alert, or manually marked busy."""
-    from routers.signal import registry as signal_registry
-    on_call = signal_registry.is_busy(nurse)
-    holding = active_counts.get(nurse, 0) > 0
-    manual  = nurse in MANUAL_BUSY
-    return on_call or holding or manual
-
-
 def nurse_is_online(nurse: str) -> bool:
-    """Online if present in EITHER the nurse-alert WS or the signaling registry."""
+    """Online == has a live nurse-alert WebSocket.
+
+    Presence is deliberately NOT OR'd with the signaling registry anymore: a
+    logged-out nurse cancels her alert socket, so she must read as OFFLINE even
+    if a signaling socket lingers briefly. This fixes the "logged out but shown
+    FREE" bug on the dispatch board.
+    """
     from routers import ws as ws_router
-    from routers.signal import registry as signal_registry
-    return ws_router.manager.is_online(nurse) or signal_registry.is_online(nurse)
+    return ws_router.manager.is_online(nurse)
 
 
 async def nurse_availability(db) -> list[dict]:
-    """Per-nurse availability for the admin dispatch board (free/busy + online)."""
+    """Per-nurse availability for the admin dispatch board.
+
+    Reports the explicit three-state status (available/busy/offline) plus the
+    booleans the existing admin.html expects (online/busy) so the board keeps
+    working while it is upgraded.
+    """
     from pg_database import get_conn, get_nurse_routing_map
-    from database import get_active_alert_counts_by_nurse
+    from database import get_active_alert_counts_by_nurse, count_active_dispatch_by_nurse
+    from dispatch import STATUS_OFFLINE, STATUS_AVAILABLE, STATUS_BUSY
 
     active_counts = await get_active_alert_counts_by_nurse(db)
+    disp_counts = await count_active_dispatch_by_nurse(db)
     async for conn in get_conn():
         routing_map = await get_nurse_routing_map(conn)
         break
@@ -64,23 +70,40 @@ async def nurse_availability(db) -> list[dict]:
 
     nurses: list[dict] = []
     for u, info in sorted(routing_map.items(), key=lambda kv: kv[1]["full_name"]):
-        held = active_counts.get(u, 0)
+        online = nurse_is_online(u)
+        held_alerts = active_counts.get(u, 0)
+        held_disp = disp_counts.get(u, 0)
+        on_call = signal_registry.is_busy(u)
+        manual = u in MANUAL_BUSY
+        busy = online and (on_call or held_alerts > 0 or held_disp > 0 or manual)
+
+        if not online:
+            status = STATUS_OFFLINE
+        elif busy:
+            status = STATUS_BUSY
+        else:
+            status = STATUS_AVAILABLE
+
         reasons = []
-        if signal_registry.is_busy(u):
+        if on_call:
             reasons.append("On a call")
-        if held > 0:
-            reasons.append(f"Handling {held} request{'s' if held != 1 else ''}")
-        if u in MANUAL_BUSY:
+        total_held = held_alerts + held_disp
+        if total_held > 0:
+            reasons.append(f"Handling {total_held} request{'s' if total_held != 1 else ''}")
+        if manual:
             reasons.append("Marked busy")
+
         nurses.append({
             "username": u,
             "full_name": info["full_name"],
             "ward": info["ward"],
-            "online": nurse_is_online(u),
-            "busy": nurse_is_busy(u, active_counts),
-            "manual_busy": u in MANUAL_BUSY,
+            "online": online,
+            "status": status,                 # "available" | "busy" | "offline"
+            "available": status == STATUS_AVAILABLE,
+            "busy": busy,
+            "manual_busy": manual,
             "busy_reason": " · ".join(reasons),
-            "active_alerts": held,
+            "active_alerts": total_held,
         })
     return nurses
 
@@ -90,54 +113,30 @@ async def route_alert(
     *,
     room_id: str,
     alert_id: int,
-    payload_json: str,
+    payload_json: str,          # kept for call-site compatibility (unused now)
     exclude: set[str] | None = None,
     is_reroute: bool = False,
     allow_supervisor: bool = True,  # kept for call-site compatibility; unused
 ) -> tuple[str | None, bool]:
-    """Deliver an alert to the nurses assigned to the patient's room.
+    """Hand a freshly created alert to the dispatch engine.
 
-    Behaviour:
-      • Send to every assigned nurse that is online.
-      • If no assigned nurse is online (or the room has no assignment), broadcast
-        to all nurses as a fallback.
-    Returns (routed_to_or_None, fell_back). `routed_to` is set to the first
-    assigned nurse delivered to (for display/audit); None when broadcast.
+    Returns (routed_to_or_None, fell_back) for backwards-compatible logging:
+      • routed_to = the primary nurse when the alert was offered to her,
+      • None + fell_back=True when it broadcast to free nurses immediately.
     """
-    from routers import ws as ws_router
-    from database import set_alert_routed_to, record_reroute
-    from pg_database import get_conn, get_nurses_for_room
+    from database import get_alert_by_id
+    from dispatch import start_dispatch
 
-    exclude = exclude or set()
-
-    async for conn in get_conn():
-        assigned_all = await get_nurses_for_room(conn, room_id)
-        break
-
-    assigned = [n for n in assigned_all if n not in exclude]
-    manager = ws_router.manager
-    record = record_reroute if is_reroute else set_alert_routed_to
-
-    # Deliver to every online assigned nurse; remember the first success.
-    first_delivered: str | None = None
-    for nurse in assigned:
-        if await manager.send_to_nurse(nurse, payload_json):
-            if first_delivered is None:
-                first_delivered = nurse
-
-    logger.info(
-        "[ROUTE%s] alert=%d room=%s assigned=%s delivered_to=%s",
-        "/reroute" if is_reroute else "", alert_id, room_id, assigned, first_delivered,
-    )
-
-    if first_delivered is None:
-        # Nobody assigned reachable → broadcast so it's never dropped.
-        await manager.broadcast(payload_json)
-        await record(db, alert_id, None, True)
+    alert = await get_alert_by_id(db, alert_id)
+    if alert is None:
+        logger.warning("[ROUTE] alert %d missing — cannot dispatch", alert_id)
         return None, True
 
-    await record(db, alert_id, first_delivered, False)
-    return first_delivered, False
+    result = await start_dispatch(db, alert)
+    state = result.get("state")
+    if state == "pending_primary":
+        return result.get("primary"), False
+    return None, True
 
 
 async def redirect_alert(
@@ -145,21 +144,36 @@ async def redirect_alert(
     *,
     alert_id: int,
     target_nurse: str,
-    payload_json: str,
+    payload_json: str,          # kept for call-site compatibility (unused now)
 ) -> tuple[bool, str]:
-    """Dispatcher override: deliver an alert to a SPECIFIC nurse.
-    Falls back to broadcast if that nurse is offline."""
-    from routers import ws as ws_router
-    from database import record_reroute
+    """Admin/dispatcher override: assign an alert to a SPECIFIC nurse.
 
-    manager = ws_router.manager
-    delivered = await manager.send_to_nurse(target_nurse, payload_json)
-    if delivered:
-        await record_reroute(db, alert_id, target_nurse, False)
-        logger.info("[REDIRECT] alert=%d manually sent to %s", alert_id, target_nurse)
-        return True, f"Alert {alert_id} redirected to {target_nurse}"
+    Routes through the dispatch engine so the target must be AVAILABLE; an
+    offline or busy nurse is rejected (the admin board only offers available
+    nurses, and this re-validates at click time)."""
+    from database import get_dispatch_by_alert, get_alert_by_id
+    from dispatch import admin_reassign, start_dispatch
 
-    await manager.broadcast(payload_json)
-    await record_reroute(db, alert_id, None, True)
-    logger.warning("[REDIRECT] target %s offline for alert=%d — broadcast", target_nurse, alert_id)
-    return False, f"{target_nurse} is offline; alert {alert_id} broadcast to all nurses instead"
+    alert = await get_alert_by_id(db, alert_id)
+    if alert is None:
+        return False, f"Alert {alert_id} not found"
+
+    row = await get_dispatch_by_alert(db, alert_id)
+    if row is None:
+        # No dispatch request yet (legacy alert) — start one, then reassign.
+        await start_dispatch(db, alert)
+        row = await get_dispatch_by_alert(db, alert_id)
+    if row is None:
+        return False, "Could not create a dispatch request for this alert"
+
+    res = await admin_reassign(db, row["id"], target_nurse)
+    if res.get("ok"):
+        logger.info("[REDIRECT] alert=%d assigned to %s", alert_id, target_nurse)
+        return True, f"Alert {alert_id} assigned to {target_nurse}"
+
+    err = res.get("error", "failed")
+    if err == "nurse_unavailable":
+        return False, f"{target_nurse} is offline — they must be logged in to receive the request"
+    if err in ("already_resolved", "already_handled", "alert_gone"):
+        return False, f"Alert {alert_id} was already handled"
+    return False, f"Could not reassign alert {alert_id}: {err}"
