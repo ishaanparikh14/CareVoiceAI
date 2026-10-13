@@ -177,22 +177,37 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         binding.btnMyStatus.setOnClickListener { toggleMyStatus() }
     }
 
-    /** True = I'm occupied (manually busy). Starts available. */
+    /** True = I manually marked myself occupied (override). */
     private var iAmOccupied = false
 
+    /** Holding ≥1 unacknowledged request → auto-occupied (mirrors the server). */
+    private fun hasUnackedRequests(): Boolean = allAlerts.any { !it.acknowledged }
+
+    /** Effective status = auto-occupied while holding requests, else the manual flag. */
+    private fun isEffectivelyOccupied(): Boolean = hasUnackedRequests() || iAmOccupied
+
     private fun renderStatusButton() {
-        if (iAmOccupied) {
-            binding.btnMyStatus.text = getString(R.string.nurse_status_occupied)
+        val occupied = isEffectivelyOccupied()
+        val auto = hasUnackedRequests()
+        if (occupied) {
+            val n = allAlerts.count { !it.acknowledged }
+            binding.btnMyStatus.text = if (auto)
+                getString(R.string.nurse_status_occupied) + "  ($n pending)"
+            else getString(R.string.nurse_status_occupied)
             binding.btnMyStatus.setIconResource(R.drawable.ic_cv_phone)
             binding.btnMyStatus.backgroundTintList =
                 android.content.res.ColorStateList.valueOf(
                     androidx.core.content.ContextCompat.getColor(this, R.color.cv_busy))
+            // While auto-occupied (holding requests) the toggle is locked — you
+            // can't declare yourself free until every request is acknowledged.
+            binding.btnMyStatus.isEnabled = !auto
         } else {
             binding.btnMyStatus.text = getString(R.string.nurse_status_available)
             binding.btnMyStatus.setIconResource(R.drawable.ic_cv_check)
             binding.btnMyStatus.backgroundTintList =
                 android.content.res.ColorStateList.valueOf(
                     androidx.core.content.ContextCompat.getColor(this, R.color.colorAcknowledged))
+            binding.btnMyStatus.isEnabled = true
         }
     }
 
@@ -706,6 +721,9 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         val list = if (showUnackedOnly) allAlerts.filter { !it.acknowledged }
                    else allAlerts.toList()
         adapter.submitList(list)
+        // Keep the status chip in sync: auto-occupied while any request is
+        // unacknowledged, auto-available once all are acked.
+        if (::binding.isInitialized) renderStatusButton()
         binding.tvEmpty.visibility  = if (list.isEmpty()) View.VISIBLE else View.GONE
         binding.rvAlerts.visibility = if (list.isEmpty()) View.GONE   else View.VISIBLE
     }
@@ -740,11 +758,13 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                         submitFilteredList()
                         updateCountBadge()
                         refreshDrawerAlertCount()
-                        // After acking, let the nurse tell the system they're free again
-                        // (reflects as Available on the admin dispatch board).
-                        Snackbar.make(binding.root, getString(R.string.nurse_ack_success), Snackbar.LENGTH_LONG)
-                            .setAction("I'm available") { markAvailable() }
-                            .show()
+                        // If that was the last pending request, auto-clear busy so
+                        // the admin board + this phone show Available immediately.
+                        if (!hasUnackedRequests()) {
+                            iAmOccupied = false
+                            markAvailable()
+                        }
+                        Snackbar.make(binding.root, getString(R.string.nurse_ack_success), Snackbar.LENGTH_SHORT).show()
                     } else {
                         submitFilteredList()
                         Snackbar.make(binding.root, getString(R.string.nurse_ack_failed), Snackbar.LENGTH_SHORT).show()

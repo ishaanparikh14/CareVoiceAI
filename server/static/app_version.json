@@ -1,7 +1,7 @@
 {
-  "versionCode": 13,
-  "versionName": "2.2",
+  "versionCode": 14,
+  "versionName": "2.3",
   "apkUrl": "/static/carevoice-latest.apk",
-  "changelog": "Fix: a request assigned or broadcast to a nurse no longer disappears from their dashboard on refresh - it stays until acknowledged, declined, or taken by someone else.",
+  "changelog": "A nurse is now automatically marked Occupied while she has unacknowledged requests, and returns to Available once she acknowledges them all - reflected on both her phone and the admin dashboard.",
   "mandatory": false
 }
