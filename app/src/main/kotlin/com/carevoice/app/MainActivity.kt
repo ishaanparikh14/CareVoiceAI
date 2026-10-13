@@ -305,6 +305,25 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
         layout.addView(etServerUrl)
 
+        // Voice-note language: the language the patient speaks notes in AND the
+        // language received notes are translated/spoken into (en / hi / de).
+        val pad2 = (12 * resources.displayMetrics.density).toInt()
+        val vnLabels = arrayOf("English", "हिंदी (Hindi)", "Deutsch (German)")
+        val vnCodes  = arrayOf("en", "hi", "de")
+        val vnLang = prefs.getString("voice_note_lang", "en") ?: "en"
+        val vnLabel = TextView(this).apply {
+            text = "Voice note language (speak & listen)"
+            setPadding(0, pad2, 0, (4 * resources.displayMetrics.density).toInt())
+        }
+        val vnSpinner = android.widget.Spinner(this).apply {
+            adapter = android.widget.ArrayAdapter(
+                this@MainActivity, android.R.layout.simple_spinner_dropdown_item, vnLabels
+            )
+            setSelection(vnCodes.indexOf(vnLang).coerceAtLeast(0))
+        }
+        layout.addView(vnLabel)
+        layout.addView(vnSpinner)
+
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.settings_title))
             .setView(layout)
@@ -313,6 +332,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 if (newUrl.isNotBlank()) {
                     prefs.edit().putString(ServerUploader.KEY_SERVER_URL, newUrl).apply()
                 }
+                prefs.edit().putString("voice_note_lang", vnCodes[vnSpinner.selectedItemPosition]).apply()
             }
             .setNegativeButton(getString(R.string.settings_cancel), null)
             .show()

@@ -1,7 +1,7 @@
 {
-  "versionCode": 14,
-  "versionName": "2.3",
+  "versionCode": 15,
+  "versionName": "2.4",
   "apkUrl": "/static/carevoice-latest.apk",
-  "changelog": "A nurse is now automatically marked Occupied while she has unacknowledged requests, and returns to Available once she acknowledges them all - reflected on both her phone and the admin dashboard.",
+  "changelog": "A nurse handling a reassigned request can now call that patient and send voice notes to them (resolved across the full ward while the request is active). Voice-note speak/listen language is now chosen in Settings and used for translation too.",
   "mandatory": false
 }

@@ -449,17 +449,35 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         layout.addView(langLabel)
         layout.addView(spinner)
 
+        // Voice-note language: the language you speak notes in AND the language
+        // received notes are translated/spoken into (en / hi / de).
+        val vnLang = voicePrefs.getString("voice_note_lang", "en") ?: "en"
+        val vnSpinner = android.widget.Spinner(this).apply {
+            adapter = android.widget.ArrayAdapter(
+                this@NurseActivity, android.R.layout.simple_spinner_dropdown_item, labels
+            )
+            setSelection(codes.indexOf(vnLang).coerceAtLeast(0))
+        }
+        val vnLabel = TextView(this).apply {
+            text = "Voice note language (speak & listen)"
+            setPadding(0, pad, 0, (4 * dp).toInt())
+        }
+        layout.addView(vnLabel)
+        layout.addView(vnSpinner)
+
         AlertDialog.Builder(this)
             .setTitle("Voice Alerts")
             .setView(layout)
             .setPositiveButton("Save") { _, _ ->
                 val on   = cb.isChecked
                 val code = codes[spinner.selectedItemPosition]
+                val vnCode = codes[vnSpinner.selectedItemPosition]
                 tts.enabled = on
                 tts.setLanguage(code)
                 voicePrefs.edit()
                     .putBoolean(KEY_VOICE_ON, on)
                     .putString(KEY_VOICE_LANG, code)
+                    .putString("voice_note_lang", vnCode)
                     .apply()
             }
             .setNegativeButton(getString(R.string.settings_cancel), null)
@@ -551,7 +569,7 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     /** Long-press an alert card: open that room's voice notes or reply to it. */
     private fun openVoiceNotes(roomId: String, alertId: Int) {
         AlertDialog.Builder(this)
-            .setTitle(getString(R.string.vn_header_room, roomId, roomToPatientName[roomId.trim()] ?: ""))
+            .setTitle(getString(R.string.vn_header_room, roomId, patientNameForRoom(roomId) ?: ""))
             .setItems(arrayOf(getString(R.string.vn_received), getString(R.string.vn_send))) { _, which ->
                 if (which == 0) ReceivedVoiceNotesActivity.open(this, roomId)
                 else SendVoiceNoteActivity.open(this, roomId, alertId)
@@ -560,9 +578,11 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
             .show()
     }
 
-    /** Place a real-time WebRTC voice call to the patient in [roomId]. */
+    /** Place a real-time WebRTC voice call to the patient in [roomId].
+     *  Resolves via own rooms first, then the full ward (so a reassigned/
+     *  broadcast request to another room can still be called). */
     private fun callPatientInRoom(roomId: String) {
-        val patientUser = roomToPatient[roomId.trim()]
+        val patientUser = patientUserForRoom(roomId)
         if (patientUser == null) {
             android.widget.Toast.makeText(this, "No patient mapped to room $roomId", android.widget.Toast.LENGTH_SHORT).show()
             return
@@ -574,7 +594,7 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
             return
         }
         ensureCallSignaling()
-        val name = roomToPatientName[roomId.trim()] ?: "Room $roomId"
+        val name = patientNameForRoom(roomId) ?: "Room $roomId"
         CallSession.placeCall(to = patientUser, displayName = name, roomId = roomId)
     }
 
@@ -646,8 +666,52 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                     }
                 }
             } catch (_: Exception) { /* fail-open: myRooms stays empty → show all */ }
+            // Also load the FULL ward map so a request reassigned/broadcast to this
+            // nurse (for a room she doesn't normally attend) can still resolve the
+            // patient for calling + voice notes while that request is on her board.
+            loadAllWardPatients()
             withContext(Dispatchers.Main) { loadAlerts(showLoading = true) }
         }
+    }
+
+    /** Full ward room→patient map (every patient), used to resolve reassigned
+     *  requests for calls/voice notes beyond this nurse's own assigned rooms. */
+    private val allRoomToPatient = mutableMapOf<String, String>()
+    private val allRoomToPatientName = mutableMapOf<String, String>()
+
+    private suspend fun loadAllWardPatients() {
+        try {
+            val req = Request.Builder()
+                .url("$serverUrl/auth/patients?all=true")
+                .addHeader("Authorization", "Bearer $token")
+                .build()
+            val body = http.newCall(req).execute().use { r -> r.body?.string() } ?: return
+            val arr = JSONArray(body)
+            val roomUser = mutableMapOf<String, String>()
+            val roomName = mutableMapOf<String, String>()
+            for (i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                val room = obj.optString("room_number").trim()
+                if (room.isNotEmpty()) {
+                    obj.optString("username").trim().takeIf { it.isNotEmpty() }?.let { roomUser[room] = it }
+                    obj.optString("full_name").trim().takeIf { it.isNotEmpty() }?.let { roomName[room] = it }
+                }
+            }
+            withContext(Dispatchers.Main) {
+                allRoomToPatient.clear(); allRoomToPatient.putAll(roomUser)
+                allRoomToPatientName.clear(); allRoomToPatientName.putAll(roomName)
+            }
+        } catch (_: Exception) { /* fail-open */ }
+    }
+
+    /** Resolve a room's patient username — own rooms first, then the full ward. */
+    private fun patientUserForRoom(roomId: String): String? {
+        val r = roomId.trim()
+        return roomToPatient[r] ?: allRoomToPatient[r]
+    }
+    private fun patientNameForRoom(roomId: String): String? {
+        val r = roomId.trim()
+        return roomToPatientName[r] ?: allRoomToPatientName[r]
     }
 
     /** True if the alert's room belongs to this nurse (or rooms not yet loaded). */
