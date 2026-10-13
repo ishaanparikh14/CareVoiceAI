@@ -32,6 +32,7 @@
     <string name="vn_language">मैं इस भाषा में बोल रहा/रही हूँ</string>
     <string name="vn_lang_english">English</string>
     <string name="vn_lang_hindi">हिंदी (Hindi)</string>
+    <string name="vn_lang_german">Deutsch (German)</string>
     <string name="vn_record">रिकॉर्डिंग शुरू करें</string>
     <string name="vn_stop">रोकें</string>
     <string name="vn_tap_to_record">माइक्रोफोन दबाएं और बोलें। अधिकतम 30 सेकंड।</string>
@@ -55,6 +56,7 @@
     <string name="vn_reply">जवाब दें</string>
     <string name="vn_translate_to_hi">हिंदी में अनुवाद करें</string>
     <string name="vn_translate_to_en">अंग्रेज़ी में अनुवाद करें</string>
+    <string name="vn_translate_to_de">जर्मन में अनुवाद करें</string>
     <string name="vn_translating">अनुवाद हो रहा है…</string>
     <string name="vn_listen_translation">अनुवाद सुनें</string>
     <string name="vn_translate_first_use">इस फ़ोन पर अनुवाद हो रहा है। पहली बार भाषा पैक डाउनलोड होगा।</string>

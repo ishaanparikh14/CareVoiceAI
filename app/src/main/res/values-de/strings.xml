@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  German (de) overrides for the voice-note feature. Every other string falls back
+  to the default values/strings.xml. Keys MUST match the default locale.
+-->
+<resources>
+    <string name="app_name">CareVoice AI</string>
+
+    <!-- Patient home -->
+    <string name="home_greeting">Hallo,</string>
+    <string name="home_subtitle">Wie können wir Ihnen heute helfen?</string>
+    <string name="home_status_label">Status</string>
+    <string name="home_sos_caption">Für dringende Hilfe tippen oder einfach „Hilfe“ sagen.</string>
+    <string name="home_quick_actions">Schnellaktionen</string>
+    <string name="home_send_note_sub">Nachricht aufnehmen</string>
+    <string name="home_inbox_sub">Antworten der Pflegekraft</string>
+    <string name="btn_stop_recording">Aufnahme stoppen</string>
+    <string name="nurse_station_label">Pflegestation</string>
+    <string name="nurse_greeting">Willkommen,</string>
+    <string name="nurse_stat_pending">Ausstehend</string>
+    <string name="nurse_stat_critical">Kritisch</string>
+    <string name="nurse_stat_rooms">Meine Zimmer</string>
+
+    <!-- Voice notes -->
+    <string name="vn_received">Empfangene Sprachnachrichten</string>
+    <string name="vn_received_room">Sprachnachrichten — Zimmer %1$s</string>
+    <string name="vn_send">Sprachnachricht senden</string>
+    <string name="vn_send_to">Senden an</string>
+    <string name="vn_to_your_nurse">Ihre Pflegekraft (Zimmer %1$s)</string>
+    <string name="vn_loading_rooms">Ihre Zimmer werden geladen…</string>
+    <string name="vn_no_rooms">Ihnen ist noch kein Zimmer zugewiesen.</string>
+    <string name="vn_language">Ich spreche auf</string>
+    <string name="vn_lang_english">English</string>
+    <string name="vn_lang_hindi">हिंदी (Hindi)</string>
+    <string name="vn_lang_german">Deutsch (German)</string>
+    <string name="vn_record">Aufnahme starten</string>
+    <string name="vn_stop">Stopp</string>
+    <string name="vn_tap_to_record">Tippen Sie auf das Mikrofon und sprechen Sie. Bis zu 30 Sekunden.</string>
+    <string name="vn_recording">Aufnahme… tippen Sie erneut, um zu stoppen.</string>
+    <string name="vn_recorded">Aufgenommen. Hören Sie es ab, dann senden oder verwerfen.</string>
+    <string name="vn_preview">Abspielen</string>
+    <string name="vn_discard">Verwerfen</string>
+    <string name="vn_send_btn">Sprachnachricht senden</string>
+    <string name="vn_sending">Sprachnachricht wird gesendet…</string>
+    <string name="vn_sent">Sprachnachricht gesendet</string>
+    <string name="vn_failed">Upload fehlgeschlagen. Versuchen Sie es erneut.</string>
+    <string name="vn_no_audio">Es wurde kein Ton aufgenommen. Versuchen Sie es erneut.</string>
+    <string name="vn_mic_denied">Für die Aufnahme einer Sprachnachricht ist die Mikrofonberechtigung erforderlich.</string>
+    <string name="vn_none">Noch keine Sprachnachrichten empfangen.</string>
+    <string name="vn_header_room">Zimmer %1$s · %2$s</string>
+    <string name="vn_from_patient">Patient</string>
+    <string name="vn_from_nurse">Pflegekraft</string>
+    <string name="vn_no_transcript">(Kein Transkript verfügbar)</string>
+    <string name="vn_play_voice">Stimme abspielen</string>
+    <string name="vn_play_failed">Diese Sprachnachricht konnte nicht abgespielt werden.</string>
+    <string name="vn_reply">Antworten</string>
+    <string name="vn_translate_to_hi">Ins Hindi übersetzen</string>
+    <string name="vn_translate_to_en">Ins Englische übersetzen</string>
+    <string name="vn_translate_to_de">Ins Deutsche übersetzen</string>
+    <string name="vn_translating">Übersetzen…</string>
+    <string name="vn_listen_translation">Übersetzung anhören</string>
+    <string name="vn_translate_first_use">Übersetzung auf diesem Telefon. Beim ersten Mal wird ein Sprachpaket heruntergeladen.</string>
+    <string name="vn_translate_failed">Übersetzung fehlgeschlagen. Prüfen Sie Ihre Internetverbindung für den einmaligen Sprachdownload.</string>
+</resources>
