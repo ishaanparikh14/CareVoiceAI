@@ -57,6 +57,38 @@ def set_nurse_broadcaster(fn):
     _nurse_broadcast = fn
 
 
+# ── Room-indexed patient socket registry ──────────────────────────────────────
+# Maps room_id -> set of that room's live patient WebSockets, so other modules
+# (department_dispatch) can push feedback like "sent to canteen" / "done" to the
+# patient without a button press. Single-process assumption, like the nurse WS.
+import asyncio as _asyncio
+_patient_socks: dict[str, set] = {}
+
+
+def _register_patient(room_id: str, ws) -> None:
+    _patient_socks.setdefault(room_id, set()).add(ws)
+
+
+def _unregister_patient(room_id: str, ws) -> None:
+    socks = _patient_socks.get(room_id)
+    if socks:
+        socks.discard(ws)
+        if not socks:
+            _patient_socks.pop(room_id, None)
+
+
+async def notify_room(room_id: str, payload: dict) -> bool:
+    """Push a JSON payload to every live patient socket in a room. Best-effort;
+    returns True if at least one delivery succeeded."""
+    socks = list(_patient_socks.get(room_id, set()))
+    if not socks:
+        return False
+    results = await _asyncio.gather(
+        *[ws.send_json(payload) for ws in socks], return_exceptions=True
+    )
+    return any(not isinstance(r, Exception) for r in results)
+
+
 @router.websocket("/ws/patient")
 async def patient_ws(
     websocket: WebSocket,
@@ -91,6 +123,7 @@ async def patient_ws(
         return
 
     logger.info("Patient WS connected: %s (room=%s)", username, room_id)
+    _register_patient(room_id, websocket)
 
     # Notify client the connection is live
     await websocket.send_json({
@@ -225,17 +258,40 @@ async def patient_ws(
                     alert_message  = getattr(result, "alert_message", None),
                 )
                 payload_json = WsAlertPayload.from_alert_response(alert_resp).model_dump_json()
+
+                # Department routing (same central agent as /audio/ingest). In
+                # shadow mode it only logs; otherwise it may hand the request to
+                # a department and tell us the nurse is no longer the owner.
+                nurse_primary = True
+                dept_result = None
                 try:
-                    from routing import route_alert
-                    routed_to, fell_back = await route_alert(
-                        db, room_id=room_id, alert_id=alert_id, payload_json=payload_json,
+                    from department_dispatch import process_alert_routing
+                    dept_result = await process_alert_routing(
+                        db, alert_id=alert_id, room_id=room_id,
+                        transcript=result.transcript, intent=result.intent,
+                        stt_avg_logprob=getattr(result, "stt_avg_logprob", None),
+                        stt_corrected=getattr(result, "stt_corrected", False),
                     )
-                    logger.info("WS alert %d routed_to=%s fell_back=%s",
-                                alert_id, routed_to, fell_back)
+                    nurse_primary = dept_result.get("nurse_primary", True)
                 except Exception:
-                    logger.exception("Scheduler routing failed for WS alert %d — broadcasting", alert_id)
-                    if _nurse_broadcast is not None:
-                        await _nurse_broadcast(payload_json)
+                    logger.exception("Department routing failed for WS alert %d — nurse default", alert_id)
+                    nurse_primary = True
+
+                if nurse_primary:
+                    try:
+                        from routing import route_alert
+                        routed_to, fell_back = await route_alert(
+                            db, room_id=room_id, alert_id=alert_id, payload_json=payload_json,
+                        )
+                        logger.info("WS alert %d routed_to=%s fell_back=%s",
+                                    alert_id, routed_to, fell_back)
+                    except Exception:
+                        logger.exception("Scheduler routing failed for WS alert %d — broadcasting", alert_id)
+                        if _nurse_broadcast is not None:
+                            await _nurse_broadcast(payload_json)
+                else:
+                    logger.info("WS alert %d routed to department(s) %s — nurse not paged",
+                                alert_id, (dept_result or {}).get("departments"))
 
             # Confirm to patient
             await websocket.send_json({
@@ -261,4 +317,5 @@ async def patient_ws(
         logger.warning("Patient %s WS error: %s", username, exc)
     finally:
         vad.reset()
+        _unregister_patient(room_id, websocket)
         logger.info("VAD session released for patient %s", username)

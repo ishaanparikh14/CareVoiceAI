@@ -58,6 +58,10 @@ class ConnectionManager:
         # Admin dashboard sockets (so dispatch escalations can be pushed to the
         # admin in real time). Admins also receive broadcasts for monitoring.
         self._admins: Set[WebSocket] = set()
+        # Department-staff sockets (canteen/pharmacy/floor managers), keyed by
+        # username, so department_dispatch can push a request to one person.
+        self._by_dept_user: dict[str, Set[WebSocket]] = {}
+        self._dept_user_of: dict[WebSocket, str] = {}
         # Callback invoked (nurse_username, online) whenever a nurse's presence
         # changes, so dispatch can react to a logout/disconnect. Injected by
         # main.py to avoid a circular import.
@@ -90,9 +94,44 @@ class ConnectionManager:
             nurse or "?", is_admin, len(self._connections),
         )
 
+    async def connect_department(self, ws: WebSocket, username: str) -> None:
+        """Register a department-staff socket (canteen/pharmacy/floor manager)."""
+        await ws.accept()
+        self._connections.add(ws)
+        self._by_dept_user.setdefault(username, set()).add(ws)
+        self._dept_user_of[ws] = username
+        logger.info("Department WS connected (user=%s). Active connections: %d",
+                    username, len(self._connections))
+
+    def is_dept_user_online(self, username: str) -> bool:
+        return bool(self._by_dept_user.get(username))
+
+    async def send_to_dept_user(self, username: str, message: str) -> bool:
+        """Deliver to all of one department user's sockets. True if any succeeded."""
+        socks = list(self._by_dept_user.get(username, set()))
+        if not socks:
+            return False
+        results = await asyncio.gather(
+            *[ws.send_text(message) for ws in socks], return_exceptions=True
+        )
+        ok = False
+        for ws, result in zip(socks, results):
+            if isinstance(result, Exception):
+                self.disconnect(ws)
+            else:
+                ok = True
+        return ok
+
     def disconnect(self, ws: WebSocket) -> None:
         self._connections.discard(ws)
         self._admins.discard(ws)
+        dept_user = self._dept_user_of.pop(ws, None)
+        if dept_user:
+            socks = self._by_dept_user.get(dept_user)
+            if socks:
+                socks.discard(ws)
+                if not socks:
+                    self._by_dept_user.pop(dept_user, None)
         nurse = self._nurse_of.pop(ws, None)
         if nurse:
             socks = self._by_nurse.get(nurse)
@@ -274,5 +313,72 @@ async def nurse_ws(
         logger.info("Nurse '%s' disconnected (WebSocketDisconnect)", nurse_id)
     except Exception as exc:
         logger.warning("Nurse '%s' WebSocket error: %s", nurse_id, exc)
+    finally:
+        manager.disconnect(websocket)
+
+
+# ── Department WebSocket route ────────────────────────────────────────────────
+
+@router.websocket("/ws/department")
+async def department_ws(
+    websocket: WebSocket,
+    token: str = Query(default="", description="JWT access token (department-staff account)"),
+):
+    """Persistent socket for a department dashboard (canteen/pharmacy/floor mgr).
+
+    The server pushes `department_request` frames to the resolved assignee and
+    `department_cancelled` frames when a request is taken/escalated elsewhere.
+    Auth: the JWT role must be one of the department-staff roles.
+    """
+    await websocket.accept()
+    raw = token or websocket.query_params.get("token", "")
+    try:
+        from auth import decode_token, DEPARTMENT_ROLES
+        payload = decode_token(raw)
+        username = payload.get("sub")
+        role = payload.get("role")
+    except Exception:
+        await websocket.send_json({"event": "error", "message": "Invalid or expired token"})
+        await websocket.close(code=4001)
+        return
+    if role not in DEPARTMENT_ROLES or not username:
+        await websocket.send_json({"event": "error", "message": "Department-staff role required"})
+        await websocket.close(code=4003)
+        return
+
+    await manager.connect_department(websocket, username)
+    await websocket.send_json({"event": "connected", "username": username, "role": role})
+
+    # Deliver any requests that are already pending for this user (offline catch-up).
+    try:
+        import aiosqlite
+        from database import list_department_requests_for_user
+        async with aiosqlite.connect(settings.DB_PATH) as db:
+            db.row_factory = aiosqlite.Row
+            pending = await list_department_requests_for_user(db, username)
+        for r in pending:
+            await websocket.send_json({
+                "event": "department_request", "request_id": r["id"], "alert_id": r["alert_id"],
+                "department": r["department"], "room_id": r["room_id"], "floor": r["floor"],
+                "transcript": r["transcript"], "created_at": r["created_at"],
+                "state": r["state"], "repeat_count": r["repeat_count"], "backlog": True,
+            })
+    except Exception as exc:
+        logger.warning("Department backlog delivery failed for %s: %s", username, exc)
+
+    try:
+        while True:
+            try:
+                message = await asyncio.wait_for(
+                    websocket.receive_text(), timeout=settings.WS_KEEPALIVE_SECONDS
+                )
+                if message != "pong":
+                    logger.debug("Department WS '%s' msg: %s", username, message)
+            except asyncio.TimeoutError:
+                await websocket.send_text("ping")
+    except WebSocketDisconnect:
+        logger.info("Department user '%s' disconnected", username)
+    except Exception as exc:
+        logger.warning("Department WS '%s' error: %s", username, exc)
     finally:
         manager.disconnect(websocket)

@@ -62,6 +62,7 @@ class TokenResponse(BaseModel):
     user_id:      int
     room_number:  str | None = None   # populated for patients only
     ward:         str | None = None   # populated for nurses only
+    department:   str | None = None   # populated for department-staff accounts
 
 
 class UserProfile(BaseModel):
@@ -71,10 +72,12 @@ class UserProfile(BaseModel):
     role:        str
     ward:        str | None = None
     room_number: str | None = None
+    department:  str | None = None
     # Patient extras
     age:         int | None = None
     diagnosis:   str | None = None
     attending:   str | None = None
+    diet_restriction: str | None = None
 
 
 class PatientSummary(BaseModel):
@@ -186,10 +189,11 @@ async def login(
             )
 
     token = create_access_token({
-        "sub":       user["username"],
-        "user_id":   user["id"],
-        "role":      user["role"],
-        "full_name": user["full_name"],
+        "sub":        user["username"],
+        "user_id":    user["id"],
+        "role":       user["role"],
+        "full_name":  user["full_name"],
+        "department": user.get("department"),
     })
 
     # For patients, fetch room_number so the UI can show/use it immediately.
@@ -208,6 +212,7 @@ async def login(
         user_id      = user["id"],
         room_number  = room_number,
         ward         = user.get("ward"),
+        department   = user.get("department"),
     )
 
 
@@ -223,11 +228,12 @@ async def me(
     conn: asyncpg.Connection = Depends(get_conn),
 ):
     profile = UserProfile(
-        user_id   = current_user["user_id"],
-        username  = current_user["username"],
-        full_name = current_user["full_name"],
-        role      = current_user["role"],
-        ward      = current_user.get("ward"),
+        user_id    = current_user["user_id"],
+        username   = current_user["username"],
+        full_name  = current_user["full_name"],
+        role       = current_user["role"],
+        ward       = current_user.get("ward"),
+        department = current_user.get("department"),
     )
 
     if current_user["role"] == "patient":
@@ -237,6 +243,9 @@ async def me(
             profile.age         = patient["age"]
             profile.diagnosis   = patient["diagnosis"]
             profile.attending   = patient["attending"]
+            profile.diet_restriction = (
+                patient["diet_restriction"] if "diet_restriction" in patient.keys() else "none"
+            )
 
     return profile
 

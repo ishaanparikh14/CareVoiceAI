@@ -89,6 +89,50 @@ CREATE TABLE IF NOT EXISTS dispatch_requests (
 );
 CREATE INDEX IF NOT EXISTS idx_dispatch_state ON dispatch_requests (state);
 CREATE INDEX IF NOT EXISTS idx_dispatch_alert ON dispatch_requests (alert_id);
+
+-- ── Department requests (canteen / pharmacy / housekeeping routing) ─────────
+-- One row per NON-NURSE slice of a request routed by department_router.py.
+-- Modeled on dispatch_requests but with its own acknowledge/escalate loop:
+--   pending      → delivered to the department user, awaiting acknowledge
+--   acknowledged → a department member took it
+--   done         → completed
+--   escalated    → SLA elapsed with no ack → handed to the nurse via dispatch.py
+--   cancelled    → superseded / alert gone
+-- Dedupe: repeat requests for the same (room_id, department) inside the window
+-- increment repeat_count on the live row instead of inserting a duplicate.
+CREATE TABLE IF NOT EXISTS department_requests (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    alert_id            INTEGER NOT NULL,
+    department          TEXT    NOT NULL,          -- canteen | pharmacy | housekeeping
+    target_username     TEXT,                      -- resolved assignee (dept account / floor mgr)
+    room_id             TEXT    NOT NULL,
+    floor               TEXT,                      -- room's floor (housekeeping routing)
+    state               TEXT    NOT NULL DEFAULT 'pending',
+    transcript          TEXT    NOT NULL,
+    predicted_department TEXT   NOT NULL,          -- what the router predicted (audit)
+    routing_reason      TEXT    NOT NULL,          -- intent_map | keyword | model
+    confidence          REAL    NOT NULL DEFAULT 0.0,
+    model_version       TEXT    NOT NULL DEFAULT '',
+    shadow              INTEGER NOT NULL DEFAULT 1, -- 1 = would-route only, not actually dispatched
+    repeat_count        INTEGER NOT NULL DEFAULT 0, -- deduped repeats merged into this row
+    acknowledged_by     TEXT,
+    created_at          TEXT    NOT NULL,
+    acknowledged_at     TEXT,
+    done_at             TEXT,
+    escalated_at        TEXT,
+    updated_at          TEXT    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_deptreq_state ON department_requests (state);
+CREATE INDEX IF NOT EXISTS idx_deptreq_alert ON department_requests (alert_id);
+CREATE INDEX IF NOT EXISTS idx_deptreq_target ON department_requests (target_username, state);
+CREATE INDEX IF NOT EXISTS idx_deptreq_dedupe ON department_requests (room_id, department, state);
+
+-- Runtime department feature-flag overrides (admin toggles persist a restart).
+CREATE TABLE IF NOT EXISTS department_flags (
+    key        TEXT PRIMARY KEY,   -- e.g. 'enabled','shadow','canteen','pharmacy','housekeeping'
+    value      INTEGER NOT NULL,   -- 0 | 1
+    updated_at TEXT    NOT NULL
+);
 """
 
 # Columns added after the original release. SQLite has no "ADD COLUMN IF NOT
@@ -107,6 +151,16 @@ _MIGRATIONS = [
     "ALTER TABLE alerts ADD COLUMN fell_back INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE alerts ADD COLUMN routed_at TEXT",
     "ALTER TABLE alerts ADD COLUMN reroute_count INTEGER NOT NULL DEFAULT 0",
+    # Department-routing audit: what the router decided for this alert and why.
+    # dept_routed_to = department(s) chosen, comma-joined; NULL/'nurse' = nurse.
+    "ALTER TABLE alerts ADD COLUMN dept_routed_to TEXT",
+    "ALTER TABLE alerts ADD COLUMN dept_confidence REAL",
+    "ALTER TABLE alerts ADD COLUMN dept_reason TEXT",
+    "ALTER TABLE alerts ADD COLUMN dept_model_version TEXT",
+    "ALTER TABLE alerts ADD COLUMN dept_shadow INTEGER NOT NULL DEFAULT 0",
+    # Marks an alert that reached the nurse as an ESCALATED department fallback
+    # (SLA elapsed) so the nurse UI can render it distinctly from a fresh call.
+    "ALTER TABLE alerts ADD COLUMN dept_escalated INTEGER NOT NULL DEFAULT 0",
 ]
 
 
@@ -714,3 +768,264 @@ async def release_all_routed_alerts(db: aiosqlite.Connection) -> int:
     )
     await db.commit()
     return cur.rowcount if cur.rowcount is not None else 0
+
+
+# ── Department routing audit on the alert row ─────────────────────────────────
+
+async def set_alert_department_routing(
+    db: aiosqlite.Connection,
+    alert_id: int,
+    *,
+    dept_routed_to: str | None,
+    confidence: float | None,
+    reason: str | None,
+    model_version: str | None,
+    shadow: bool,
+) -> None:
+    """Record the router's decision on the alert row for admin audit.
+
+    dept_routed_to is a comma-joined list of non-nurse departments, or None/'nurse'
+    when the request stayed with the nurse. This is write-only audit metadata and
+    never changes the nurse dispatch path.
+    """
+    try:
+        await db.execute(
+            """
+            UPDATE alerts
+            SET dept_routed_to = ?, dept_confidence = ?, dept_reason = ?,
+                dept_model_version = ?, dept_shadow = ?
+            WHERE id = ?
+            """,
+            (dept_routed_to, confidence, reason, model_version, 1 if shadow else 0, alert_id),
+        )
+        await db.commit()
+    except Exception as exc:
+        logger.warning("Could not set department routing audit for alert %d: %s", alert_id, exc)
+
+
+async def mark_alert_dept_escalated(db: aiosqlite.Connection, alert_id: int) -> None:
+    """Flag that this alert reached the nurse as an escalated department fallback."""
+    try:
+        await db.execute(
+            "UPDATE alerts SET dept_escalated = 1 WHERE id = ?", (alert_id,)
+        )
+        await db.commit()
+    except Exception as exc:
+        logger.warning("Could not mark alert %d dept_escalated: %s", alert_id, exc)
+
+
+# ── Department request helpers ────────────────────────────────────────────────
+# The durable side of department_dispatch.py's acknowledge/escalate loop. The
+# in-memory SLA timers and WebSocket fan-out live in department_dispatch.py;
+# this module owns the authoritative SQLite state.
+
+_DEPT_TERMINAL = ("done", "escalated", "cancelled")
+
+
+async def find_dedupe_department_request(
+    db: aiosqlite.Connection, *, room_id: str, department: str, within_seconds: int
+) -> dict | None:
+    """Return a still-open (pending/acknowledged) request for the same room +
+    department created within `within_seconds`, for dedupe. Newest first."""
+    cutoff = datetime.now(timezone.utc).timestamp() - within_seconds
+    async with db.execute(
+        """
+        SELECT * FROM department_requests
+        WHERE room_id = ? AND department = ? AND state IN ('pending','acknowledged')
+        ORDER BY created_at DESC
+        """,
+        (room_id, department),
+    ) as cur:
+        rows = await cur.fetchall()
+    for row in rows:
+        d = dict(row)
+        try:
+            ts = datetime.fromisoformat(d["created_at"].replace("Z", "+00:00")).timestamp()
+        except Exception:
+            continue
+        if ts >= cutoff:
+            return d
+    return None
+
+
+async def bump_department_repeat(db: aiosqlite.Connection, request_id: int) -> None:
+    """Increment the repeat counter on a deduped department request."""
+    now = utcnow()
+    await db.execute(
+        "UPDATE department_requests SET repeat_count = repeat_count + 1, updated_at = ? WHERE id = ?",
+        (now, request_id),
+    )
+    await db.commit()
+
+
+async def create_department_request(
+    db: aiosqlite.Connection,
+    *,
+    alert_id: int,
+    department: str,
+    target_username: str | None,
+    room_id: str,
+    floor: str | None,
+    transcript: str,
+    predicted_department: str,
+    routing_reason: str,
+    confidence: float,
+    model_version: str,
+    shadow: bool,
+    initial_state: str = "pending",
+) -> int:
+    """Create a department request row and return its id."""
+    now = utcnow()
+    cur = await db.execute(
+        """
+        INSERT INTO department_requests
+            (alert_id, department, target_username, room_id, floor, state, transcript,
+             predicted_department, routing_reason, confidence, model_version, shadow,
+             created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (alert_id, department, target_username, room_id, floor, initial_state, transcript,
+         predicted_department, routing_reason, confidence, model_version, 1 if shadow else 0,
+         now, now),
+    )
+    await db.commit()
+    return cur.lastrowid
+
+
+async def get_department_request(db: aiosqlite.Connection, request_id: int) -> dict | None:
+    async with db.execute(
+        "SELECT * FROM department_requests WHERE id = ?", (request_id,)
+    ) as cur:
+        row = await cur.fetchone()
+    return dict(row) if row else None
+
+
+async def acknowledge_department_request(
+    db: aiosqlite.Connection, request_id: int, by_username: str
+) -> dict | None:
+    """Mark a pending department request acknowledged. Atomic: only succeeds from
+    'pending', so two dashboards can't both claim it. Returns the row on success,
+    None if it was already taken / terminal."""
+    now = utcnow()
+    cur = await db.execute(
+        """
+        UPDATE department_requests
+        SET state = 'acknowledged', acknowledged_by = ?, acknowledged_at = ?, updated_at = ?
+        WHERE id = ? AND state = 'pending'
+        """,
+        (by_username, now, now, request_id),
+    )
+    await db.commit()
+    if cur.rowcount == 0:
+        return None
+    return await get_department_request(db, request_id)
+
+
+async def complete_department_request(
+    db: aiosqlite.Connection, request_id: int, by_username: str | None = None
+) -> dict | None:
+    """Mark a department request done (from pending or acknowledged)."""
+    now = utcnow()
+    cur = await db.execute(
+        """
+        UPDATE department_requests
+        SET state = 'done', done_at = ?, updated_at = ?,
+            acknowledged_by = COALESCE(acknowledged_by, ?)
+        WHERE id = ? AND state IN ('pending','acknowledged')
+        """,
+        (now, now, by_username, request_id),
+    )
+    await db.commit()
+    if cur.rowcount == 0:
+        return None
+    return await get_department_request(db, request_id)
+
+
+async def mark_department_escalated(db: aiosqlite.Connection, request_id: int) -> dict | None:
+    """Move a still-open request to 'escalated' (SLA elapsed, handed to nurse).
+    Guarded so an ack/done that landed first is never clobbered."""
+    now = utcnow()
+    cur = await db.execute(
+        """
+        UPDATE department_requests
+        SET state = 'escalated', escalated_at = ?, updated_at = ?
+        WHERE id = ? AND state = 'pending'
+        """,
+        (now, now, request_id),
+    )
+    await db.commit()
+    if cur.rowcount == 0:
+        return None
+    return await get_department_request(db, request_id)
+
+
+async def cancel_department_request(db: aiosqlite.Connection, request_id: int) -> None:
+    now = utcnow()
+    await db.execute(
+        """
+        UPDATE department_requests
+        SET state = 'cancelled', updated_at = ?
+        WHERE id = ? AND state NOT IN ('done','escalated','cancelled')
+        """,
+        (now, request_id),
+    )
+    await db.commit()
+
+
+async def list_department_requests_for_user(
+    db: aiosqlite.Connection, username: str, *, include_done: bool = False, limit: int = 100
+) -> list[dict]:
+    """Requests assigned to one department user (their dashboard queue)."""
+    if include_done:
+        query = """
+            SELECT * FROM department_requests
+            WHERE target_username = ?
+            ORDER BY created_at DESC LIMIT ?
+        """
+    else:
+        query = """
+            SELECT * FROM department_requests
+            WHERE target_username = ? AND state IN ('pending','acknowledged')
+            ORDER BY created_at DESC LIMIT ?
+        """
+    async with db.execute(query, (username, limit)) as cur:
+        rows = await cur.fetchall()
+    return [dict(r) for r in rows]
+
+
+async def get_active_department_requests(db: aiosqlite.Connection) -> list[dict]:
+    """All non-terminal, non-shadow department requests — for SLA timer re-arm."""
+    async with db.execute(
+        """
+        SELECT * FROM department_requests
+        WHERE state = 'pending' AND shadow = 0
+        ORDER BY created_at ASC
+        """
+    ) as cur:
+        rows = await cur.fetchall()
+    return [dict(r) for r in rows]
+
+
+# ── Department feature-flag persistence (admin runtime toggles) ───────────────
+
+async def get_department_flags(db: aiosqlite.Connection) -> dict[str, bool]:
+    """Return any admin-persisted department flag overrides as {key: bool}."""
+    try:
+        async with db.execute("SELECT key, value FROM department_flags") as cur:
+            rows = await cur.fetchall()
+    except Exception:
+        return {}
+    return {r["key"]: bool(r["value"]) for r in rows}
+
+
+async def set_department_flag(db: aiosqlite.Connection, key: str, value: bool) -> None:
+    now = utcnow()
+    await db.execute(
+        """
+        INSERT INTO department_flags (key, value, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+        """,
+        (key, 1 if value else 0, now),
+    )
+    await db.commit()

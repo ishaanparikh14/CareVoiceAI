@@ -45,6 +45,7 @@ body {
 .logo p   { font-size: .78rem; color: #718096; text-align: center; margin-top: 2px; }
 
 /* ── Role toggle ──────────────────────────────────────────────────── */
+.role-toggle-4 { grid-template-columns: 1fr 1fr 1fr 1fr !important; }
 .role-toggle {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -77,6 +78,9 @@ body {
 .role-btn.active.nurse-active   { color: #2b6cb0; }
 .role-btn.active.patient-active { color: #276749; }
 .role-btn.active.admin-active   { color: #6b46c1; }
+.role-btn.active.staff-active   { color: #b7791f; }
+/* Narrower padding + label so four tabs fit the card width. */
+.role-toggle-4 .role-btn { padding: 9px 4px; font-size: .82rem; }
 
 /* ── Form fields ──────────────────────────────────────────────────── */
 .field { margin-bottom: 18px; }
@@ -170,7 +174,7 @@ input:focus {
   </div>
 
   <!-- Role toggle -->
-  <div class="role-toggle">
+  <div class="role-toggle role-toggle-4">
     <button class="role-btn active nurse-active" id="btn-nurse" onclick="setRole('nurse')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -192,6 +196,13 @@ input:focus {
         <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
       </svg>
       Admin
+    </button>
+    <button class="role-btn" id="btn-staff" onclick="setRole('staff')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.5"><rect x="3" y="7" width="18" height="13" rx="2"/>
+        <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+      </svg>
+      Staff
     </button>
   </div>
 
@@ -241,7 +252,7 @@ let currentRole = 'nurse';
 function setRole(role) {
   currentRole = role;
 
-  ['nurse', 'patient', 'admin'].forEach(r => {
+  ['nurse', 'patient', 'admin', 'staff'].forEach(r => {
     const btn = document.getElementById(`btn-${r}`);
     btn.classList.toggle('active',        role === r);
     btn.classList.toggle(`${r}-active`,   role === r);
@@ -251,14 +262,19 @@ function setRole(role) {
     role === 'patient' ? 'block' : 'none';
 
   const btn = document.getElementById('login-btn');
-  const labels = { nurse: 'Sign In as Nurse', patient: 'Sign In as Patient', admin: 'Sign In as Admin' };
+  const labels = {
+    nurse: 'Sign In as Nurse', patient: 'Sign In as Patient',
+    admin: 'Sign In as Admin', staff: 'Sign In as Staff',
+  };
   btn.textContent = labels[role];
-  btn.className   = `btn-login ${role}`;
+  // The Staff tab reuses the admin button styling (both use the staff accent via CSS).
+  btn.className   = `btn-login ${role === 'staff' ? 'admin' : role}`;
 
-  document.getElementById('username').placeholder =
-    role === 'nurse'   ? 'e.g. nurse_anna'   :
-    role === 'patient' ? 'e.g. patient_raj'  :
-                         'e.g. admin';
+  const placeholders = {
+    nurse: 'e.g. nurse_anna', patient: 'e.g. patient_raj',
+    admin: 'e.g. admin', staff: 'e.g. canteen_cathy',
+  };
+  document.getElementById('username').placeholder = placeholders[role];
   hideError();
 }
 
@@ -290,11 +306,17 @@ async function doLogin(e) {
       return;
     }
 
-    // Verify role matches selected tab
-    if (data.role !== currentRole) {
+    // The "Staff" tab is for department accounts (canteen / pharmacy / floor
+    // manager / housekeeping). Those roles must come in through the Staff tab;
+    // every other role must match its own tab.
+    const DEPT_ROLES = ['canteen', 'pharmacy', 'floor_manager', 'housekeeping'];
+    const isDeptStaff = DEPT_ROLES.includes(data.role);
+    const tabOk = isDeptStaff ? (currentRole === 'staff') : (data.role === currentRole);
+    if (!tabOk) {
       showError(
-        `This account is a "${data.role}" account. ` +
-        `Please select the correct role tab.`
+        isDeptStaff
+          ? `This is a department-staff account. Please select the "Staff" tab.`
+          : `This account is a "${data.role}" account. Please select the correct role tab.`
       );
       return;
     }
@@ -308,20 +330,18 @@ async function doLogin(e) {
     const room = data.room_number ?? roomInput ?? '';
     localStorage.setItem('cv_room', room);
     if (data.ward) localStorage.setItem('cv_ward', data.ward);
+    if (data.department) localStorage.setItem('cv_department', data.department);
 
     // Route by role
-    if (data.role === 'admin') {
-      window.location.href = '/admin';
-    } else {
-      window.location.href = '/dashboard';
-    }
+    window.location.href = destFor(data.role);
 
   } catch (err) {
     showError('Network error — is the server running?');
   } finally {
     btn.disabled    = false;
-    const labels = { nurse: 'Sign In as Nurse', patient: 'Sign In as Patient', admin: 'Sign In as Admin' };
-    btn.textContent = labels[currentRole];
+    const labels = { nurse: 'Sign In as Nurse', patient: 'Sign In as Patient',
+                     admin: 'Sign In as Admin', staff: 'Sign In as Staff' };
+    btn.textContent = labels[currentRole] || 'Sign In';
   }
 }
 
@@ -346,10 +366,17 @@ window.addEventListener('DOMContentLoaded', () => {
       else { localStorage.clear(); }
     }).then(me => {
       if (!me) return;
-      window.location.href = me.role === 'admin' ? '/admin' : '/dashboard';
+      window.location.href = destFor(me.role);
     }).catch(() => {});
   }
 });
+
+// Destination page for a given role. Department-staff → the department board.
+function destFor(role) {
+  if (role === 'admin') return '/admin';
+  if (['canteen', 'pharmacy', 'floor_manager'].includes(role)) return '/dept';
+  return '/dashboard';
+}
 </script>
 </body>
 </html>

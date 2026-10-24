@@ -70,6 +70,37 @@ class Settings(BaseSettings):
     # How often the reroute loop scans for stale routed alerts.
     REROUTE_CHECK_INTERVAL_SECONDS: int = 10
 
+    # ── Department routing (canteen / pharmacy / housekeeping) ────────────────
+    # A decision layer that runs AFTER intent classification and BEFORE the nurse
+    # dispatch. Nurse-bound requests keep using dispatch.py unchanged.
+    #
+    # These are the STARTUP defaults. Admins can flip them at runtime through
+    # PATCH /admin/department/config; runtime changes are persisted in SQLite
+    # (department_flags) and override these on the next start, so a department
+    # switched off in an emergency stays off after a restart.
+    DEPARTMENT_ROUTING_ENABLED: bool = True    # master switch (False = legacy behaviour only)
+    # SHADOW MODE (default ON): the router runs and its decision is logged on the
+    # alert row, but EVERY request still goes to the nurse exactly as before.
+    DEPARTMENT_ROUTING_SHADOW: bool = True
+    DEPT_CANTEEN_ENABLED: bool = True
+    DEPT_PHARMACY_ENABLED: bool = True
+    DEPT_HOUSEKEEPING_ENABLED: bool = True
+
+    # Asymmetric confidence gate: misrouting to the nurse is cheap, routing a
+    # clinical request AWAY from the nurse is expensive, so any non-nurse route
+    # needs at least this much confidence.
+    DEPT_MIN_CONFIDENCE: float = 0.85
+    # Whisper average segment log-probability below this means the transcript is
+    # unreliable; every non-nurse route is vetoed and the nurse gets the request.
+    DEPT_MIN_STT_AVG_LOGPROB: float = -0.7
+
+    # A department request nobody acknowledges within this many seconds is
+    # escalated to the nurse through the existing dispatch engine.
+    DEPT_ACK_SLA_SECONDS: int = 150
+    # Repeat requests for the same room + department inside this window are merged
+    # into one request with a repeat counter instead of creating duplicates.
+    DEPT_DEDUPE_WINDOW_SECONDS: int = 120
+
     # ── CORS ──────────────────────────────────────────────────────────────────
     # Restrict to specific origins in production for security.
     # Defaults to empty list, which the server interprets as ["*"] (allow all)

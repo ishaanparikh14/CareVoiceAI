@@ -243,6 +243,7 @@ async def admin_patients(
             "age":           p["age"],
             "diagnosis":     p["diagnosis"],
             "attending":     p["attending"],
+            "diet_restriction": p["diet_restriction"] if "diet_restriction" in p.keys() else "none",
             "is_discharged": p["is_discharged"],
             "admitted_at":   p["admitted_at"].isoformat() if p["admitted_at"] else None,
             "registered_at": p["registered_at"].isoformat() if p["registered_at"] else None,
@@ -699,4 +700,41 @@ async def discharge_patient(
         "full_name":     row["full_name"],
         "room_number":   row["room_number"],
         "is_discharged": row["is_discharged"],
+    }
+
+
+# ── Patient diet restriction (editable field; gates Food/Water routing) ───────
+
+_VALID_DIETS = {"none", "npo", "diabetic", "dysphagia", "low_sodium", "fluid_restricted", "renal"}
+
+
+class DietRequest(BaseModel):
+    diet_restriction: str = Field(..., description="none|npo|diabetic|dysphagia|low_sodium|fluid_restricted|renal")
+
+
+@router.post("/patients/{patient_id}/diet", summary="Set a patient's diet restriction")
+async def set_patient_diet(
+    patient_id: int,
+    body: DietRequest,
+    admin: AdminUser,
+    conn: asyncpg.Connection = Depends(get_conn),
+):
+    """Edit the diet restriction. A restriction other than 'none' makes the
+    central router send Food/Water requests to the NURSE instead of the canteen."""
+    diet = body.diet_restriction.strip().lower()
+    if diet not in _VALID_DIETS:
+        raise HTTPException(status_code=422, detail=f"Invalid diet. Use one of {sorted(_VALID_DIETS)}")
+    row = await conn.fetchrow(
+        """
+        UPDATE patients SET diet_restriction = $1 WHERE id = $2
+        RETURNING id, full_name, room_number, diet_restriction
+        """,
+        diet, patient_id,
+    )
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
+    logger.info("Patient %d diet set to '%s' by admin %s", patient_id, diet, admin["username"])
+    return {
+        "id": row["id"], "full_name": row["full_name"],
+        "room_number": row["room_number"], "diet_restriction": row["diet_restriction"],
     }

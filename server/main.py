@@ -41,6 +41,7 @@ from routers import admin as admin_router
 from routers import signal as signal_router
 from routers import voice_notes as voice_notes_router
 from routers import dispatch_router
+from routers import department_api as department_api_router
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -175,6 +176,14 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning("Dispatch timer re-arm failed: %s", exc)
 
+    # Re-arm department-request SLA timers (acknowledge/escalate loop) so a
+    # restart never strands a pending canteen/pharmacy/housekeeping request.
+    try:
+        from department_dispatch import rearm_pending_department_timers
+        await rearm_pending_department_timers()
+    except Exception as exc:
+        logger.warning("Department SLA timer re-arm failed: %s", exc)
+
     # Start the auto-escalation background task (Urgent → Critical after timeout).
     escalation_task = asyncio.create_task(_escalation_loop())
 
@@ -252,6 +261,7 @@ app.include_router(patient_ws_router.router)   # WS   /ws/patient  (always-on VA
 app.include_router(signal_router.router)       # WS   /ws/signal   (WebRTC call signaling relay)
 app.include_router(voice_notes_router.router)  # POST /voice-notes, GET /voice-notes/latest, /{id}/audio
 app.include_router(dispatch_router.router)     # POST /dispatch/{id}/accept|decline|reassign, /dispatch/status
+app.include_router(department_api_router.router)  # /department/*, /admin/department/* (central routing agent)
 
 # ── Static pages (registered BEFORE admin API router so /admin exact match ──
 # serves the HTML page while /admin/stats etc. route into the API)
@@ -279,6 +289,11 @@ async def login_page():
 async def admin_page():
     """Serve the admin monitoring dashboard (requires admin role — JS handles guard)."""
     return FileResponse(str(_static_dir / "admin.html"))
+
+@app.get("/dept", include_in_schema=False)
+async def dept_page():
+    """Serve the department dashboard (canteen/pharmacy/floor mgr — JS enforces the JWT)."""
+    return FileResponse(str(_static_dir / "dept.html"), headers=_NO_CACHE)
 
 @app.get("/", include_in_schema=False)
 async def root():

@@ -104,7 +104,7 @@ async def upload_voice_note(
     try:
         # Transcribe with the existing Whisper pipeline (sender's language hint).
         try:
-            transcript, _detected = await asyncio.to_thread(_transcribe, data, language)
+            transcript, _detected, *_ = await asyncio.to_thread(_transcribe, data, language)
         except Exception as exc:
             log.warning("Voice-note STT failed (storing without transcript): %s", exc)
             transcript = ""

@@ -113,12 +113,16 @@ async def get_current_user(
         )
 
     return {
-        "user_id":   row["id"],
-        "username":  row["username"],
-        "full_name": row["full_name"],
-        "role":      row["role"],
-        "ward":      row["ward"],
-        "is_active": row["is_active"],
+        "user_id":    row["id"],
+        "username":   row["username"],
+        "full_name":  row["full_name"],
+        "role":       row["role"],
+        "ward":       row["ward"],
+        "is_active":  row["is_active"],
+        # department is only set for department-staff accounts (canteen/pharmacy/
+        # housekeeping). Nullable for everyone else. Guarded with a key check so
+        # a pre-migration DB row without the column doesn't blow up.
+        "department": (row["department"] if "department" in row.keys() else None),
     }
 
 
@@ -159,10 +163,40 @@ def require_admin(current_user: CurrentUser) -> dict:
     return current_user
 
 
+# Roles that represent department staff, and the department each maps to.
+# floor_manager handles the 'housekeeping' department for the floors it covers.
+DEPARTMENT_ROLES = {
+    "canteen":       "canteen",
+    "pharmacy":      "pharmacy",
+    "floor_manager": "housekeeping",
+}
+
+
+def require_department_staff(current_user: CurrentUser) -> dict:
+    """Role guard — raises 403 unless the user is a department-staff account
+    (canteen, pharmacy, or floor_manager). Used by the department dashboard API."""
+    if current_user["role"] not in DEPARTMENT_ROLES:
+        raise HTTPException(
+            status_code = status.HTTP_403_FORBIDDEN,
+            detail      = "Department-staff role required for this endpoint",
+        )
+    return current_user
+
+
+def department_of(current_user: dict) -> str | None:
+    """The department a user serves: the explicit `department` column if set,
+    else derived from the role (floor_manager → housekeeping)."""
+    dep = current_user.get("department")
+    if dep:
+        return dep
+    return DEPARTMENT_ROLES.get(current_user.get("role"))
+
+
 # Typed aliases for role-guarded routes
-NurseUser   = Annotated[dict, Depends(require_nurse)]
-PatientUser = Annotated[dict, Depends(require_patient)]
-AdminUser   = Annotated[dict, Depends(require_admin)]
+NurseUser      = Annotated[dict, Depends(require_nurse)]
+PatientUser    = Annotated[dict, Depends(require_patient)]
+AdminUser      = Annotated[dict, Depends(require_admin)]
+DepartmentUser = Annotated[dict, Depends(require_department_staff)]
 
 
 # ── Login helper (used by auth router) ───────────────────────────────────────

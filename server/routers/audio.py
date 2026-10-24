@@ -190,8 +190,31 @@ async def ingest_audio(
         alert_message  = result.alert_message,
     )
 
-    # ── 8. Route to the next available assigned nurse (fallback: broadcast) ──
-    if result.should_alert:
+    # ── 8. Department routing + nurse dispatch ────────────────────────────────
+    # The central router decides nurse vs canteen/pharmacy/housekeeping. It runs
+    # BEFORE the should_alert suppression gate so facility requests (which the
+    # intent model labels Other/Information and would otherwise be dropped) can
+    # still reach housekeeping. In shadow mode it only logs its decision and the
+    # nurse path below is taken exactly as before.
+    nurse_primary = True
+    dept_result = None
+    try:
+        from department_dispatch import process_alert_routing
+        dept_result = await process_alert_routing(
+            db, alert_id=alert_id, room_id=room_id, transcript=result.transcript,
+            intent=result.intent,
+            stt_avg_logprob=getattr(result, "stt_avg_logprob", None),
+            stt_corrected=getattr(result, "stt_corrected", False),
+        )
+        nurse_primary = dept_result.get("nurse_primary", True)
+    except Exception:
+        logger.exception("Department routing failed for alert %d — defaulting to nurse", alert_id)
+        nurse_primary = True
+
+    # Nurse dispatch runs when the router kept the nurse as the primary owner.
+    # A request fully handled by departments (nurse_primary=False) skips it.
+    # should_alert still suppresses pure non-care chatter that stayed with the nurse.
+    if nurse_primary and (result.should_alert or (dept_result and dept_result.get("departments"))):
         payload = WsAlertPayload.from_alert_response(alert_resp)
         try:
             from routing import route_alert
@@ -206,6 +229,11 @@ async def ingest_audio(
             logger.exception("Scheduler routing failed for alert %d — broadcasting", alert_id)
             if _ws_broadcast is not None:
                 await _ws_broadcast(payload.model_dump_json())
+    elif not nurse_primary:
+        logger.info(
+            "Alert %d routed to department(s) %s — nurse not paged (notice sent)",
+            alert_id, (dept_result or {}).get("departments"),
+        )
     else:
         logger.info(
             "Alert %d suppressed (intent=%s) — general speech, nurses not paged",

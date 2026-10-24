@@ -71,6 +71,14 @@ class PipelineResult(BaseModel):
     # be forwarded to nurses as an alert (still stored for audit purposes).
     should_alert: bool = Field(default=True, description="False for general non-medical speech")
 
+    # ── STT quality signals (used by the department router's confidence gate) ──
+    # Whisper's average segment log-probability (higher = more confident). None
+    # for the stub. stt_corrected is True when an Indic-script auto-correction
+    # fired (Urdu→Hindi / Devanagari→Kannada), meaning the transcript is less
+    # certain — both bias the department router toward the nurse.
+    stt_avg_logprob: float | None = Field(default=None, description="Whisper avg segment logprob")
+    stt_corrected:   bool = Field(default=False, description="True if a script auto-correction fired")
+
     # Stub flag — False once real models are plugged in
     is_stub: bool = Field(default=True, description="True when produced by pipeline_stub")
 

@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS users (
     username        TEXT  NOT NULL UNIQUE,
     password_hash   TEXT  NOT NULL,
     full_name       TEXT  NOT NULL,
-    role            TEXT  NOT NULL CHECK (role IN ('nurse','patient','admin')),
+    role            TEXT  NOT NULL CHECK (role IN ('nurse','patient','admin','canteen','pharmacy','floor_manager')),
     ward            TEXT,
     is_active       BOOLEAN NOT NULL DEFAULT TRUE,
     approval_status TEXT NOT NULL DEFAULT 'approved'
@@ -185,6 +185,17 @@ _SEED_NURSES = [
     ("nurse_carol", "pass123", "Carol Singh RN",    "Ward B"),
 ]
 
+# Department-staff accounts (per-person, NOT shared). floor managers handle
+# housekeeping/facility requests for the floors they cover and may have a deputy.
+# (username, plain_pw, full_name, role, department, floors_csv, deputy_username)
+_SEED_DEPARTMENT_STAFF = [
+    ("canteen_cathy",  "dept1234", "Cathy Lewis (Canteen)",       "canteen",       "canteen",      "",    None),
+    ("pharmacy_pete",  "dept1234", "Pete Rao (Pharmacy)",         "pharmacy",      "pharmacy",     "",    None),
+    ("floor_mgr_4",    "dept1234", "Fatima Noor (Floor 4 Mgr)",   "floor_manager", "housekeeping", "4",   "floor_mgr_5"),
+    ("floor_mgr_5",    "dept1234", "Sam Patel (Floor 5 Mgr)",     "floor_manager", "housekeeping", "5",   "floor_mgr_4"),
+    ("floor_mgr_6",    "dept1234", "Liu Wei (Floor 6 Mgr)",       "floor_manager", "housekeeping", "6",   None),
+]
+
 _SEED_PATIENTS = [
     # (username,       plain_pw,  full_name,           room,  age, diagnosis,              attending)
     ("patient_raj",  "pass123", "Rajesh Kumar",       "4B",  58,  "Post-op recovery",     "nurse_anna"),
@@ -216,6 +227,10 @@ async def init_pg_db() -> None:
 
         # Migrate: add routing columns (competencies/status/supervisor/acuity).
         await _migrate_routing_columns(conn)
+
+        # Migrate: department-routing columns (users.department + floor-manager
+        # coverage, rooms.floor, patients.diet_restriction) and seed demo data.
+        await _migrate_department_columns(conn)
 
         # Ensure at least one admin exists regardless of seed state
         admin_count = await conn.fetchval("SELECT COUNT(*) FROM users WHERE role='admin'")
@@ -304,13 +319,16 @@ async def _migrate_role_constraint(conn: asyncpg.Connection) -> None:
         defn = await conn.fetchval(
             "SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname = $1", conname
         )
-        if defn and "admin" not in defn:
+        # Recreate the constraint whenever any required role is missing (this
+        # already added 'admin'; now it also adds the department-staff roles).
+        required_roles = ("admin", "canteen", "pharmacy", "floor_manager")
+        if defn and any(r not in defn for r in required_roles):
             await conn.execute(f'ALTER TABLE users DROP CONSTRAINT "{conname}"')
             await conn.execute(
                 "ALTER TABLE users ADD CONSTRAINT users_role_check "
-                "CHECK (role IN ('nurse','patient','admin'))"
+                "CHECK (role IN ('nurse','patient','admin','canteen','pharmacy','floor_manager'))"
             )
-            logger.info("Migrated users.role CHECK constraint to include 'admin'")
+            logger.info("Migrated users.role CHECK constraint to include admin + department roles")
 
 
 async def _migrate_routing_columns(conn: asyncpg.Connection) -> None:
@@ -349,6 +367,82 @@ async def _migrate_routing_columns(conn: asyncpg.Connection) -> None:
             room, esi,
         )
     logger.info("Routing columns ensured (competencies/status/supervisor/acuity)")
+
+
+async def _migrate_department_columns(conn: asyncpg.Connection) -> None:
+    """Add department-routing columns (idempotent) and seed demo data.
+
+    users.department   — for department-staff accounts: 'canteen'|'pharmacy'|'housekeeping'.
+                         Preferred over inventing a role per department so adding
+                         e.g. a dietitian later is data, not a migration.
+    users.floors       — comma-separated floors a floor_manager covers (housekeeping).
+    users.deputy_username — a floor_manager's deputy (covers breaks/shifts).
+    rooms.floor        — the room's floor (NOT parsed from room_number).
+    patients.diet_restriction — 'none'|'npo'|'diabetic'|'dysphagia'|'low_sodium'|...
+                         Editable in the patient profile; gates Food/Water routing.
+    """
+    await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS department TEXT")
+    await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS floors TEXT NOT NULL DEFAULT ''")
+    await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS deputy_username TEXT")
+    await conn.execute("ALTER TABLE rooms ADD COLUMN IF NOT EXISTS floor TEXT")
+    await conn.execute("ALTER TABLE patients ADD COLUMN IF NOT EXISTS diet_restriction TEXT NOT NULL DEFAULT 'none'")
+
+    # Seed room floors for the demo rooms (explicit, not string-parsed).
+    room_floors = [("4B", "4"), ("4C", "4"), ("5A", "5"), ("5B", "5"), ("6A", "6")]
+    for room, fl in room_floors:
+        await conn.execute(
+            "UPDATE rooms SET floor = $2 WHERE room_number = $1 AND (floor IS NULL OR floor = '')",
+            room, fl,
+        )
+
+    # Seed RANDOM-but-deterministic diet restrictions across the demo patients so
+    # both the diet gate (NURSE) and the open path (CANTEEN) are exercisable.
+    # Deterministic here = fixed demo assignment; still editable in the profile.
+    demo_diets = [
+        ("patient_raj",  "diabetic"),   # Food/Water → nurse (gated)
+        ("patient_sara", "none"),       # Food/Water → canteen (open) + nurse notice
+        ("patient_tom",  "npo"),        # Food/Water → nurse (gated)
+        ("patient_lima", "none"),       # Food/Water → canteen (open) + nurse notice
+        ("patient_zoe",  "dysphagia"),  # Food/Water → nurse (gated)
+    ]
+    for username, diet in demo_diets:
+        await conn.execute(
+            """
+            UPDATE patients p
+            SET diet_restriction = $2
+            FROM users u
+            WHERE p.user_id = u.id AND u.username = $1 AND p.diet_restriction = 'none'
+            """,
+            username, diet,
+        )
+
+    # Seed per-person department-staff accounts (NOT shared logins).
+    await _seed_department_staff(conn)
+    logger.info("Department columns ensured + demo data seeded (floors, diets, dept staff)")
+
+
+async def _seed_department_staff(conn: asyncpg.Connection) -> None:
+    """Insert per-person canteen / pharmacy / floor-manager accounts (idempotent).
+
+    Floor managers cover specific floors (housekeeping) and may name a deputy.
+    """
+    from passlib.context import CryptContext
+    pwd_ctx = CryptContext(schemes=["argon2"], deprecated="auto")
+
+    for username, plain_pw, full_name, role, department, floors, deputy in _SEED_DEPARTMENT_STAFF:
+        hashed = pwd_ctx.hash(plain_pw)
+        await conn.execute(
+            """
+            INSERT INTO users (username, password_hash, full_name, role, department, floors, deputy_username, approval_status)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'approved')
+            ON CONFLICT (username) DO UPDATE
+                SET department = EXCLUDED.department,
+                    floors = EXCLUDED.floors,
+                    deputy_username = EXCLUDED.deputy_username
+            """,
+            username, hashed, full_name, role, department, floors, deputy,
+        )
+    logger.info("Department staff accounts ensured (%d)", len(_SEED_DEPARTMENT_STAFF))
 
 
 async def _seed_admins(conn: asyncpg.Connection) -> None:
@@ -540,19 +634,25 @@ async def update_user_profile(
 
 
 async def update_patient_profile(
-    conn:        asyncpg.Connection,
-    user_id:     int,
-    full_name:   str | None = None,
-    room_number: str | None = None,
-    age:         int | None = None,
-    diagnosis:   str | None = None,
-    attending:   str | None = None,
+    conn:             asyncpg.Connection,
+    user_id:          int,
+    full_name:        str | None = None,
+    room_number:      str | None = None,
+    age:              int | None = None,
+    diagnosis:        str | None = None,
+    attending:        str | None = None,
+    diet_restriction: str | None = None,
 ) -> None:
     """Update mutable patient-specific fields. Also syncs full_name on patients row."""
     if full_name is not None:
         await conn.execute(
             "UPDATE patients SET full_name = $1 WHERE user_id = $2",
             full_name, user_id,
+        )
+    if diet_restriction is not None:
+        await conn.execute(
+            "UPDATE patients SET diet_restriction = $1 WHERE user_id = $2",
+            diet_restriction, user_id,
         )
     if room_number is not None:
         await conn.execute(
@@ -630,7 +730,7 @@ async def get_all_patients_admin(conn: asyncpg.Connection) -> list[asyncpg.Recor
         """
         SELECT
             p.id, p.room_number, p.full_name, p.age, p.diagnosis,
-            p.attending, p.admitted_at, p.is_discharged,
+            p.attending, p.admitted_at, p.is_discharged, p.diet_restriction,
             u.username, u.id AS user_id, u.is_active, u.created_at AS registered_at
         FROM patients p
         JOIN users u ON u.id = p.user_id
@@ -1137,3 +1237,104 @@ async def get_voice_note(
 ) -> asyncpg.Record | None:
     """Return a single voice-note row by id, or None."""
     return await conn.fetchrow("SELECT * FROM voice_notes WHERE id = $1", note_id)
+
+
+# ── Department-routing query helpers ──────────────────────────────────────────
+
+async def get_floor_for_room(room_number: str) -> str | None:
+    """Resolve a room's floor from the rooms table (own pooled connection)."""
+    if _pool is None or not room_number:
+        return None
+    try:
+        async with _pool.acquire() as conn:
+            return await conn.fetchval(
+                "SELECT floor FROM rooms WHERE room_number = $1", room_number.strip()
+            )
+    except Exception:
+        return None
+
+
+async def get_diet_restriction_for_room(room_number: str) -> str | None:
+    """Resolve the active patient's diet restriction for a room (gates catering)."""
+    if _pool is None or not room_number:
+        return None
+    try:
+        async with _pool.acquire() as conn:
+            return await conn.fetchval(
+                """
+                SELECT diet_restriction FROM patients
+                WHERE room_number = $1 AND is_discharged = FALSE
+                ORDER BY admitted_at DESC LIMIT 1
+                """,
+                room_number.strip(),
+            )
+    except Exception:
+        return None
+
+
+async def get_department_user(conn: asyncpg.Connection, department: str) -> asyncpg.Record | None:
+    """Return a single active account for a global department (canteen/pharmacy)."""
+    return await conn.fetchrow(
+        """
+        SELECT username, full_name, department, floors, deputy_username
+        FROM users
+        WHERE department = $1 AND is_active = TRUE
+        ORDER BY username
+        LIMIT 1
+        """,
+        department,
+    )
+
+
+async def get_floor_manager_chain(conn: asyncpg.Connection, floor: str | None) -> list[dict]:
+    """Return the housekeeping escalation chain for a floor, in order:
+       [primary floor manager, deputy, ...any other housekeeping staff].
+    Each item: {username, full_name, is_deputy}. Empty if none.
+    """
+    if not floor:
+        # No floor → fall back to all housekeeping staff.
+        rows = await conn.fetch(
+            """
+            SELECT username, full_name FROM users
+            WHERE department = 'housekeeping' AND is_active = TRUE
+            ORDER BY username
+            """
+        )
+        return [{"username": r["username"], "full_name": r["full_name"], "is_deputy": False} for r in rows]
+
+    rows = await conn.fetch(
+        """
+        SELECT username, full_name, floors, deputy_username
+        FROM users
+        WHERE department = 'housekeeping' AND is_active = TRUE
+        ORDER BY username
+        """
+    )
+    chain: list[dict] = []
+    deputies: list[str] = []
+    covered = []
+    for r in rows:
+        floors = {f.strip() for f in (r["floors"] or "").split(",") if f.strip()}
+        if floor in floors:
+            covered.append(r)
+            if r["deputy_username"]:
+                deputies.append(r["deputy_username"])
+    for r in covered:
+        chain.append({"username": r["username"], "full_name": r["full_name"], "is_deputy": False})
+    # Append named deputies (if not already in the chain).
+    seen = {c["username"] for c in chain}
+    for dep in deputies:
+        if dep in seen:
+            continue
+        drow = await conn.fetchrow(
+            "SELECT username, full_name FROM users WHERE username = $1 AND is_active = TRUE", dep
+        )
+        if drow:
+            chain.append({"username": drow["username"], "full_name": drow["full_name"], "is_deputy": True})
+            seen.add(dep)
+    # Finally, any other housekeeping staff as a last-resort pool.
+    for r in rows:
+        if r["username"] not in seen:
+            chain.append({"username": r["username"], "full_name": r["full_name"], "is_deputy": True})
+            seen.add(r["username"])
+    return chain

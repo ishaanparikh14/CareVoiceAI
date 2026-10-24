@@ -171,9 +171,18 @@ async def _authorized_pair(
     target_role = target["role"]
 
     if sender_role == "patient" and target_role == "nurse":
-        # The patient's own record names their attending nurse.
+        # 1) The target is the patient's permanent attending nurse.
         patient = await get_patient_by_user_id(conn, sender_user_id) if sender_user_id else None
-        return bool(patient and patient["attending"] == target_username)
+        if patient and patient["attending"] == target_username:
+            return True
+        # 2) OR the target nurse is CURRENTLY HANDLING a request for this
+        #    patient's room (reassigned/broadcast). This mirrors the nurse→patient
+        #    rule so the patient can ACCEPT and negotiate media with a nurse who
+        #    was handed their request — otherwise the call rings but never
+        #    connects (the patient's call_accept/SDP/ICE back would be denied).
+        if patient and patient["room_number"]:
+            return await _nurse_handling_room(target_username, patient["room_number"])
+        return False
 
     if sender_role == "nurse" and target_role == "patient":
         # 1) The nurse is the permanent attending nurse of the target patient.

@@ -255,10 +255,12 @@ async def process_audio(wav_bytes: bytes, room_id: str, lang_hint: str | None = 
     import asyncio
 
     # ── Step 1: Transcribe ────────────────────────────────────────────────────
-    transcript, language = await asyncio.get_event_loop().run_in_executor(
+    transcript, language, stt_avg_logprob, stt_corrected = await asyncio.get_event_loop().run_in_executor(
         None, _transcribe, wav_bytes, lang_hint
     )
-    logger.info("[PIPELINE] room=%s lang=%s transcript: %s", room_id, language, transcript)
+    logger.info("[PIPELINE] room=%s lang=%s avg_lp=%.2f corrected=%s transcript: %s",
+                room_id, language, (stt_avg_logprob if stt_avg_logprob is not None else 0.0),
+                stt_corrected, transcript)
 
     # ── Step 2: Classify intent ───────────────────────────────────────────────
     intent = _classify_intent(transcript)
@@ -289,6 +291,8 @@ async def process_audio(wav_bytes: bytes, room_id: str, lang_hint: str | None = 
         emotion        = nlp["emotion"],
         alert_message  = nlp["alert_message"],
         should_alert   = should_alert,
+        stt_avg_logprob = stt_avg_logprob,
+        stt_corrected   = stt_corrected,
         is_stub        = False,
     )
 
@@ -342,7 +346,11 @@ def _transcribe(wav_bytes: bytes, lang_hint: str | None = None) -> tuple[str, st
           - Urdu detected  → re-transcribe as Hindi (Devanagari).
           - Kannada speech mis-emitted as Devanagari → re-transcribe as Kannada
             and keep whichever pass is more confident + script-consistent.
-    Returns (transcript, language_code).
+    Returns (transcript, language_code, avg_logprob, corrected) where avg_logprob
+    is Whisper's confidence proxy for the kept pass and `corrected` is True when
+    an Indic-script auto-correction fired (Urdu→Hindi or Devanagari→Kannada).
+    The extra two fields feed the department router's confidence gate; callers
+    that only want (text, lang) can unpack the first two.
     """
     import tempfile, os
     model = _get_whisper()
@@ -359,18 +367,21 @@ def _transcribe(wav_bytes: bytes, lang_hint: str | None = None) -> tuple[str, st
         # added to _DEVANAGARI_LANGS (that block runs only on the auto-detect
         # branch where lang_hint is None/blank).
         if lang_hint in ("en", "hi", "kn", "de"):
-            text, info, _ = _run_whisper(model, tmp_path, lang_hint)
+            text, info, lp = _run_whisper(model, tmp_path, lang_hint)
             logger.info("Whisper(forced=%s): text='%s'", lang_hint, text)
-            return (text if text else "[silence]", lang_hint)
+            return (text if text else "[silence]", lang_hint, lp, False)
 
         # ── Auto-detect pass ──────────────────────────────────────────────────
         text, info, lp_auto = _run_whisper(model, tmp_path, None)
         lang = getattr(info, "language", "unknown")
+        corrected = False
+        avg_lp = lp_auto
 
         # Fix 1: Urdu → Hindi (same spoken language, different script).
         if lang == "ur":
-            text, info, _ = _run_whisper(model, tmp_path, "hi")
+            text, info, avg_lp = _run_whisper(model, tmp_path, "hi")
             lang = "hi"
+            corrected = True
             logger.info("Urdu detected → re-transcribed as Hindi (Devanagari)")
 
         # Fix 2: Kannada mis-detected as a Devanagari language. This is the main
@@ -389,9 +400,11 @@ def _transcribe(wav_bytes: bytes, lang_hint: str | None = None) -> tuple[str, st
                     lang, lp_auto, lp_kn, kn_ratio * 100, kn_text,
                 )
                 text, lang = kn_text, "kn"
+                avg_lp = lp_kn
+                corrected = True
 
         logger.info("Whisper: lang=%s text='%s'", lang, text)
-        return (text if text else "[silence]", lang)
+        return (text if text else "[silence]", lang, avg_lp, corrected)
     finally:
         try:
             os.unlink(tmp_path)

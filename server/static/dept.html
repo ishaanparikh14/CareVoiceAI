@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CareVoice — Department Dashboard</title>
+<style>
+  :root { --bg:#f1f5f9; --card:#fff; --ink:#1e293b; --muted:#64748b; --accent:#2563eb; --ok:#059669; --warn:#d97706; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+  header { background:var(--card); border-bottom:1px solid #e2e8f0; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:5; }
+  header h1 { font-size:1.05rem; margin:0; }
+  header .sub { color:var(--muted); font-size:.8rem; }
+  .badge { background:var(--accent); color:#fff; border-radius:999px; padding:2px 10px; font-size:.8rem; font-weight:700; margin-left:8px; }
+  .badge.zero { background:#cbd5e1; color:#475569; }
+  main { max-width:820px; margin:18px auto; padding:0 14px; }
+  .row { display:flex; gap:10px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
+  button { cursor:pointer; border:none; border-radius:8px; padding:8px 14px; font-weight:600; font-size:.85rem; }
+  .btn-ghost { background:#e2e8f0; color:var(--ink); }
+  .card { background:var(--card); border:1px solid #e2e8f0; border-left:4px solid var(--accent); border-radius:10px; padding:14px 16px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+  .card.ack { border-left-color:var(--warn); opacity:.85; }
+  .card .room { font-weight:800; font-size:1.05rem; }
+  .card .meta { color:var(--muted); font-size:.78rem; margin:2px 0 8px; }
+  .card .txt { font-size:.95rem; margin-bottom:10px; }
+  .card .actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .btn-ack { background:var(--accent); color:#fff; }
+  .btn-done { background:var(--ok); color:#fff; }
+  .btn-not { background:#fee2e2; color:#b91c1c; }
+  .rep { background:#fef3c7; color:#92400e; border-radius:6px; padding:1px 7px; font-size:.72rem; font-weight:700; }
+  .empty { text-align:center; color:var(--muted); padding:40px 0; }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#cbd5e1; margin-right:6px; }
+  .dot.on { background:var(--ok); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>CareVoice — <span id="dept-name">Department</span> <span id="count" class="badge zero">0</span></h1>
+    <div class="sub"><span id="conn-dot" class="dot"></span><span id="who">—</span> · <span id="conn-txt">connecting…</span></div>
+  </div>
+  <div class="row" style="margin:0">
+    <label style="font-size:.8rem;color:var(--muted)"><input type="checkbox" id="sound" checked /> sound</label>
+    <button class="btn-ghost" onclick="logout()">Sign out</button>
+  </div>
+</header>
+
+<main>
+  <div id="list"></div>
+  <div id="empty" class="empty">No pending requests. New requests will appear here.</div>
+</main>
+
+<script>
+const BASE = window.location.origin;
+let token = null;
+try { if (window.CareVoiceApp && window.CareVoiceApp.getToken) token = window.CareVoiceApp.getToken() || null; } catch (e) {}
+if (token) localStorage.setItem('cv_token', token); else token = localStorage.getItem('cv_token');
+if (!token) { window.location.href = '/login'; }
+
+const requests = new Map();   // request_id -> row
+let department = localStorage.getItem('cv_department') || '';
+
+async function api(path, opts = {}) {
+  const res = await fetch(BASE + path, {
+    ...opts,
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', ...(opts.headers || {}) },
+  });
+  if (res.status === 401 || res.status === 403) { localStorage.clear(); window.location.href = '/login'; throw new Error('Unauthorized'); }
+  if (!res.ok) { const t = await res.json().catch(()=>({})); throw new Error(t.detail || `HTTP ${res.status}`); }
+  return res.status === 204 ? null : res.json();
+}
+
+function logout() { localStorage.clear(); if (window.CareVoiceApp && window.CareVoiceApp.logout) return window.CareVoiceApp.logout(); window.location.href = '/login'; }
+
+function beep() {
+  if (!document.getElementById('sound').checked) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination); o.type = 'sine'; o.frequency.value = 880;
+    g.gain.setValueAtTime(0.001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    o.start(); o.stop(ctx.currentTime + 0.5);
+  } catch (e) {}
+}
+
+function render() {
+  const list = document.getElementById('list');
+  const rows = [...requests.values()].sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''));
+  const pending = rows.filter(r => r.state !== 'done' && r.state !== 'escalated' && r.state !== 'cancelled');
+  document.getElementById('count').textContent = pending.length;
+  document.getElementById('count').className = 'badge' + (pending.length ? '' : ' zero');
+  document.getElementById('empty').style.display = pending.length ? 'none' : 'block';
+  list.innerHTML = pending.map(r => `
+    <div class="card ${r.state === 'acknowledged' ? 'ack' : ''}">
+      <div class="room">Room ${r.room_id} ${r.repeat_count > 0 ? `<span class="rep">×${r.repeat_count + 1}</span>` : ''}</div>
+      <div class="meta">${r.department}${r.floor ? ' · floor ' + r.floor : ''} · ${new Date(r.created_at).toLocaleTimeString()} · ${r.state}</div>
+      <div class="txt">${(r.transcript || '').replace(/</g,'&lt;')}</div>
+      <div class="actions">
+        ${r.state === 'pending' ? `<button class="btn-ack" onclick="ack(${r.id})">I've got this</button>` : ''}
+        <button class="btn-done" onclick="done(${r.id})">Done</button>
+        <button class="btn-not" onclick="notMine(${r.id})">Not mine</button>
+      </div>
+    </div>`).join('');
+}
+
+async function ack(id)  { try { await api(`/department/${id}/acknowledge`, {method:'POST'}); const r = requests.get(id); if (r){ r.state='acknowledged'; render(); } } catch(e){ alert(e.message); } }
+async function done(id) { try { await api(`/department/${id}/done`, {method:'POST'}); requests.delete(id); render(); } catch(e){ alert(e.message); } }
+async function notMine(id){ if(!confirm('Send this back to the nurse?')) return; try { await api(`/department/${id}/not-mine`, {method:'POST', body: JSON.stringify({reason:'not mine'})}); requests.delete(id); render(); } catch(e){ alert(e.message); } }
+
+async function loadQueue() {
+  const data = await api('/department/requests');
+  department = data.department || department;
+  document.getElementById('dept-name').textContent = department.charAt(0).toUpperCase() + department.slice(1);
+  requests.clear();
+  (data.requests || []).forEach(r => requests.set(r.id, r));
+  render();
+}
+
+function connectWs() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}/ws/department?token=${encodeURIComponent(token)}`);
+  ws.onopen = () => { document.getElementById('conn-dot').className = 'dot on'; document.getElementById('conn-txt').textContent = 'live'; };
+  ws.onclose = () => { document.getElementById('conn-dot').className = 'dot'; document.getElementById('conn-txt').textContent = 'reconnecting…'; setTimeout(connectWs, 2500); };
+  ws.onmessage = e => {
+    if (e.data === 'ping') { try { ws.send('pong'); } catch(_){} return; }
+    let p; try { p = JSON.parse(e.data); } catch(_) { return; }
+    if (p.event === 'connected') { document.getElementById('who').textContent = p.username; }
+    else if (p.event === 'department_request') {
+      const existing = requests.get(p.request_id);
+      requests.set(p.request_id, { id: p.request_id, alert_id: p.alert_id, department: p.department,
+        room_id: p.room_id, floor: p.floor, transcript: p.transcript, created_at: p.created_at,
+        state: p.state || (existing ? existing.state : 'pending'), repeat_count: p.repeat_count || 0 });
+      if (!p.backlog) beep();
+      render();
+    } else if (p.event === 'department_cancelled') { requests.delete(p.request_id); render(); }
+  };
+}
+
+(async function init() {
+  try { await loadQueue(); } catch (e) { return; }
+  connectWs();
+})();
+</script>
+</body>
+</html>
