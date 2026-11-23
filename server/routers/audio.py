@@ -52,6 +52,10 @@ def get_pipeline():
 # ws router (which would create a circular dependency).
 _ws_broadcast = None
 
+# request_key -> IngestResponse for recent uploads (bounded, single process).
+from collections import OrderedDict
+_INGEST_KEYS: "OrderedDict[str, IngestResponse]" = OrderedDict()
+
 def set_broadcaster(fn):
     """Called from main.py after both routers are registered."""
     global _ws_broadcast
@@ -75,8 +79,16 @@ async def ingest_audio(
     audio:   UploadFile = File(..., description="WAV audio clip (16kHz mono PCM)"),
     room_id: str        = Form(..., description="Ward room identifier, e.g. '4B'"),
     lang:    str        = Form("", description="Optional language hint: en | hi | kn (blank = auto-detect)"),
+    request_key: str    = Form("", description="Idempotency key from the app's retry queue"),
     db:      aiosqlite.Connection = Depends(get_db),
 ):
+    # A retried upload (the app lost the first response) returns the original
+    # result instead of paging the nurse twice.
+    request_key = (request_key or "").strip()[:80]
+    if request_key and request_key in _INGEST_KEYS:
+        logger.info("Ingest retry with known request_key — returning original result")
+        return _INGEST_KEYS[request_key]
+
     # ── 1. Validate room_id ───────────────────────────────────────────────────
     room_id = room_id.strip()
     if not room_id:
@@ -148,113 +160,47 @@ async def ingest_audio(
             detail="AI pipeline error — audio was saved and will be retried",
         ) from exc
 
-    # ── 6. Persist alert ──────────────────────────────────────────────────────
-    # Language: prefer what the pipeline actually used/detected; fall back to
-    # the client hint. None for the stub pipeline.
+    # ── 6-8. Triage -> persist -> dispatch (shared with the patient WebSocket) ─
+    # Triage runs BEFORE the alert is stored: nurse-bound intents go straight to
+    # the nurse (router skipped); ground-support requests go to housekeeping and
+    # never page the nurse; food becomes a Routine nurse-visible request.
     alert_language = getattr(result, "language", None) or lang_hint
-
-    # Resolve the patient name for the standardised "Patient X in Room Y" prefix.
-    from pg_database import get_patient_name_by_room
-    patient_name = await get_patient_name_by_room(room_id)
-
-    alert_id = await insert_alert(
-        db,
-        room_id        = room_id,
-        priority       = result.priority.value,
-        intent         = result.intent.value,
-        distress_score = result.distress_score,
-        transcript     = result.transcript,
-        wav_path       = str(wav_path),
-        language       = alert_language,
-        patient_name   = patient_name,
-        summary        = result.summary,
-        emotion        = result.emotion,
-        alert_message  = result.alert_message,
+    from ingest_flow import handle_pipeline_result
+    out = await handle_pipeline_result(
+        db, result=result, room_id=room_id, wav_path=str(wav_path),
+        language=alert_language, broadcast=_ws_broadcast,
     )
 
-    # ── 7. Build response object (needed for WS broadcast too) ────────────────
-    alert_resp = AlertResponse(
-        id             = alert_id,
-        room_id        = room_id,
-        priority       = result.priority,
-        intent         = result.intent,
-        distress_score = result.distress_score,
-        transcript     = result.transcript,
-        wav_path       = str(wav_path),
-        acknowledged   = False,
-        created_at     = utcnow(),
-        language       = alert_language,
-        patient_name   = patient_name,
-        summary        = result.summary,
-        emotion        = result.emotion,
-        alert_message  = result.alert_message,
-    )
-
-    # ── 8. Department routing + nurse dispatch ────────────────────────────────
-    # The central router decides nurse vs canteen/pharmacy/housekeeping. It runs
-    # BEFORE the should_alert suppression gate so facility requests (which the
-    # intent model labels Other/Information and would otherwise be dropped) can
-    # still reach housekeeping. In shadow mode it only logs its decision and the
-    # nurse path below is taken exactly as before.
-    nurse_primary = True
-    dept_result = None
-    try:
-        from department_dispatch import process_alert_routing
-        dept_result = await process_alert_routing(
-            db, alert_id=alert_id, room_id=room_id, transcript=result.transcript,
-            intent=result.intent,
-            stt_avg_logprob=getattr(result, "stt_avg_logprob", None),
-            stt_corrected=getattr(result, "stt_corrected", False),
-        )
-        nurse_primary = dept_result.get("nurse_primary", True)
-    except Exception:
-        logger.exception("Department routing failed for alert %d — defaulting to nurse", alert_id)
-        nurse_primary = True
-
-    # Nurse dispatch runs when the router kept the nurse as the primary owner.
-    # A request fully handled by departments (nurse_primary=False) skips it.
-    # should_alert still suppresses pure non-care chatter that stayed with the nurse.
-    if nurse_primary and (result.should_alert or (dept_result and dept_result.get("departments"))):
-        payload = WsAlertPayload.from_alert_response(alert_resp)
-        try:
-            from routing import route_alert
-            routed_to, fell_back = await route_alert(
-                db, room_id=room_id, alert_id=alert_id,
-                payload_json=payload.model_dump_json(),
-            )
-            logger.info(
-                "Alert %d routed_to=%s fell_back=%s", alert_id, routed_to, fell_back
-            )
-        except Exception:
-            logger.exception("Scheduler routing failed for alert %d — broadcasting", alert_id)
-            if _ws_broadcast is not None:
-                await _ws_broadcast(payload.model_dump_json())
-    elif not nurse_primary:
-        logger.info(
-            "Alert %d routed to department(s) %s — nurse not paged (notice sent)",
-            alert_id, (dept_result or {}).get("departments"),
-        )
+    # should_alert tells the app whether someone was notified: true when the
+    # nurse was paged OR a department took the request.
+    notified = out["nurse_paged"] or bool(out["departments"])
+    if out["request_class"] == "facility" and out["departments"]:
+        msg = "Sent to housekeeping"
+    elif out["request_class"] == "food":
+        msg = "Food request noted — your attender or nurse will place the order"
+    elif notified:
+        msg = "Nurse notified"
+    elif (result.transcript or "").strip() in ("", "[silence]"):
+        msg = "No speech heard"
     else:
-        logger.info(
-            "Alert %d suppressed (intent=%s) — general speech, nurses not paged",
-            alert_id, result.intent.value,
-        )
+        msg = "No request detected"
+    no_speech = (result.transcript or "").strip() in ("", "[silence]")
 
-    logger.info(
-        "Alert created: id=%d room=%s priority=%s intent=%s should_alert=%s",
-        alert_id, room_id, result.priority.value,
-        result.intent.value, result.should_alert,
-    )
-
-    return IngestResponse(
-        alert_id       = alert_id,
+    resp = IngestResponse(
+        alert_id       = out["alert_id"],
         room_id        = room_id,
-        priority       = result.priority,
-        intent         = result.intent,
+        priority       = out["priority"],
+        intent         = out["intent"],
         distress_score = result.distress_score,
-        transcript     = result.transcript,
+        transcript     = "" if no_speech else result.transcript,
         is_stub        = result.is_stub,
         summary        = result.summary,
         emotion        = result.emotion,
-        should_alert   = result.should_alert,
+        should_alert   = notified,
+        message        = msg,
     )
+    if request_key:
+        _INGEST_KEYS[request_key] = resp
+        while len(_INGEST_KEYS) > 300:
+            _INGEST_KEYS.popitem(last=False)
+    return resp

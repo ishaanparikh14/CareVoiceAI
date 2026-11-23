@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 # Cycles through all 9 intents in order so testers can see every priority level
 # without crafting specific audio. The cycle is shared across all rooms.
-_DEMO_INTENTS = list(Intent)
+_DEMO_INTENTS = [i for i in Intent if i != Intent.FACILITY]
 _demo_counter = 0
 
 

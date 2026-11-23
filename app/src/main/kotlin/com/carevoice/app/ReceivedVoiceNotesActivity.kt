@@ -43,7 +43,7 @@ class ReceivedVoiceNotesActivity : AppCompatActivity() {
     private lateinit var adapter: VoiceNoteAdapter
     private lateinit var uploader: ServerUploader
     private lateinit var tts: TtsManager
-    private val translator = NoteTranslator()
+    private val translator by lazy { NoteTranslator(applicationContext) }
     private var player: MediaPlayer? = null
     private var playerFile: File? = null
 

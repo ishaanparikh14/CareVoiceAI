@@ -145,6 +145,16 @@
                                 android:text="@string/status_idle"
                                 android:textColor="@color/colorText"
                                 android:textSize="16sp" />
+
+                            <!-- What was heard / what the server said / retry state -->
+                            <TextView
+                                android:id="@+id/tvStatusDetail"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:textColor="@color/cv_text_muted"
+                                android:textSize="13sp"
+                                android:visibility="gone" />
                         </LinearLayout>
                     </LinearLayout>
 

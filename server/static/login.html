@@ -174,7 +174,7 @@ input:focus {
   </div>
 
   <!-- Role toggle -->
-  <div class="role-toggle role-toggle-4">
+  <div class="role-toggle">
     <button class="role-btn active nurse-active" id="btn-nurse" onclick="setRole('nurse')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -182,13 +182,6 @@ input:focus {
         <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
       </svg>
       Nurse
-    </button>
-    <button class="role-btn" id="btn-patient" onclick="setRole('patient')">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-        <circle cx="12" cy="7" r="4"/>
-      </svg>
-      Patient
     </button>
     <button class="role-btn" id="btn-admin" onclick="setRole('admin')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -224,16 +217,6 @@ input:focus {
              placeholder="••••••••" required/>
     </div>
 
-    <!-- Room number — shown only for Patient role -->
-    <div class="field" id="room-field">
-      <label>Room Number</label>
-      <input type="text" id="room-number" placeholder="e.g. 4B"
-             pattern="[0-9]{1,3}[A-Za-z]?" title="Room number like 4B or 12C"/>
-      <p id="room-hint">
-        Enter the room number printed on your bedside card.<br>
-        It will be auto-filled from your account if left blank.
-      </p>
-    </div>
 
     <button class="btn-login nurse" id="login-btn" type="submit">
       Sign In as Nurse
@@ -252,29 +235,25 @@ let currentRole = 'nurse';
 function setRole(role) {
   currentRole = role;
 
-  ['nurse', 'patient', 'admin', 'staff'].forEach(r => {
+  ['nurse', 'admin', 'staff'].forEach(r => {
     const btn = document.getElementById(`btn-${r}`);
+    if (!btn) return;
     btn.classList.toggle('active',        role === r);
     btn.classList.toggle(`${r}-active`,   role === r);
   });
 
-  document.getElementById('room-field').style.display =
-    role === 'patient' ? 'block' : 'none';
-
   const btn = document.getElementById('login-btn');
   const labels = {
-    nurse: 'Sign In as Nurse', patient: 'Sign In as Patient',
-    admin: 'Sign In as Admin', staff: 'Sign In as Staff',
+    nurse: 'Sign In as Nurse', admin: 'Sign In as Admin', staff: 'Sign In as Staff',
   };
-  btn.textContent = labels[role];
+  btn.textContent = labels[role] || 'Sign In';
   // The Staff tab reuses the admin button styling (both use the staff accent via CSS).
   btn.className   = `btn-login ${role === 'staff' ? 'admin' : role}`;
 
   const placeholders = {
-    nurse: 'e.g. nurse_anna', patient: 'e.g. patient_raj',
-    admin: 'e.g. admin', staff: 'e.g. canteen_cathy',
+    nurse: 'e.g. nurse_anna', admin: 'e.g. admin', staff: 'e.g. canteen_cathy',
   };
-  document.getElementById('username').placeholder = placeholders[role];
+  document.getElementById('username').placeholder = placeholders[role] || '';
   hideError();
 }
 
@@ -285,7 +264,6 @@ async function doLogin(e) {
 
   const username  = document.getElementById('username').value.trim();
   const password  = document.getElementById('password').value;
-  const roomInput = document.getElementById('room-number').value.trim();
 
   const btn = document.getElementById('login-btn');
   btn.disabled    = true;
@@ -306,10 +284,16 @@ async function doLogin(e) {
       return;
     }
 
+    // Patient accounts are APP-ONLY — the website has no patient experience.
+    if (data.role === 'patient') {
+      showError('Patient accounts are available only in the CareVoice mobile app. Please use the app to sign in.');
+      return;
+    }
+
     // The "Staff" tab is for department accounts (canteen / pharmacy / floor
     // manager / housekeeping). Those roles must come in through the Staff tab;
     // every other role must match its own tab.
-    const DEPT_ROLES = ['canteen', 'pharmacy', 'floor_manager', 'housekeeping'];
+    const DEPT_ROLES = ['canteen', 'pharmacy', 'floor_manager', 'housekeeping', 'doctor', 'dietician'];
     const isDeptStaff = DEPT_ROLES.includes(data.role);
     const tabOk = isDeptStaff ? (currentRole === 'staff') : (data.role === currentRole);
     if (!tabOk) {
@@ -326,9 +310,6 @@ async function doLogin(e) {
     localStorage.setItem('cv_role',      data.role);
     localStorage.setItem('cv_full_name', data.full_name);
     localStorage.setItem('cv_user_id',   data.user_id);
-
-    const room = data.room_number ?? roomInput ?? '';
-    localStorage.setItem('cv_room', room);
     if (data.ward) localStorage.setItem('cv_ward', data.ward);
     if (data.department) localStorage.setItem('cv_department', data.department);
 
@@ -339,8 +320,7 @@ async function doLogin(e) {
     showError('Network error — is the server running?');
   } finally {
     btn.disabled    = false;
-    const labels = { nurse: 'Sign In as Nurse', patient: 'Sign In as Patient',
-                     admin: 'Sign In as Admin', staff: 'Sign In as Staff' };
+    const labels = { nurse: 'Sign In as Nurse', admin: 'Sign In as Admin', staff: 'Sign In as Staff' };
     btn.textContent = labels[currentRole] || 'Sign In';
   }
 }
@@ -366,6 +346,8 @@ window.addEventListener('DOMContentLoaded', () => {
       else { localStorage.clear(); }
     }).then(me => {
       if (!me) return;
+      // Patients have no web experience — clear any stale session, stay on login.
+      if (me.role === 'patient') { localStorage.clear(); return; }
       window.location.href = destFor(me.role);
     }).catch(() => {});
   }
@@ -374,8 +356,11 @@ window.addEventListener('DOMContentLoaded', () => {
 // Destination page for a given role. Department-staff → the department board.
 function destFor(role) {
   if (role === 'admin') return '/admin';
+  if (role === 'doctor') return '/doctor';
+  if (role === 'dietician') return '/dietician';
   if (['canteen', 'pharmacy', 'floor_manager'].includes(role)) return '/dept';
-  return '/dashboard';
+  if (role === 'nurse') return '/dashboard';
+  return '/login';
 }
 </script>
 </body>

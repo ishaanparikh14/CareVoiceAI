@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CareVoice — Patient Care</title>
+<style>
+  /* Palette matched to the Android app (nurse teal accent, slate surfaces,
+     priority badge colors) so this screen feels native inside the nurse app. */
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  :root {
+    --bg:#F1F5F9; --surface:#FFFFFF; --surface2:#F8FAFC; --border:#E2E8F0;
+    --nurse:#0F766E; --nurse-dark:#115E59; --nurse-soft:#F0FDFA;
+    --ink:#0F172A; --muted:#64748B; --muted2:#94A3B8;
+    --ok:#16A34A; --ok-bg:#DCFCE7; --danger:#DC2626; --danger-bg:#FEE2E2;
+    --warn:#D97706; --warn-bg:#FEF3C7; --info:#0284C7;
+    --font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  body { font-family:var(--font); background:var(--bg); color:var(--ink); min-height:100vh; }
+  /* Teal gradient header like the app's nurse header */
+  .appbar { background:linear-gradient(135deg,var(--nurse) 0%,var(--info) 100%); color:#fff;
+    padding:16px 18px; position:sticky; top:0; z-index:10; display:flex; justify-content:space-between; align-items:center; }
+  .appbar h1 { font-size:1.06rem; font-weight:800; }
+  .appbar .sub { font-size:.74rem; opacity:.9; margin-top:1px; }
+  .appbar button { background:rgba(255,255,255,.18); color:#fff; border:none; border-radius:8px; padding:7px 12px; font-weight:600; font-size:.8rem; cursor:pointer; }
+  main { max-width:760px; margin:14px auto; padding:0 12px 40px; }
+  .section-title { font-size:.8rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin:16px 4px 8px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:15px 16px; margin-bottom:12px; box-shadow:0 1px 2px rgba(15,23,42,.04); }
+  .card.approval { border-left:4px solid var(--warn); }
+  .pname { font-weight:800; font-size:1.04rem; }
+  .proom { color:var(--muted); font-size:.8rem; margin-bottom:12px; }
+  .field { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0; }
+  label { font-size:.76rem; color:var(--muted); font-weight:700; }
+  select, input { padding:9px 11px; border:1px solid #CBD5E1; border-radius:10px; font-size:.88rem; font-family:inherit; background:#fff; }
+  select:focus, input:focus { outline:none; border-color:var(--nurse); box-shadow:0 0 0 3px rgba(15,118,110,.12); }
+  button.act { border:none; border-radius:10px; padding:9px 14px; font-weight:700; font-size:.82rem; cursor:pointer; }
+  .btn-nurse { background:var(--nurse); color:#fff; }
+  .btn-ok { background:var(--ok); color:#fff; }
+  .btn-del { background:var(--danger-bg); color:var(--danger); }
+  .btn-approve { background:var(--ok); color:#fff; }
+  .btn-reject { background:var(--danger-bg); color:var(--danger); }
+  .meds { margin-top:10px; }
+  .med { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:9px 11px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; margin-bottom:6px; font-size:.86rem; }
+  .pill { font-size:.64rem; font-weight:800; padding:2px 8px; border-radius:6px; text-transform:uppercase; letter-spacing:.03em; }
+  .pill.prescribed { background:#E0E7FF; color:#3730A3; }
+  .pill.general { background:var(--ok-bg); color:#166534; }
+  .add-med { border-top:1px dashed var(--border); margin-top:10px; padding-top:10px; }
+  .empty { text-align:center; color:var(--muted); padding:34px 0; font-size:.9rem; }
+  .appr-item { font-size:.9rem; margin-bottom:10px; }
+  .appr-item b { color:var(--nurse-dark); }
+  .toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; padding:10px 18px; border-radius:10px; font-size:.86rem; opacity:0; transition:opacity .2s; z-index:30; }
+  .toast.show { opacity:1; }
+  .count-badge { background:#fff; color:var(--warn); border-radius:999px; padding:1px 9px; font-size:.78rem; font-weight:800; margin-left:6px; }
+</style>
+</head>
+<body>
+<div class="appbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <button id="backBtn" onclick="goBack()" title="Back"
+      style="background:rgba(255,255,255,.18);border:none;border-radius:8px;padding:6px 11px;color:#fff;font-size:1.1rem;cursor:pointer;line-height:1">&#8592;</button>
+    <div>
+      <h1>Patient Care</h1>
+      <div class="sub" id="appbar-sub">Diet &amp; medications</div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <!-- Nurse/admin view -->
+  <div id="staff-view" style="display:none">
+    <div class="section-title">Shift copilot</div>
+    <div class="card"><button class="act btn-nurse" onclick="copilot()">Generate shift summary &amp; next actions</button>
+      <div id="copilot" style="margin-top:8px;font-size:.86rem"></div>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:6px">Advisory only. Clinical judgement and safety overrides stay final.</div></div>
+    <div class="section-title">Pending approvals <span id="appr-count" class="count-badge" style="display:none">0</span></div>
+    <div id="approvals"><div class="empty">No orders awaiting your approval.</div></div>
+    <div class="section-title">Your patients — diet &amp; medications</div>
+    <div id="list"><div class="empty">Loading…</div></div>
+  </div>
+  <!-- Patient read-only view -->
+  <div id="patient-view" style="display:none">
+    <div id="patient-care"><div class="empty">Loading…</div></div>
+  </div>
+</main>
+<div id="toast" class="toast"></div>
+
+<script>
+const BASE = window.location.origin;
+let token = null;
+try { if (window.CareVoiceApp && window.CareVoiceApp.getToken) token = window.CareVoiceApp.getToken() || null; } catch(e){}
+if (token) localStorage.setItem('cv_token', token); else token = localStorage.getItem('cv_token');
+if (!token) { window.location.href = '/login'; }
+let dietOptions = [];
+
+async function api(path, opts={}) {
+  const res = await fetch(BASE+path, { ...opts, headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json', ...(opts.headers||{}) }});
+  if (res.status===401) { localStorage.clear(); if (window.CareVoiceApp && window.CareVoiceApp.sessionExpired) window.CareVoiceApp.sessionExpired(); else window.location.href='/login'; throw new Error('Unauthorized'); }
+  if (!res.ok) { const t=await res.json().catch(()=>({})); throw new Error(t.detail||('HTTP '+res.status)); }
+  return res.status===204 ? null : res.json();
+}
+function goBack(){
+  // In the app, the hosting activity handles Back → returns to the dashboard.
+  // The native CareVoiceApp.back() bridge is used when present; otherwise we
+  // fall back to browser history (web nurse console).
+  try { if (window.CareVoiceApp && window.CareVoiceApp.back) { window.CareVoiceApp.back(); return; } } catch(e){}
+  if (history.length > 1) history.back(); else window.location.href = '/dashboard';
+}
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
+function esc(s){ return (s||'').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+// ── Approvals (polled — robust even if the live socket flaps) ────────────────
+async function loadApprovals() {
+  try {
+    const data = await api('/department/approvals');
+    const rows = data.approvals || [];
+    const el = document.getElementById('approvals');
+    const badge = document.getElementById('appr-count');
+    badge.style.display = rows.length ? 'inline-block' : 'none';
+    badge.textContent = rows.length;
+    el.innerHTML = rows.length ? rows.map(a => `
+      <div class="card approval">
+        <div class="appr-item">Room <b>${esc(a.room_id)}</b> · ${esc(a.kind||a.department)}
+          ${a.item_name?` — <b>${esc(a.item_name)}</b>${a.item_detail?` (${esc(a.item_detail)})`:''}`:''}</div>
+        <div class="proom">“${esc(a.transcript)}”${a.diet_restriction&&a.diet_restriction!=='none'?` · diet: ${esc(a.diet_restriction)}`:''}</div>
+        <div class="field">
+          <button class="act btn-approve" onclick="approve(${a.id})">Approve</button>
+          <button class="act btn-reject" onclick="reject(${a.id})">Reject</button>
+        </div>
+      </div>`).join('') : '<div class="empty">No orders awaiting your approval.</div>';
+  } catch(e){ /* keep last state */ }
+}
+async function approve(id){ try { await api(`/department/order/${id}/approve`,{method:'POST'}); toast('Approved'); loadApprovals(); } catch(e){ toast(e.message); } }
+async function reject(id){ if(!confirm('Reject this order?'))return; try { await api(`/department/order/${id}/reject`,{method:'POST',body:JSON.stringify({reason:'rejected by nurse'})}); toast('Rejected'); loadApprovals(); } catch(e){ toast(e.message); } }
+
+// ── Patient diet + meds editor ───────────────────────────────────────────────
+function patientCard(p) {
+  const dietSel = dietOptions.map(d=>`<option value="${d}" ${d===p.diet_restriction?'selected':''}>${d}</option>`).join('');
+  const meds = (p.medications||[]).map(m=>`
+    <div class="med">
+      <div><b>${esc(m.name)}</b> <span class="pill ${m.kind}">${m.kind}</span> <span style="color:var(--muted)">${esc(m.dosage)}</span></div>
+      <button class="act btn-del" onclick="removeMed('${esc(p.room_number)}','${esc(m.name)}')">Remove</button>
+    </div>`).join('') || '<div style="color:var(--muted);font-size:.84rem;padding:4px 0">No medications listed.</div>';
+  return `<div class="card">
+    <div class="pname">${esc(p.full_name)}</div>
+    <div class="proom">Room ${esc(p.room_number)}</div>
+    <div class="field">
+      <label>Dietary requirement</label>
+      <select id="diet-${esc(p.room_number)}">${dietSel}</select>
+      <button class="act btn-nurse" onclick="saveDiet('${esc(p.room_number)}')">Save</button>
+    </div>
+    <div class="field" style="margin-top:4px">
+      <button class="act btn-nurse" onclick="orderFood('${esc(p.room_number)}')">Order food</button>
+      <button class="act" style="background:#E0E7FF;color:#3730A3" onclick="emr('${esc(p.room_number)}')">EMR snapshot</button>
+      <button class="act" style="background:#F1F5F9;color:#0F172A" onclick="setPin('${esc(p.room_number)}')">Attender PIN</button>
+      ${wf.pharmacy_orders_nurse_only?`<button class="act" style="background:#FCE7F3;color:#9D174D" onclick="orderMed('${esc(p.room_number)}')">Pharmacy order</button>`:''}
+    </div>
+    <div id="x-${esc(p.room_number)}"></div>
+    <div class="meds">${meds}
+      <div class="add-med field">
+        <input id="mname-${esc(p.room_number)}" placeholder="Medicine name" style="flex:1;min-width:120px"/>
+        <select id="mkind-${esc(p.room_number)}"><option value="general">general</option><option value="prescribed">prescribed</option></select>
+        <input id="mdose-${esc(p.room_number)}" placeholder="dosage" style="width:110px"/>
+        <button class="act btn-ok" onclick="addMed('${esc(p.room_number)}')">Add</button>
+      </div>
+    </div>
+  </div>`;
+}
+// ── v3: food ordering, attender PIN, EMR snapshot, pharmacy, copilot ─────────
+let wf = {};
+async function loadWf(){ try { wf = await api('/workflow/flags'); } catch(e){ wf = {}; } }
+function panel(room, html){ const el=document.getElementById('x-'+room); el.innerHTML = html ? `<div class="card" style="margin-top:8px;background:var(--surface2)">${html}</div>` : ''; }
+async function orderFood(room){
+  try { const d = await api('/orders/menu/'+encodeURIComponent(room));
+    wf.pharmacy_orders_nurse_only = wf.pharmacy_orders_nurse_only;
+    panel(room, `<div style="font-size:.84rem;margin-bottom:6px">Diet: <b>${esc(d.diet_label)}</b>${d.dietician_plan&&d.dietician_plan.notes?' · dietician: '+esc(d.dietician_plan.notes):''}</div>
+     ${d.menu.map(m=>`<div class="med" style="${m.allowed?'':'opacity:.5'}"><div><b>${esc(m.name)}</b> ${m.recommended?'<span class="pill general">fits diet</span>':''}<div style="font-size:.72rem;color:var(--muted)">${esc(m.reason)}</div></div>
+       <button class="act btn-ok" ${m.allowed?'':'disabled'} onclick="placeFood('${esc(room)}',${m.id})">Order</button></div>`).join('')}
+     <button class="act" style="background:#F1F5F9" onclick="panel('${esc(room)}','')">Close</button>`);
+  } catch(e){ toast(e.message); } }
+async function placeFood(room,id){ try { const r = await api('/orders/food',{method:'POST',body:JSON.stringify({room,item_id:id})});
+  toast('Ordered — '+r.order_status.replace('_',' ')); panel(room,''); } catch(e){ toast(e.message); } }
+async function setPin(room){ const pin = prompt('New 4-digit attender PIN for Room '+room); if(!pin) return;
+  const name = prompt('Attender name (optional)','Attender') || 'Attender';
+  try { await api('/nurse/attender-pin',{method:'POST',body:JSON.stringify({room,pin,name})}); toast('Attender PIN set for Room '+room); }
+  catch(e){ toast(e.message); } }
+async function emr(room){ try { const d = await api('/nurse/emr/'+encodeURIComponent(room));
+  const row = o => `<div class="med"><span>${esc(o.display)}</span><b style="${o.flag!=='normal'?'color:var(--danger)':''}">${esc(o.value)} ${esc(o.unit)}</b></div>`;
+  panel(room, `<div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">${esc(d.source==='local'?'Demo EMR (sample data)':'HIS/EMR')}</div>
+    <div style="font-weight:700;font-size:.82rem">Vitals</div>${d.vitals.map(row).join('')}
+    <div style="font-weight:700;font-size:.82rem;margin-top:6px">Labs</div>${d.labs.map(row).join('')}
+    <div style="font-weight:700;font-size:.82rem;margin-top:6px">Conditions</div><div style="font-size:.84rem">${d.conditions.map(c=>esc(c.display)).join('<br>')}</div>
+    <button class="act" style="background:#F1F5F9;margin-top:8px" onclick="panel('${esc(room)}','')">Close</button>`);
+  } catch(e){ toast(e.message); } }
+async function orderMed(room){ const name = prompt('Medicine to order from the pharmacy for Room '+room); if(!name) return;
+  const dosage = prompt('Dosage / quantity','') || '';
+  try { await api('/orders/medicine',{method:'POST',body:JSON.stringify({room,name,dosage})}); toast('Sent to pharmacy'); }
+  catch(e){ toast(e.message); } }
+async function copilot(){ const el=document.getElementById('copilot'); el.textContent='Preparing the shift summary… (can take a minute)';
+  try { const d = await api('/nurse/copilot'); el.innerHTML = d.patients.map(p=>`<div class="med" style="display:block"><b>${esc(p.full_name)} · Room ${esc(p.room_number)}</b>
+      <div style="white-space:pre-wrap;margin-top:4px">${esc(p.summary)}</div>${(p.trends.flags||[]).map(f=>`<span class="pill prescribed" style="margin-top:4px;display:inline-block">${esc(f)}</span>`).join(' ')}</div>`).join('') || 'No assigned patients.'; }
+  catch(e){ el.textContent = e.message; } }
+
+async function loadPatients() {
+  try {
+    const data = await api('/nurse/care/patients');
+    dietOptions = data.diet_options || ['none'];
+    const list = document.getElementById('list');
+    list.innerHTML = (data.patients||[]).length ? data.patients.map(patientCard).join('')
+      : '<div class="empty">You have no assigned patients.</div>';
+  } catch(e){ document.getElementById('list').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+async function saveDiet(room){ const diet=document.getElementById('diet-'+room).value;
+  try { await api(`/nurse/care/${encodeURIComponent(room)}/diet`,{method:'POST',body:JSON.stringify({diet_restriction:diet})}); toast('Diet updated — Room '+room); } catch(e){ toast(e.message); } }
+async function addMed(room){ const name=document.getElementById('mname-'+room).value.trim(), kind=document.getElementById('mkind-'+room).value, dose=document.getElementById('mdose-'+room).value.trim();
+  if(!name){ toast('Enter a medicine name'); return; }
+  try { await api(`/nurse/care/${encodeURIComponent(room)}/medication`,{method:'POST',body:JSON.stringify({name,kind,dosage:dose})}); toast('Medication saved'); loadPatients(); } catch(e){ toast(e.message); } }
+async function removeMed(room,name){ if(!confirm(`Remove ${name}?`))return;
+  try { await api(`/nurse/care/${encodeURIComponent(room)}/medication/${encodeURIComponent(name)}`,{method:'DELETE'}); toast('Removed'); loadPatients(); } catch(e){ toast(e.message); } }
+
+// ── Patient read-only view ───────────────────────────────────────────────────
+function renderPatientCare(d) {
+  const diet = (d.diet_restriction && d.diet_restriction !== 'none') ? esc(d.diet_restriction) : 'No restriction';
+  const prescribed = (d.medications || []).filter(m => m.kind === 'prescribed');
+  const general = (d.medications || []).filter(m => m.kind === 'general');
+  const medRow = m => `<div class="med"><div><b>${esc(m.name)}</b> <span class="pill ${m.kind}">${m.kind}</span> <span style="color:var(--muted)">${esc(m.dosage)}</span></div></div>`;
+  document.getElementById('patient-care').innerHTML = `
+    <div class="card">
+      <div class="pname">${esc(d.full_name)}</div>
+      <div class="proom">Room ${esc(d.room_number || '—')}</div>
+      <div class="field"><label>Dietary requirement</label>
+        <span style="font-weight:700;color:var(--nurse-dark)">${diet}</span></div>
+    </div>
+    <div class="section-title">Prescribed medications</div>
+    <div class="card">${prescribed.length ? prescribed.map(medRow).join('') : '<div class="empty" style="padding:14px 0">None on your chart.</div>'}</div>
+    ${general.length ? `<div class="section-title">General medicines</div><div class="card">${general.map(medRow).join('')}</div>` : ''}
+    <div style="text-align:center;color:var(--muted);font-size:.78rem;margin-top:10px">
+      Diet and medications are set by your care team. Speak to your nurse to request changes.
+    </div>`;
+}
+
+async function init() {
+  let role = localStorage.getItem('cv_role');
+  try { const me = await api('/auth/me'); role = me.role; } catch(e){}
+  if (role === 'patient') {
+    document.getElementById('patient-view').style.display = 'block';
+    document.getElementById('appbar-sub').textContent = 'Your diet & medications';
+    try { renderPatientCare(await api('/department/my-care')); }
+    catch(e){ document.getElementById('patient-care').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+  } else {
+    document.getElementById('staff-view').style.display = 'block';
+    await loadWf();
+    loadApprovals(); loadPatients();
+    setInterval(loadApprovals, 6000);   // poll so approvals never depend on a live socket
+  }
+}
+init();
+</script>
+</body>
+</html>

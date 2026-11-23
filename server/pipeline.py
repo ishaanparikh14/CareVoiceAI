@@ -263,12 +263,13 @@ async def process_audio(wav_bytes: bytes, room_id: str, lang_hint: str | None = 
                 stt_corrected, transcript)
 
     # ── Step 2: Classify intent ───────────────────────────────────────────────
-    intent = _classify_intent(transcript)
-    logger.info("[PIPELINE] intent: %s", intent.value)
+    no_speech = transcript.strip() in ("", "[silence]")
+    intent = Intent.OTHER if no_speech else _classify_intent(transcript)
+    logger.info("[PIPELINE] intent: %s%s", intent.value, " (no speech)" if no_speech else "")
 
     # ── Step 3: Priority + alert decision (intent-driven) ─────────────────────
     priority     = priority_engine.compute_priority(intent, transcript)
-    should_alert = priority_engine.should_alert_nurse(intent, transcript)
+    should_alert = False if no_speech else priority_engine.should_alert_nurse(intent, transcript)
 
     logger.info("[PIPELINE] priority=%s should_alert=%s", priority.value, should_alert)
 
@@ -306,6 +307,46 @@ _DEVANAGARI_RANGE = (0x0900, 0x097F)
 _DEVANAGARI_LANGS = {"hi", "mr", "ne", "sa"}
 
 
+_SUPPORTED_LANGS = ("en", "hi", "kn", "de")
+
+# Phrases Whisper is known to invent on silence / noise (YouTube-caption
+# training artefacts). Matched only as the WHOLE transcript, never inside a
+# real sentence.
+_HALLUCINATIONS = {
+    "thanks for watching", "thank you for watching", "thanks for watching and see you next time",
+    "please subscribe", "subscribe to my channel", "like and subscribe", "see you next time",
+    "see you in the next video", "bye", "bye bye", "you", "the end", "music", "applause",
+    "subtitles by the amara.org community", "vielen dank fürs zuschauen", "untertitel im auftrag des zdf",
+    "धन्यवाद देखने के लिए", "सब्सक्राइब करें",
+}
+
+
+def is_hallucination(text: str) -> bool:
+    import re
+    t = re.sub(r"[^\w\s\u0900-\u097F\u0C80-\u0CFF.]", " ", (text or "").lower())
+    t = re.sub(r"\s+", " ", t).strip(" .")
+    return t in _HALLUCINATIONS or t.startswith("subtitles by")
+
+
+def _best_supported_language(info) -> str:
+    """Most probable supported language from Whisper's detection scores
+    (faster-whisper exposes info.all_language_probs as [(code, prob), ...]).
+    Defaults to English when the scores are unavailable."""
+    probs = getattr(info, "all_language_probs", None) or []
+    best, best_p = "en", -1.0
+    for item in probs:
+        try:
+            code, p = item[0], float(item[1])
+        except Exception:
+            continue
+        # Urdu / Marathi / Nepali speech from our patients is Hindi.
+        if code in ("ur", "mr", "ne", "sa"):
+            code = "hi"
+        if code in _SUPPORTED_LANGS and p > best_p:
+            best, best_p = code, p
+    return best
+
+
 def _script_ratio(text: str, lo: int, hi: int) -> float:
     """Fraction of letters in `text` whose codepoint falls in [lo, hi]."""
     letters = [c for c in text if c.isalpha()]
@@ -316,16 +357,38 @@ def _script_ratio(text: str, lo: int, hi: int) -> float:
 
 
 def _run_whisper(model, path: str, language: str | None):
-    """Single transcription pass. Returns (text, info, avg_logprob)."""
-    segments, info = model.transcribe(
-        path,
-        language   = language,   # None → auto-detect
-        beam_size  = 5,
-        vad_filter = False,
-        condition_on_previous_text = False,
-    )
-    segs = list(segments)
+    """Single transcription pass. Returns (text, info, avg_logprob).
+
+    Silence handling: on a silent clip Whisper invents text ("Thanks for
+    watching!") or loops until the 60 s pipeline timeout. So:
+      * the built-in Silero VAD strips non-speech first (permissive threshold
+        and padding so quiet patients are not cut off) — pure silence then
+        yields no segments at all and returns in well under a second;
+      * output is capped (a request is never more than a few sentences);
+      * segments Whisper itself marks as probably-not-speech are dropped.
+    """
+    try:
+        segments, info = model.transcribe(
+            path,
+            language   = language,   # None → auto-detect
+            beam_size  = 5,
+            vad_filter = True,
+            vad_parameters = {"threshold": 0.35, "min_silence_duration_ms": 700, "speech_pad_ms": 400},
+            condition_on_previous_text = False,
+            max_new_tokens = 120,
+            temperature = [0.0, 0.4],
+        )
+        segs = [s for s in segments
+                if not (getattr(s, "no_speech_prob", 0.0) > 0.6 and getattr(s, "avg_logprob", 0.0) < -1.0)]
+    except ValueError:
+        # faster-whisper 1.0.x: when VAD removes ALL audio, auto language
+        # detection runs on an empty sequence and raises. That means: no speech.
+        logger.info("Whisper: VAD found no speech in clip")
+        return "", None, -10.0
     text = " ".join(s.text.strip() for s in segs).strip()
+    if is_hallucination(text):
+        logger.info("Whisper hallucination on non-speech dropped: %r", text)
+        segs, text = [], ""
     # Average segment log-prob is Whisper's confidence proxy; higher = better.
     if segs:
         avg_lp = sum(getattr(s, "avg_logprob", -5.0) for s in segs) / len(segs)
@@ -373,12 +436,12 @@ def _transcribe(wav_bytes: bytes, lang_hint: str | None = None) -> tuple[str, st
 
         # ── Auto-detect pass ──────────────────────────────────────────────────
         text, info, lp_auto = _run_whisper(model, tmp_path, None)
-        lang = getattr(info, "language", "unknown")
+        lang = getattr(info, "language", None) or "en"
         corrected = False
         avg_lp = lp_auto
 
         # Fix 1: Urdu → Hindi (same spoken language, different script).
-        if lang == "ur":
+        if text and lang == "ur":
             text, info, avg_lp = _run_whisper(model, tmp_path, "hi")
             lang = "hi"
             corrected = True
@@ -388,7 +451,7 @@ def _transcribe(wav_bytes: bytes, lang_hint: str | None = None) -> tuple[str, st
         # end-to-end Kannada bug: Kannada speech gets emitted in Devanagari, so
         # neither the display nor the Kannada keyword layer works. When the auto
         # pass is Devanagari-Indic, run a forced Kannada pass and compare.
-        if lang in _DEVANAGARI_LANGS:
+        if text and lang in _DEVANAGARI_LANGS:
             kn_text, _, lp_kn = _run_whisper(model, tmp_path, "kn")
             kn_ratio = _script_ratio(kn_text, *_KANNADA_RANGE)
             # Prefer Kannada when the forced pass actually yields Kannada script
@@ -402,6 +465,17 @@ def _transcribe(wav_bytes: bytes, lang_hint: str | None = None) -> tuple[str, st
                 text, lang = kn_text, "kn"
                 avg_lp = lp_kn
                 corrected = True
+
+        # Fix 3: patients speak only en / hi / kn / de. Short clips are sometimes
+        # detected as an unrelated language (e.g. "Nice weather" -> Bulgarian,
+        # written in Cyrillic), which then gets misread downstream. Re-transcribe
+        # in the most probable SUPPORTED language.
+        if text and lang not in _SUPPORTED_LANGS:
+            best = _best_supported_language(info)
+            text2, _, lp2 = _run_whisper(model, tmp_path, best)
+            logger.info("Unsupported language %s detected (lp=%.2f) → re-transcribed as %s (lp=%.2f): '%s'",
+                        lang, avg_lp, best, lp2, text2)
+            text, lang, avg_lp = text2, best, lp2
 
         logger.info("Whisper: lang=%s text='%s'", lang, text)
         return (text if text else "[silence]", lang, avg_lp, corrected)

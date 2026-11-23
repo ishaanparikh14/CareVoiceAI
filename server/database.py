@@ -127,6 +127,52 @@ CREATE INDEX IF NOT EXISTS idx_deptreq_alert ON department_requests (alert_id);
 CREATE INDEX IF NOT EXISTS idx_deptreq_target ON department_requests (target_username, state);
 CREATE INDEX IF NOT EXISTS idx_deptreq_dedupe ON department_requests (room_id, department, state);
 
+-- Hospital workflow configuration (admin-editable, survives restarts).
+-- value is JSON text so bools, numbers and lists share one table.
+CREATE TABLE IF NOT EXISTS workflow_config (
+    key        TEXT PRIMARY KEY,
+    value      TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    updated_by TEXT
+);
+CREATE TABLE IF NOT EXISTS workflow_config_log (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    key        TEXT NOT NULL,
+    old_value  TEXT,
+    new_value  TEXT,
+    changed_by TEXT,
+    changed_at TEXT NOT NULL
+);
+
+-- Per-request audit trail for department routing (assignment, escalation along
+-- the housekeeping chain, "not mine" overrides, unattended). Feeds the stats.
+CREATE TABLE IF NOT EXISTS dept_events (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    request_id  INTEGER NOT NULL,
+    event       TEXT    NOT NULL,   -- assigned|escalated|override|unattended|acknowledged|done
+    actor       TEXT,
+    target      TEXT,
+    detail      TEXT,
+    created_at  TEXT    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_dept_events_req ON dept_events (request_id);
+
+-- Every LLM interaction (care agent) is logged for audit.
+CREATE TABLE IF NOT EXISTS llm_audit (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    username    TEXT,
+    role        TEXT,
+    purpose     TEXT,
+    provider    TEXT,
+    model       TEXT,
+    prompt      TEXT,
+    response    TEXT,
+    flags       TEXT,
+    latency_ms  INTEGER,
+    status      TEXT,
+    created_at  TEXT NOT NULL
+);
+
 -- Runtime department feature-flag overrides (admin toggles persist a restart).
 CREATE TABLE IF NOT EXISTS department_flags (
     key        TEXT PRIMARY KEY,   -- e.g. 'enabled','shadow','canteen','pharmacy','housekeeping'
@@ -161,6 +207,34 @@ _MIGRATIONS = [
     # Marks an alert that reached the nurse as an ESCALATED department fallback
     # (SLA elapsed) so the nurse UI can render it distinctly from a fresh call.
     "ALTER TABLE alerts ADD COLUMN dept_escalated INTEGER NOT NULL DEFAULT 0",
+    # ── Order-lifecycle columns on department_requests ─────────────────────────
+    # kind: 'food' | 'medicine' | 'facility' (facility = plain housekeeping).
+    "ALTER TABLE department_requests ADD COLUMN kind TEXT NOT NULL DEFAULT 'facility'",
+    # order_status fulfilment lifecycle, independent of the ack/escalate `state`:
+    # requested | pending_approval | approved | preparing | delivered | rejected
+    "ALTER TABLE department_requests ADD COLUMN order_status TEXT NOT NULL DEFAULT 'requested'",
+    "ALTER TABLE department_requests ADD COLUMN item_name TEXT",
+    "ALTER TABLE department_requests ADD COLUMN item_detail TEXT",
+    "ALTER TABLE department_requests ADD COLUMN needs_approval INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE department_requests ADD COLUMN approved_by TEXT",
+    "ALTER TABLE department_requests ADD COLUMN approved_at TEXT",
+    "ALTER TABLE department_requests ADD COLUMN diet_restriction TEXT",
+    # ── v3 routing model ────────────────────────────────────────────────────────
+    # request_class: nurse | facility | food. model_intent keeps what the DistilBERT
+    # model said, so a mislabel is auditable even after triage overrides intent.
+    "ALTER TABLE alerts ADD COLUMN request_class TEXT NOT NULL DEFAULT 'nurse'",
+    "ALTER TABLE alerts ADD COLUMN model_intent TEXT",
+    # 0 = routed away from the nurse (housekeeping); hidden from nurse lists/WS.
+    "ALTER TABLE alerts ADD COLUMN visible_to_nurse INTEGER NOT NULL DEFAULT 1",
+    "ALTER TABLE alerts ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0",
+    # Housekeeping escalation chain (JSON list of usernames) + current position.
+    "ALTER TABLE department_requests ADD COLUMN chain TEXT",
+    "ALTER TABLE department_requests ADD COLUMN chain_idx INTEGER NOT NULL DEFAULT 0",
+    # Who placed a food/medicine order and in what capacity (attender|nurse).
+    "ALTER TABLE department_requests ADD COLUMN ordered_by TEXT",
+    "ALTER TABLE department_requests ADD COLUMN ordered_by_role TEXT",
+    "ALTER TABLE department_requests ADD COLUMN item_notes TEXT",
+    "ALTER TABLE department_requests ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0",
 ]
 
 
@@ -226,22 +300,31 @@ async def insert_alert(
     summary: str | None = None,
     emotion: str | None = None,
     alert_message: str | None = None,
+    request_class: str = "nurse",
+    model_intent: str | None = None,
+    visible_to_nurse: bool = True,
 ) -> int:
     """
     Insert a new alert row and return its auto-generated id.
     created_at is set to the current UTC time in ISO-8601 format.
+
+    request_class / model_intent / visible_to_nurse carry the routing triage so a
+    facility request that the intent model mislabelled is stored as Routine
+    Facility and (when routed to housekeeping) hidden from the nurse's lists.
     """
     now = utcnow()
     cursor = await db.execute(
         """
         INSERT INTO alerts
             (room_id, priority, intent, distress_score, transcript, wav_path,
-             created_at, language, patient_name, summary, emotion, alert_message)
+             created_at, language, patient_name, summary, emotion, alert_message,
+             request_class, model_intent, visible_to_nurse)
         VALUES
-            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (room_id, priority, intent, distress_score, transcript, wav_path, now,
-         language, patient_name, summary, emotion, alert_message),
+         language, patient_name, summary, emotion, alert_message,
+         request_class, model_intent, 1 if visible_to_nurse else 0),
     )
     alert_id = cursor.lastrowid
     logger.info(
@@ -265,16 +348,19 @@ async def get_latest_alerts(
     limit        : max number of rows to return (default 20)
     unacked_only : if True, exclude already-acknowledged alerts
     """
+    # visible_to_nurse = 0 rows were routed to housekeeping and must never show up
+    # in the nurse's list (ground-support tasks do not interrupt nurses).
     if unacked_only:
         query = """
             SELECT * FROM alerts
-            WHERE acknowledged = 0
+            WHERE acknowledged = 0 AND visible_to_nurse = 1 AND is_demo = 0
             ORDER BY created_at DESC
             LIMIT ?
         """
     else:
         query = """
             SELECT * FROM alerts
+            WHERE visible_to_nurse = 1 AND is_demo = 0
             ORDER BY created_at DESC
             LIMIT ?
         """
@@ -441,6 +527,7 @@ async def get_stale_unacked_urgent(
         WHERE acknowledged = 0
           AND priority = 'Urgent'
           AND escalated = 0
+          AND request_class = 'nurse'
         ORDER BY created_at ASC
     """
     async with db.execute(query) as cursor:
@@ -1029,3 +1116,111 @@ async def set_department_flag(db: aiosqlite.Connection, key: str, value: bool) -
         (key, 1 if value else 0, now),
     )
     await db.commit()
+
+
+# ── Order-lifecycle helpers (food / medicine fulfilment) ──────────────────────
+# These drive the order_status column on department_requests:
+#   requested -> pending_approval -> approved -> preparing -> delivered
+#                                  \-> rejected
+# `state` (pending/acknowledged/done/...) continues to drive the SLA/escalation
+# loop and the department dashboard queue; order_status drives the fulfilment UI.
+
+ORDER_STATUSES = ("requested", "pending_approval", "approved", "preparing", "delivered", "rejected")
+
+
+async def create_order_request(
+    db: aiosqlite.Connection,
+    *,
+    alert_id: int,
+    department: str,
+    kind: str,                      # 'food' | 'medicine'
+    target_username: str | None,
+    room_id: str,
+    floor: str | None,
+    transcript: str,
+    predicted_department: str,
+    routing_reason: str,
+    confidence: float,
+    model_version: str,
+    needs_approval: bool,
+    order_status: str,
+    item_name: str | None = None,
+    item_detail: str | None = None,
+    diet_restriction: str | None = None,
+) -> int:
+    """Create a department request carrying order-lifecycle fields. Returns id."""
+    now = utcnow()
+    cur = await db.execute(
+        """
+        INSERT INTO department_requests
+            (alert_id, department, target_username, room_id, floor, state, transcript,
+             predicted_department, routing_reason, confidence, model_version, shadow,
+             created_at, updated_at,
+             kind, order_status, item_name, item_detail, needs_approval, diet_restriction)
+        VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (alert_id, department, target_username, room_id, floor, transcript,
+         predicted_department, routing_reason, confidence, model_version,
+         now, now,
+         kind, order_status, item_name, item_detail, 1 if needs_approval else 0, diet_restriction),
+    )
+    await db.commit()
+    return cur.lastrowid
+
+
+async def set_order_status(
+    db: aiosqlite.Connection, request_id: int, order_status: str, *, by: str | None = None
+) -> dict | None:
+    """Advance an order's fulfilment status. Also stamps approval fields when the
+    transition is an approval."""
+    if order_status not in ORDER_STATUSES:
+        return None
+    now = utcnow()
+    if order_status == "approved":
+        await db.execute(
+            "UPDATE department_requests SET order_status=?, approved_by=?, approved_at=?, updated_at=? WHERE id=?",
+            (order_status, by, now, now, request_id),
+        )
+    elif order_status == "delivered":
+        await db.execute(
+            "UPDATE department_requests SET order_status=?, state='done', done_at=?, updated_at=? WHERE id=?",
+            (order_status, now, now, request_id),
+        )
+    elif order_status == "rejected":
+        await db.execute(
+            "UPDATE department_requests SET order_status=?, state='cancelled', updated_at=? WHERE id=?",
+            (order_status, now, request_id),
+        )
+    else:
+        await db.execute(
+            "UPDATE department_requests SET order_status=?, updated_at=? WHERE id=?",
+            (order_status, now, request_id),
+        )
+    await db.commit()
+    return await get_department_request(db, request_id)
+
+
+async def set_order_item(
+    db: aiosqlite.Connection, request_id: int, item_name: str, item_detail: str | None = None
+) -> dict | None:
+    """Record the chosen menu item / medication on an order."""
+    now = utcnow()
+    await db.execute(
+        "UPDATE department_requests SET item_name=?, item_detail=?, updated_at=? WHERE id=?",
+        (item_name, item_detail, now, request_id),
+    )
+    await db.commit()
+    return await get_department_request(db, request_id)
+
+
+async def list_orders_pending_approval(db: aiosqlite.Connection, room_id: str | None = None) -> list[dict]:
+    """Orders waiting on nurse approval (for the nurse approval queue)."""
+    if room_id:
+        q = "SELECT * FROM department_requests WHERE order_status='pending_approval' AND room_id=? ORDER BY created_at DESC"
+        args = (room_id,)
+    else:
+        q = "SELECT * FROM department_requests WHERE order_status='pending_approval' ORDER BY created_at DESC"
+        args = ()
+    async with db.execute(q, args) as cur:
+        rows = await cur.fetchall()
+    return [dict(r) for r in rows]

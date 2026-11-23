@@ -1243,6 +1243,13 @@ function handlePtEvent(evt) {
       addSendItem(evt);
       setTimeout(() => { if (!ptMuted) { setOrb('started','Listening'); setStatus('Listening… just speak — no button needed'); } }, 2500);
       break;
+    case 'department_update':
+      // Live order-status feedback: "sent to canteen", "approved — preparing",
+      // "delivered", etc. Show it prominently, then resume the listening prompt.
+      setOrb('sent', 'Update');
+      setStatus(evt.message || 'Your request was updated.');
+      setTimeout(() => { if (!ptMuted) { setOrb('started','Listening'); setStatus('Listening… just speak — no button needed'); } }, 5000);
+      break;
     case 'error':
       setOrb('error', 'Error');
       setStatus(evt.message || 'Processing error — please speak again.');

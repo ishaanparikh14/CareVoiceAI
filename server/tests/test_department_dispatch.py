@@ -85,7 +85,10 @@ def install_fakes(monkeypatch, mgr, *, targets, floor="4", nurses=("anna",),
 
     async def fake_floor_chain(conn, fl):
         u = targets.get("housekeeping")
-        return [{"username": u, "full_name": u, "is_deputy": False}] if u else []
+        if not u:
+            return []
+        return [{"username": u, "full_name": u, "is_deputy": False},
+                {"username": u + "_deputy", "full_name": u + " deputy", "is_deputy": True}]
 
     async def fake_nurses_for_room(conn, room): return list(nurses)
 
@@ -164,7 +167,7 @@ def run(coro): return asyncio.run(coro)
 
 # ── Delivery ──────────────────────────────────────────────────────────────────
 
-def test_route_delivers_to_department_and_notifies_nurse(ctx):
+def test_route_delivers_to_department_without_nurse_notice(ctx):
     async def body():
         db = await _new_db()
         aid = await _make_alert(db)
@@ -175,7 +178,7 @@ def test_route_delivers_to_department_and_notifies_nurse(ctx):
         )
         assert res["ok"] and res["target"] == "canteen_cathy"
         assert ctx["mgr"].sent_dept.get("canteen_cathy")        # delivered
-        assert ctx["mgr"].sent_nurse.get("anna")                # nurse notice
+        assert not ctx["mgr"].sent_nurse.get("anna")            # nurse not disturbed
         req = await database.get_department_request(db, res["request_id"])
         assert req["state"] == "pending"
         dd._cancel_timer(res["request_id"])
@@ -240,28 +243,32 @@ def test_double_acknowledge_rejected(ctx):
 
 # ── SLA timeout → escalate to nurse ──────────────────────────────────────────
 
-def test_sla_timeout_escalates_to_nurse(ctx):
+def test_t_esc_moves_along_housekeeping_chain_never_to_nurse(ctx):
     async def body():
         db = await _new_db()
         aid = await _make_alert(db)
         res = await dd.route_request(
-            db, alert_id=aid, department="canteen", room_id="4B",
-            transcript="water", predicted_department="canteen",
+            db, alert_id=aid, department="housekeeping", room_id="4B",
+            transcript="water spilled on the floor", predicted_department="housekeeping",
             routing_reason="keyword", confidence=0.9, model_version="t",
         )
         rid = res["request_id"]
-        # The SLA timer must be armed for a pending request.
-        assert rid in dd._timers, "SLA timer was not armed"
-        # Cancel the background timer and drive the escalation deterministically
-        # (awaiting a real sleeping background task across asyncio.run boundaries
-        # is flaky; _escalate_to_nurse IS the exact code path the timer runs).
+        assert res["target"] == "floor_mgr_4"
+        assert rid in dd._timers, "T_esc timer was not armed"
+        # Drive the timer's code path deterministically.
         dd._cancel_timer(rid)
-        await dd._escalate_to_nurse(db, rid, reason="sla_timeout")
+        nxt = await dd._advance_chain(db, rid, reason="t_esc_timeout")
+        assert nxt == "floor_mgr_4_deputy"
         req = await database.get_department_request(db, rid)
-        alert = await database.get_alert_by_id(db, aid)
-        assert req["state"] == "escalated", req["state"]
-        assert alert["dept_escalated"] == 1, "alert not flagged"
-        assert aid in ctx["escalations"], "route_alert not called by escalation"
+        assert req["state"] == "pending" and req["target_username"] == "floor_mgr_4_deputy"
+        dd._cancel_timer(rid)
+        # Chain exhausted -> unattended, admins told, nurse never paged.
+        assert await dd._advance_chain(db, rid, reason="t_esc_timeout") is None
+        req = await database.get_department_request(db, rid)
+        assert req["state"] == "escalated"
+        assert any("department_unattended" in f for f in ctx["mgr"].admin_frames)
+        assert aid not in ctx["escalations"], "housekeeping must never page the nurse"
+        assert not ctx["mgr"].sent_nurse
         await db.close()
     run(body())
 
@@ -287,19 +294,22 @@ def test_ack_before_sla_prevents_escalation(ctx):
 
 # ── "Not mine" bounce-back ────────────────────────────────────────────────────
 
-def test_not_mine_escalates_to_nurse(ctx):
+def test_not_mine_passes_to_next_then_unattended(ctx):
     async def body():
         db = await _new_db()
         aid = await _make_alert(db)
         res = await dd.route_request(
-            db, alert_id=aid, department="canteen", room_id="4B",
-            transcript="water", predicted_department="canteen",
+            db, alert_id=aid, department="housekeeping", room_id="4B",
+            transcript="bin is full", predicted_department="housekeeping",
             routing_reason="keyword", confidence=0.9, model_version="t",
         )
         rid = res["request_id"]
-        r = await dd.reject(db, rid, "canteen_cathy", "not mine")
-        assert r["ok"] and r["state"] == "escalated"
-        assert aid in ctx["escalations"]
+        r = await dd.reject(db, rid, "floor_mgr_4", "not mine")
+        assert r["ok"] and r["state"] == "reassigned" and r["next"] == "floor_mgr_4_deputy"
+        dd._cancel_timer(rid)
+        r2 = await dd.reject(db, rid, "floor_mgr_4_deputy", "not mine")
+        assert r2["ok"] and r2["state"] == "unattended"
+        assert aid not in ctx["escalations"]
         await db.close()
     run(body())
 
@@ -336,19 +346,123 @@ def test_dedupe_merges_repeat(ctx):
 
 # ── No target configured → straight to nurse ─────────────────────────────────
 
-def test_no_target_escalates(ctx, monkeypatch):
+def test_no_target_is_unplaced(ctx, monkeypatch):
     async def body():
         import pg_database
-        async def none_user(conn, department): return None
-        monkeypatch.setattr(pg_database, "get_department_user", none_user)
+        async def empty_chain(conn, fl): return []
+        monkeypatch.setattr(pg_database, "get_floor_manager_chain", empty_chain)
         db = await _new_db()
         aid = await _make_alert(db)
         res = await dd.route_request(
-            db, alert_id=aid, department="pharmacy", room_id="4B",
-            transcript="refill", predicted_department="pharmacy",
+            db, alert_id=aid, department="housekeeping", room_id="4B",
+            transcript="ac broken", predicted_department="housekeeping",
             routing_reason="keyword", confidence=0.9, model_version="t",
         )
-        assert res.get("escalated") is True
-        assert aid in ctx["escalations"]
+        assert res == {"ok": False, "unplaced": True}
+        assert aid not in ctx["escalations"]
+        await db.close()
+    run(body())
+
+
+# ── Triage-level routing decisions ───────────────────────────────────────────
+
+def test_facility_alert_hidden_from_nurse_when_routed(ctx, monkeypatch):
+    monkeypatch.setattr(config.settings, "DEPARTMENT_ROUTING_SHADOW", False)
+
+    async def body():
+        db = await _new_db()
+        aid = await _make_alert(db)
+        out = await dd.process_alert_routing(
+            db, alert_id=aid, room_id="4B", transcript="water spilled on the floor",
+            request_class="facility", confidence=0.9, reason="kw",
+        )
+        assert out["nurse_primary"] is False and out["departments"] == ["housekeeping"]
+        alert = await database.get_alert_by_id(db, aid)
+        assert alert["visible_to_nurse"] == 0
+        for rid in list(dd._timers):
+            dd._cancel_timer(rid)
+        await db.close()
+    run(body())
+
+
+def test_facility_unplaced_falls_back_to_nurse(ctx, monkeypatch):
+    monkeypatch.setattr(config.settings, "DEPARTMENT_ROUTING_SHADOW", False)
+
+    async def body():
+        import pg_database
+        async def empty_chain(conn, fl): return []
+        monkeypatch.setattr(pg_database, "get_floor_manager_chain", empty_chain)
+        db = await _new_db()
+        aid = await _make_alert(db)
+        out = await dd.process_alert_routing(
+            db, alert_id=aid, room_id="4B", transcript="ac broken",
+            request_class="facility", confidence=0.9, reason="kw",
+        )
+        assert out["nurse_primary"] is True   # housekeeping_nurse_fallback defaults on
+        alert = await database.get_alert_by_id(db, aid)
+        assert alert["visible_to_nurse"] == 1
+        await db.close()
+    run(body())
+
+
+def test_nurse_and_food_requests_go_to_nurse(ctx):
+    async def body():
+        db = await _new_db()
+        for cls in ("nurse", "food"):
+            aid = await _make_alert(db)
+            out = await dd.process_alert_routing(
+                db, alert_id=aid, room_id="4B", transcript="x", request_class=cls,
+            )
+            assert out["nurse_primary"] is True and out["departments"] == []
+        assert not ctx["mgr"].sent_dept.get("canteen_cathy")   # canteen never contacted
+        await db.close()
+    run(body())
+
+
+# ── v3.1: repeat vs new request, offline staff skipped ───────────────────────
+
+def test_same_request_similarity():
+    assert dd.same_request("water spilled on the floor", "the water spill on floor again")
+    assert not dd.same_request("I have spilled water on the floor", "I lost my TV remote")
+    assert not dd.same_request("water spilled on the floor", "the AC is not working")
+
+
+def test_different_request_after_not_mine_goes_to_floor_manager(ctx):
+    async def body():
+        db = await _new_db()
+        a1 = await _make_alert(db)
+        r1 = await dd.route_request(
+            db, alert_id=a1, department="housekeeping", room_id="4B",
+            transcript="I have spilled water on the floor", predicted_department="housekeeping",
+            routing_reason="keyword", confidence=0.9, model_version="t",
+        )
+        await dd.reject(db, r1["request_id"], "floor_mgr_4", "not mine")
+        a2 = await _make_alert(db)
+        r2 = await dd.route_request(
+            db, alert_id=a2, department="housekeeping", room_id="4B",
+            transcript="I lost my TV remote", predicted_department="housekeeping",
+            routing_reason="keyword", confidence=0.9, model_version="t",
+        )
+        assert not r2.get("deduped"), "a different request must not be merged into the rejected one"
+        assert r2["target"] == "floor_mgr_4"
+        for rid in list(dd._timers):
+            dd._cancel_timer(rid)
+        await db.close()
+    run(body())
+
+
+def test_offline_floor_manager_skipped_to_online_deputy(ctx):
+    async def body():
+        ctx["mgr"].dept_online.discard("floor_mgr_4")
+        ctx["mgr"].dept_online.add("floor_mgr_4_deputy")
+        db = await _new_db()
+        aid = await _make_alert(db)
+        res = await dd.route_request(
+            db, alert_id=aid, department="housekeeping", room_id="4B",
+            transcript="bin is full", predicted_department="housekeeping",
+            routing_reason="keyword", confidence=0.9, model_version="t",
+        )
+        assert res["target"] == "floor_mgr_4_deputy"
+        dd._cancel_timer(res["request_id"])
         await db.close()
     run(body())

@@ -44,6 +44,10 @@ class Intent(str, Enum):
     EMOTIONAL_SUPPORT = "Emotional Support"
     INFORMATION      = "Information"
     OTHER            = "Other"
+    # Ground-support / facility requests (spills, AC, cleaning...). Never produced
+    # by the DistilBERT model; assigned by the department triage so a mislabelled
+    # facility request can no longer become a nurse Critical/Urgent alert.
+    FACILITY         = "Facility"
 
 
 # ── Pipeline internal DTOs ────────────────────────────────────────────────────
@@ -163,6 +167,8 @@ class AlertListResponse(BaseModel):
     alerts:      list[AlertResponse]
     total:       int  = Field(..., description="Number of alerts returned")
     unacked_only: bool = Field(..., description="Whether unacknowledged filter was applied")
+    scoped:      bool = Field(default=False,
+                              description="True when the list is already filtered for the calling nurse")
 
 
 # ── Acknowledgement ───────────────────────────────────────────────────────────

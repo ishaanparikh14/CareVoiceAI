@@ -109,8 +109,11 @@
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
     <string name="drawer_profile">Profile</string>
+    <string name="drawer_care">Patient Care (Diet &amp; Meds)</string>
     <string name="drawer_voice">Voice Alerts</string>
     <string name="drawer_settings">Settings</string>
+    <string name="drawer_my_health">My health &amp; Ask CareVoice</string>
+    <string name="drawer_attender">Attender: order own meal</string>
     <string name="drawer_logout">Log out</string>
     <string name="drawer_server_url">Server URL</string>
     <string name="drawer_role_patient">Patient</string>

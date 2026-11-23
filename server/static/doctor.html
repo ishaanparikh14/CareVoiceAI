@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CareVoice AI — Doctor</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f1f5f9;--surface:#fff;--surface2:#f8fafc;--border:#e2e8f0;--accent:#4f46e5;--green:#16a34a;--yellow:#d97706;--red:#dc2626;--text:#0f172a;--muted:#64748b;--font:system-ui,-apple-system,sans-serif}
+body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:58px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.logo{display:flex;align-items:center;gap:10px}.logo h1{font-size:1.1rem;font-weight:800}
+.logo span{font-size:.7rem;font-weight:600;color:var(--accent);background:rgba(79,70,229,.12);padding:2px 8px;border-radius:20px;border:1px solid rgba(79,70,229,.25)}
+.btn{border:1px solid var(--border);background:var(--surface);color:var(--text);padding:7px 14px;border-radius:8px;font-size:.83rem;cursor:pointer;font-weight:600}
+.btn.prim{background:var(--accent);color:#fff;border-color:var(--accent)}
+.layout{display:flex;flex:1;overflow:hidden}
+.side{width:300px;border-right:1px solid var(--border);background:var(--surface);overflow-y:auto}
+.pt{padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer}
+.pt:hover{background:var(--surface2)}.pt.active{background:rgba(79,70,229,.08);border-left:3px solid var(--accent)}
+.pt b{font-size:.92rem}.pt .m{font-size:.76rem;color:var(--muted);margin-top:2px}
+.flag{display:inline-block;font-size:.66rem;font-weight:700;background:#fef3c7;color:#92400e;border-radius:5px;padding:1px 6px;margin:3px 3px 0 0}
+.main{flex:1;overflow-y:auto;padding:20px 26px 60px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+.card h3{font-size:.92rem;margin-bottom:10px}
+table{width:100%;border-collapse:collapse;font-size:.84rem}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}th{color:var(--muted);font-weight:600}
+.f-high,.f-low{color:var(--red);font-weight:700}
+.banner{background:#e0e7ff;color:#3730a3;border:1px solid #c7d2fe;border-radius:10px;padding:9px 12px;font-size:.82rem;margin-bottom:10px;font-weight:600}
+.summary{white-space:pre-wrap;font-size:.88rem;line-height:1.5}
+.src{font-size:.72rem;color:var(--muted)}
+.empty{color:var(--muted);text-align:center;padding:60px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo"><h1>CareVoice AI</h1><span>Doctor</span></div>
+  <div style="display:flex;gap:10px;align-items:center"><span id="who" style="font-size:.8rem;color:var(--muted)"></span><button class="btn" onclick="logout()">Sign out</button></div>
+</div>
+<div class="layout">
+  <div class="side" id="list"><div class="empty">Loading…</div></div>
+  <div class="main" id="detail"><div class="empty">Select a patient to see the full history.</div></div>
+</div>
+<script>
+const BASE=location.origin;let token=localStorage.getItem('cv_token');
+try{if(window.CareVoiceApp&&window.CareVoiceApp.getToken){const t=window.CareVoiceApp.getToken();if(t)token=t}}catch(e){}
+if(!token)location.href='/login';
+async function api(p,o={}){const r=await fetch(BASE+p,{...o,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'}});
+ if(r.status===401||r.status===403){localStorage.clear();location.href='/login';throw new Error('auth')}
+ if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
+function logout(){localStorage.clear();location.href='/login'}
+const esc=s=>String(s??'').replace(/</g,'&lt;');
+let current=null;
+async function loadList(){
+ document.getElementById('who').textContent=localStorage.getItem('cv_full_name')||'';
+ const d=await api('/doctor/patients');
+ document.getElementById('list').innerHTML=d.patients.map(p=>`<div class="pt" id="pt-${p.room_number}" onclick="open_('${p.room_number}')">
+  <b>${esc(p.full_name)}</b><div class="m">Room ${esc(p.room_number)} · ${esc(p.diagnosis||'')} · ESI ${p.acuity??'—'}</div>
+  <div>${(p.trends.flags||[]).map(f=>`<span class="flag">${esc(f)}</span>`).join('')}</div></div>`).join('');
+}
+function obsTable(rows){return rows.length?`<table><tr><th>Parameter</th><th>Value</th><th>Usual range</th><th>When</th></tr>${rows.map(o=>`<tr><td>${esc(o.display)}</td><td class="f-${o.flag}">${esc(o.value)} ${esc(o.unit)}</td><td>${esc(o.ref_range)}</td><td>${o.effective_at?new Date(o.effective_at).toLocaleString():''}</td></tr>`).join('')}</table>`:'<div class="src">None recorded</div>'}
+async function open_(room){
+ current=room;document.querySelectorAll('.pt').forEach(e=>e.classList.remove('active'));document.getElementById('pt-'+room)?.classList.add('active');
+ const el=document.getElementById('detail');el.innerHTML='<div class="empty">Loading record…</div>';
+ const r=await api('/doctor/patient/'+room);const p=r.patient||{};
+ el.innerHTML=`
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+   <div><h2 style="font-size:1.25rem">${esc(p.full_name)}</h2><div class="src">Room ${esc(room)} · age ${p.age??'—'} · ${esc(p.diagnosis||'')} · diet ${esc(p.diet_restriction||'none')} · source: ${esc(r.source_label)}</div></div>
+   <div style="display:flex;gap:8px"><button class="btn prim" onclick="summary(false)">Generate patient summary</button><button class="btn" onclick="summary(true)">Generate &amp; save to EMR</button></div>
+  </div>
+  <div id="sum"></div>
+  <div class="card"><h3>Behaviour trends</h3>${(r.trends.flags.length?r.trends.flags:['No flags']).map(f=>`<span class="flag">${esc(f)}</span>`).join('')}
+   <div class="src" style="margin-top:6px">${r.trends.nurse_calls_24h} nurse calls in 24 h · ${r.trends.total_calls} total · night share ${Math.round(r.trends.night_share*100)}%</div></div>
+  <div class="grid2">
+   <div class="card"><h3>Active conditions</h3><table>${r.conditions.map(c=>`<tr><td>${esc(c.display)}</td><td>${esc(c.status)}</td><td>${esc(c.onset)}</td></tr>`).join('')}</table></div>
+   <div class="card"><h3>Medications</h3><table>${r.medications.map(m=>`<tr><td>${esc(m.name)}</td><td>${esc(m.kind)}</td><td>${esc(m.dosage)}</td></tr>`).join('')}</table></div>
+  </div>
+  <div class="card"><h3>Vitals</h3>${obsTable(r.vitals)}</div>
+  <div class="card"><h3>Lab results</h3>${obsTable(r.labs)}</div>
+  <div class="card"><h3>Hospital course</h3><table>${r.encounters.map(e=>`<tr><td style="white-space:nowrap">${e.occurred_at?new Date(e.occurred_at).toLocaleString():''}</td><td>${esc(e.kind)}</td><td>${esc(e.summary)}</td><td>${esc(e.author)}</td></tr>`).join('')}</table></div>
+  <div class="card"><h3>Recent patient calls</h3><table>${r.recent_calls.map(a=>`<tr><td style="white-space:nowrap">${new Date(a.created_at).toLocaleString()}</td><td>${esc(a.priority)}</td><td>${esc(a.intent)}</td><td>${esc(a.summary||a.transcript)}</td></tr>`).join('')||'<tr><td class="src">No calls</td></tr>'}</table></div>
+  <div class="card"><h3>Saved documents (EMR)</h3><table>${(r.documents||[]).map(d=>`<tr><td style="white-space:nowrap">${new Date(d.created_at).toLocaleString()}</td><td>${esc(d.doc_type)}</td><td>${esc(d.title)}</td><td>${esc(d.author)}</td></tr>`).join('')||'<tr><td class="src">None yet</td></tr>'}</table></div>`;
+}
+async function summary(save){
+ const el=document.getElementById('sum');el.innerHTML='<div class="card"><div class="src">Generating summary with the care agent… (can take up to a minute on CPU)</div></div>';
+ try{const s=await api('/doctor/patient/'+current+'/summary',{method:'POST',body:JSON.stringify({save_to_emr:save})});
+  el.innerHTML=`<div class="card"><div class="banner">${esc(s.banner)}</div><div class="summary">${esc(s.summary)}</div>
+   <div class="src" style="margin-top:8px">Generated by: ${s.provider==='template'?'template (care-agent model unavailable)':esc(s.provider)} · data: ${esc(s.source)}${s.saved?' · saved to EMR':''}</div></div>`;
+ }catch(e){el.innerHTML=`<div class="card">Could not generate: ${esc(e.message)}</div>`}
+}
+loadList();
+</script>
+</body>
+</html>

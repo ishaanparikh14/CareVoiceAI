@@ -59,6 +59,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         binding   = ActivityMainBinding.inflate(layoutInflater)
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
         setContentView(binding.root)
+        // Bedside device: keep the screen on so "Help" can always be heard
+        // (Android blocks background microphone use for speech recognition).
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         val patientName = UserSession.getFullName(this) ?: "Patient"
         val roomNumber  = UserSession.getRoomNumber(this) ?: "—"
@@ -80,11 +83,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         // Reconnect signaling if it dropped while backgrounded.
         ensureCallSignaling()
         startVoiceNotePoll()
+        // Wake-word listening only runs while this screen is in front: it frees
+        // the mic for voice notes/calls and keeps playback audible.
+        viewModel.resume()
     }
 
     override fun onPause() {
         super.onPause()
         vnPollJob?.cancel()
+        viewModel.pause()
     }
 
     // ── Voice-note arrival notification (patient side) ──────────────────────────
@@ -137,6 +144,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun setupDrawer() {
         binding.navView.setNavigationItemSelectedListener(this)
+        // Shared drawer menu: hide the nurse-only entries on the patient screen.
+        binding.navView.menu.findItem(R.id.nav_care)?.isVisible = false
+        binding.navView.menu.findItem(R.id.nav_voice)?.isVisible = false
 
         binding.btnMenu.setOnClickListener {
             if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
@@ -188,6 +198,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             R.id.nav_profile     -> { showProfileDialog(); true }
             R.id.nav_vn_received -> { ReceivedVoiceNotesActivity.open(this); true }
             R.id.nav_vn_send     -> { SendVoiceNoteActivity.open(this); true }
+            R.id.nav_my_health   -> { CareWebActivity.open(this, "/my-health"); true }
+            R.id.nav_attender    -> { CareWebActivity.open(this, "/attender"); true }
             R.id.nav_settings    -> { showSettingsDialog(); true }
             R.id.nav_logout      -> { doLogout(); true }
             else                 -> false
@@ -324,6 +336,23 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         layout.addView(vnLabel)
         layout.addView(vnSpinner)
 
+        // Wake-word sensitivity: Normal adds common mis-hearings + Hindi words
+        // (madad, bachao, sister); High also accepts near-matches and quieter speech.
+        val wsLabels = arrayOf("Low (fewest false alarms)", "Normal", "High (most sensitive)")
+        val wsCodes  = arrayOf("low", "normal", "high")
+        val wsCur = prefs.getString(WakeWordDetector.KEY_SENSITIVITY, "normal") ?: "normal"
+        layout.addView(TextView(this).apply {
+            text = "Wake word sensitivity (\"Help\" / \"Nurse\")"
+            setPadding(0, pad2, 0, (4 * resources.displayMetrics.density).toInt())
+        })
+        val wsSpinner = android.widget.Spinner(this).apply {
+            adapter = android.widget.ArrayAdapter(
+                this@MainActivity, android.R.layout.simple_spinner_dropdown_item, wsLabels
+            )
+            setSelection(wsCodes.indexOf(wsCur).coerceAtLeast(0))
+        }
+        layout.addView(wsSpinner)
+
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.settings_title))
             .setView(layout)
@@ -332,7 +361,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 if (newUrl.isNotBlank()) {
                     prefs.edit().putString(ServerUploader.KEY_SERVER_URL, newUrl).apply()
                 }
-                prefs.edit().putString("voice_note_lang", vnCodes[vnSpinner.selectedItemPosition]).apply()
+                prefs.edit()
+                    .putString("voice_note_lang", vnCodes[vnSpinner.selectedItemPosition])
+                    .putString(WakeWordDetector.KEY_SENSITIVITY, wsCodes[wsSpinner.selectedItemPosition])
+                    .apply()
             }
             .setNegativeButton(getString(R.string.settings_cancel), null)
             .show()
@@ -408,6 +440,39 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun observeViewModel() {
         viewModel.uiState.observe(this)  { renderState(it) }
         viewModel.rmsLevel.observe(this) { animateAmplitudeBar(it) }
+        viewModel.detail.observe(this)   { renderDetail() }
+        viewModel.pendingCount.observe(this) { renderDetail() }
+        viewModel.feedback.observe(this) { fb -> fb?.let { showFeedback(it) } }
+    }
+
+    private var lastFeedbackId = 0L
+
+    private fun showFeedback(fb: MainViewModel.Feedback) {
+        if (fb.id == lastFeedbackId) return     // don't replay on rotation
+        lastFeedbackId = fb.id
+        val bar = Snackbar.make(binding.root, fb.text,
+            if (fb.kind == MainViewModel.Feedback.Kind.ERROR) Snackbar.LENGTH_LONG else Snackbar.LENGTH_SHORT)
+        val color = when (fb.kind) {
+            MainViewModel.Feedback.Kind.ERROR   -> R.color.cv_danger
+            MainViewModel.Feedback.Kind.SUCCESS -> R.color.colorLoginPatientAccent
+            else -> null
+        }
+        color?.let { bar.setBackgroundTint(getColor(it)) }
+        if (fb.kind == MainViewModel.Feedback.Kind.ERROR) {
+            bar.setAction("Call Nurse") { viewModel.callNurseNow() }
+        }
+        bar.show()
+    }
+
+    private fun renderDetail() {
+        val d = viewModel.detail.value
+        val n = viewModel.pendingCount.value ?: 0
+        val text = listOfNotNull(
+            d?.takeIf { it.isNotBlank() },
+            if (n > 0) "$n request(s) waiting to be re-sent" else null,
+        ).joinToString("\n")
+        binding.tvStatusDetail.text = text
+        binding.tvStatusDetail.visibility = if (text.isEmpty()) View.GONE else View.VISIBLE
     }
 
     // ── State rendering ───────────────────────────────────────────────────────
@@ -477,7 +542,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 updateDrawerStatus(false)
             }
             is MainViewModel.UiState.Ignored -> {
-                binding.tvStatus.text          = "Say \"Help\" to call the nurse"
+                binding.tvStatus.text          = "Not sent — no request understood"
+                binding.btnCallNurse.isEnabled = true
+                binding.btnStop.isEnabled      = false
+                updateDrawerStatus(false)
+            }
+            is MainViewModel.UiState.Paused -> {
+                binding.tvStatus.text          = "Listening paused"
                 binding.btnCallNurse.isEnabled = true
                 binding.btnStop.isEnabled      = false
                 updateDrawerStatus(false)
@@ -490,10 +561,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 showDownloadErrorSnackbar()
             }
             is MainViewModel.UiState.UploadError -> {
-                binding.tvStatus.text          = "Could not reach the server"
+                binding.tvStatus.text          = "Not sent yet"
                 binding.btnCallNurse.isEnabled = true
                 binding.btnStop.isEnabled      = false
-                Toast.makeText(this, "Upload failed — will retry", Toast.LENGTH_SHORT).show()
             }
         }
         // The Stop button only appears while a message is being recorded,

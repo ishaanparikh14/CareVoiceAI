@@ -199,11 +199,36 @@ def test_primary_available_gets_offer(harness):
         res = await dispatch.start_dispatch(db, alert)
         assert res["state"] == "pending_primary"
         assert res["primary"] == "anna"
-        # Anna got exactly one offer frame; ben got none.
+        # Anna got exactly one frame (assigned to her); ben got none.
         assert len(h.ws.sent.get("anna", [])) == 1
         assert "ben" not in h.ws.sent
         row = await database.get_dispatch_by_alert(db, alert["id"])
-        assert row["state"] == "pending_primary" and row["assignee"] == "anna"
+        # Hers straight away — no Accept step and no timer that takes it back.
+        assert row["state"] == "assigned" and row["assignee"] == "anna"
+        assert row["id"] not in dispatch._timers
+        await db.close()
+    run(body())
+
+
+def test_second_request_goes_to_other_free_nurse(harness):
+    h = harness
+    h.nurse("anna"); h.nurse("ben")
+    h.room_nurses["4B"] = ["anna"]
+
+    async def body():
+        db = await _new_db()
+        a1 = await _make_alert(db)
+        await dispatch.start_dispatch(db, a1)           # -> anna (now busy holding it)
+        a2 = await _make_alert(db)
+        res = await dispatch.start_dispatch(db, a2)
+        assert res["state"] == "broadcasting"
+        assert res["delivered"] == ["ben"]              # free nurse, not the busy primary
+        # The first request is still Anna's — nothing was taken away or acked.
+        r1 = await database.get_dispatch_by_alert(db, a1["id"])
+        assert r1["state"] == "assigned" and r1["assignee"] == "anna"
+        assert (await database.get_alert_by_id(db, a1["id"]))["acknowledged"] == 0
+        for rid in list(dispatch._timers):
+            dispatch._cancel_timer(rid)
         await db.close()
     run(body())
 

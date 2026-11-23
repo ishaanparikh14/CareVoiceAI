@@ -308,6 +308,7 @@ _BASE_SUMMARIES: dict[Intent, str] = {
     Intent.EMOTIONAL_SUPPORT: "would like emotional support",
     Intent.INFORMATION:       "has a question",
     Intent.OTHER:             "needs assistance",
+    Intent.FACILITY:          "needs room / facility support",
 }
 
 # Refinement rules — checked in order; first match wins.

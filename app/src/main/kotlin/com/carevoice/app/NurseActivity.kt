@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
 import android.media.ToneGenerator
+import android.os.Build
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
@@ -130,15 +131,51 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
         // Connect call signaling so the nurse can place/receive real-time calls.
         ensureCallSignaling()
+
+        // Request notifications reach the nurse while the app is in the background.
+        Notifier.ensure(this)
+        if (Build.VERSION.SDK_INT >= 33 &&
+            androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+            != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            notifPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+        NurseAlertService.start(this)
+    }
+
+    private val notifPermission =
+        registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { granted ->
+            if (!granted) Snackbar.make(binding.root,
+                "Notifications are off — you won't be alerted when the app is in the background.",
+                Snackbar.LENGTH_LONG).show()
+        }
+
+    /** True while the dashboard is on screen (in-app chime); otherwise notify. */
+    private var isForeground = false
+
+    /** Alert ids already announced (sound / notification), so polls don't repeat them. */
+    private val announcedIds = HashSet<Int>()
+    private var announceBaselineSet = false
+
+    private fun notifyIfBackground(a: AlertModel) {
+        if (isForeground || a.acknowledged) return
+        Notifier.alert(this, a.id, a.priority, a.roomId, a.patientName, a.summary, a.escalated)
     }
 
     override fun onResume() {
         super.onResume()
+        isForeground = true
         ensureCallSignaling()
+        if (::adapter.isInitialized && roomsLoaded) loadAlerts(showLoading = false)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        isForeground = false
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        if (isFinishing) NurseAlertService.stop(this)
         pollJob?.cancel()
         wsReconnectJob?.cancel()
         webSocket?.cancel()
@@ -259,6 +296,9 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
     private fun setupDrawer() {
         binding.navView.setNavigationItemSelectedListener(this)
+        // Shared drawer menu: hide the patient-only entries.
+        binding.navView.menu.findItem(R.id.nav_my_health)?.isVisible = false
+        binding.navView.menu.findItem(R.id.nav_attender)?.isVisible = false
     }
 
     private fun populateDrawerHeader() {
@@ -314,6 +354,7 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
             R.id.nav_voice      -> { showVoiceDialog(); true }
             R.id.nav_vn_received -> { ReceivedVoiceNotesActivity.open(this); true }
             R.id.nav_vn_send    -> { SendVoiceNoteActivity.open(this); true }
+            R.id.nav_care       -> { CareWebActivity.open(this); true }
             R.id.nav_settings   -> { showSettingsDialog(); true }
             R.id.nav_logout     -> { doLogout(); true }
             else                -> false
@@ -534,6 +575,7 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 webSocket?.cancel()
                 webSocket = null
                 try { CallSession.shutdownSignaling() } catch (_: Exception) {}
+                NurseAlertService.stop(this)
                 UserSession.logout(this)
                 startActivity(
                     Intent(this, LoginActivity::class.java).apply {
@@ -670,9 +712,16 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
             // nurse (for a room she doesn't normally attend) can still resolve the
             // patient for calling + voice notes while that request is on her board.
             loadAllWardPatients()
-            withContext(Dispatchers.Main) { loadAlerts(showLoading = true) }
+            withContext(Dispatchers.Main) {
+                roomsLoaded = true
+                loadAlerts(showLoading = true)
+            }
         }
     }
+
+    /** Set once the nurse's own rooms are known — no alert load before that, so
+     *  a startup race can never show another nurse's patients. */
+    private var roomsLoaded = false
 
     /** Full ward room→patient map (every patient), used to resolve reassigned
      *  requests for calls/voice notes beyond this nurse's own assigned rooms. */
@@ -716,7 +765,7 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
     /** True if the alert's room belongs to this nurse (or rooms not yet loaded). */
     private fun isMyRoom(roomId: String): Boolean =
-        myRooms.isEmpty() || myRooms.contains(roomId.trim())
+        myRooms.contains(roomId.trim())
 
     // ── Load alerts (HTTP) ────────────────────────────────────────────────────
 
@@ -745,21 +794,38 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                     }
                 }
 
-                val parsed = parseAlertList(body).filter { isMyRoom(it.roomId) }
+                // A v3.1+ server filters the list for this nurse (dispatch rules:
+                // only what was offered/assigned to her, or broadcast while she is
+                // free). Trust it as-is. Older servers return everything, so fall
+                // back to the room filter.
+                val scoped = runCatching { JSONObject(body).optBoolean("scoped", false) }.getOrDefault(false)
+                val parsed = parseAlertList(body).let { all -> if (scoped) all else all.filter { isMyRoom(it.roomId) } }
                 withContext(Dispatchers.Main) {
                     binding.progressLoading.visibility = View.GONE
-                    // Preserve dispatch-sourced cards (broadcast / admin-reassigned)
-                    // that aren't in this nurse's own rooms — otherwise the room
-                    // filter here would wipe a request the nurse was just handed
-                    // and it would vanish from the screen on the next poll.
+                    // Unscoped server only: preserve dispatch-sourced cards
+                    // (broadcast / admin-reassigned) outside this nurse's rooms so
+                    // the room filter doesn't wipe a request she was just handed.
+                    // A scoped server already includes them, and dropping one means
+                    // it went to someone else — so it must disappear.
                     val parsedIds = parsed.map { it.id }.toSet()
-                    val keptDispatch = allAlerts.filter { a ->
+                    val keptDispatch = if (scoped) emptyList() else allAlerts.filter { a ->
                         requestIdForAlert.containsKey(a.id) && a.id !in parsedIds && !a.acknowledged
                     }
                     allAlerts.clear()
                     allAlerts.addAll(parsed)
                     // Re-add preserved dispatch cards at the top, newest first.
                     keptDispatch.asReversed().forEach { allAlerts.add(0, it) }
+                    overlayAcks(allAlerts)
+                    // Anything acknowledged elsewhere: clear its notification.
+                    allAlerts.filter { it.acknowledged }.forEach { Notifier.cancelAlert(this@NurseActivity, it.id) }
+                    // Poll fallback: notify for requests the socket missed.
+                    if (!announceBaselineSet) {
+                        allAlerts.forEach { announcedIds.add(it.id) }
+                        announceBaselineSet = true
+                    } else {
+                        allAlerts.filter { !it.acknowledged && announcedIds.add(it.id) }
+                            .forEach { notifyIfBackground(it) }
+                    }
                     submitFilteredList()
                     updateCountBadge()
                     refreshDrawerAlertCount()
@@ -803,46 +869,74 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
     // ── ACK ───────────────────────────────────────────────────────────────────
 
-    private fun ackAlert(alertId: Int, by: String) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val json    = JSONObject().put("ack_by", by).toString()
-                val reqBody = json.toRequestBody("application/json".toMediaType())
-                val req     = Request.Builder()
-                    .url("$serverUrl/alerts/$alertId/ack")
-                    .addHeader("Authorization", "Bearer $token")
-                    .post(reqBody)
-                    .build()
+    /** Alerts whose ACK is on its way to the server (shown as acknowledged meanwhile). */
+    private val ackInFlight = mutableSetOf<Int>()
 
-                val code = http.newCall(req).execute().use { it.code }
-                withContext(Dispatchers.Main) {
-                    // 200/201 = acked by us; 409 = already acknowledged (race or
-                    // dispatch resolved it) — either way the request IS handled,
-                    // so mark it acked locally instead of leaving a stuck card.
-                    if (code == 200 || code == 201 || code == 409) {
-                        val idx = allAlerts.indexOfFirst { it.id == alertId }
-                        if (idx >= 0) allAlerts[idx] = allAlerts[idx].copy(acknowledged = true, ackedBy = by)
-                        submitFilteredList()
-                        updateCountBadge()
-                        refreshDrawerAlertCount()
-                        if (!hasUnackedRequests()) {
-                            iAmOccupied = false
-                            markAvailable()
-                        }
-                        Snackbar.make(binding.root, getString(R.string.nurse_ack_success), Snackbar.LENGTH_SHORT).show()
-                    } else {
-                        // Real failure — force every visible row to re-bind so the
-                        // optimistically-disabled ACK button re-enables (DiffUtil
-                        // would otherwise skip the unchanged item and leave it
-                        // stuck disabled until a logout/login).
-                        adapter.notifyDataSetChanged()
-                        Snackbar.make(binding.root, getString(R.string.nurse_ack_failed), Snackbar.LENGTH_SHORT).show()
-                    }
+    /** Short-timeout client for ACK so a slow network never freezes the card. */
+    private val ackHttp by lazy {
+        http.newBuilder()
+            .connectTimeout(5, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS)
+            .writeTimeout(5, TimeUnit.SECONDS)
+            .build()
+    }
+
+    /** Keep in-flight ACKs acknowledged when a poll / socket update replaces the list. */
+    private fun overlayAcks(list: MutableList<AlertModel>) {
+        if (ackInFlight.isEmpty()) return
+        for (i in list.indices) {
+            val a = list[i]
+            if (a.id in ackInFlight && !a.acknowledged) list[i] = a.copy(acknowledged = true, ackedBy = nurseName)
+        }
+    }
+
+    private fun setLocalAck(alertId: Int, acked: Boolean, by: String?) {
+        val idx = allAlerts.indexOfFirst { it.id == alertId }
+        if (idx >= 0) allAlerts[idx] = allAlerts[idx].copy(acknowledged = acked, ackedBy = if (acked) by else null)
+        submitFilteredList()
+        updateCountBadge()
+        refreshDrawerAlertCount()
+    }
+
+    private fun ackAlert(alertId: Int, by: String) {
+        if (!ackInFlight.add(alertId)) return            // double tap
+        // Optimistic: the card flips to acknowledged immediately.
+        setLocalAck(alertId, true, by)
+        Notifier.cancelAlert(this, alertId)
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val json = JSONObject().put("ack_by", by).toString()
+            var code = -1
+            for (attempt in 0..1) {                       // one quick retry on network error
+                try {
+                    val req = Request.Builder()
+                        .url("$serverUrl/alerts/$alertId/ack")
+                        .addHeader("Authorization", "Bearer $token")
+                        .post(json.toRequestBody("application/json".toMediaType()))
+                        .build()
+                    code = ackHttp.newCall(req).execute().use { it.code }
+                    break
+                } catch (e: Exception) {
+                    if (attempt == 1) code = -1 else delay(800)
                 }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    adapter.notifyDataSetChanged()
-                    Snackbar.make(binding.root, getString(R.string.nurse_ack_failed), Snackbar.LENGTH_SHORT).show()
+            }
+            withContext(Dispatchers.Main) {
+                ackInFlight.remove(alertId)
+                // 200/201 = acked by us; 409 = already acknowledged (race or
+                // dispatch resolved it) — either way the request IS handled.
+                if (code == 200 || code == 201 || code == 409) {
+                    if (!hasUnackedRequests()) {
+                        iAmOccupied = false
+                        markAvailable()
+                    }
+                    Snackbar.make(binding.root, getString(R.string.nurse_ack_success), Snackbar.LENGTH_SHORT).show()
+                } else {
+                    // Roll back so the ACK button is usable again.
+                    setLocalAck(alertId, false, null)
+                    val why = if (code == -1) "no connection" else "HTTP $code"
+                    Snackbar.make(binding.root, getString(R.string.nurse_ack_failed) + " ($why)", Snackbar.LENGTH_LONG)
+                        .setAction("Retry") { ackAlert(alertId, by) }
+                        .show()
                 }
             }
         }
@@ -950,7 +1044,10 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         updateCountBadge()
         refreshDrawerAlertCount()
         binding.rvAlerts.scrollToPosition(0)
-        if (!alert.acknowledged) chimeForAlert(alert.id, alert.priority)
+        announcedIds.add(alert.id)
+        if (!alert.acknowledged) {
+            if (isForeground) chimeForAlert(alert.id, alert.priority) else notifyIfBackground(alert)
+        }
         // Read out every incoming request (all categories).
         if (!alert.acknowledged) tts.maybeAnnounce(
             alertId = alert.id, priority = alert.priority, roomId = alert.roomId,
@@ -1085,6 +1182,7 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
         webSocket = wsHttp.newWebSocket(req, object : WebSocketListener() {
             override fun onOpen(ws: WebSocket, response: Response) {
+                wsFailures = 0
                 runOnUiThread {
                     binding.tvWsStatus.text = getString(R.string.nurse_ws_connected)
                     refreshDrawerWsStatus(true)
@@ -1139,8 +1237,12 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                         summary       = j.optString("summary").ifEmpty { null },
                         emotion       = j.optString("emotion").ifEmpty { null }
                     )
-                    // Ignore alerts for rooms not assigned to this nurse.
-                    if (!isMyRoom(alert.roomId)) return
+                    // "alert_updated" is sent by the server only to the nurse holding
+                    // the request, so accept it when the card is already mine (e.g. a
+                    // reassigned room). "new_alert" only arrives from the emergency
+                    // fallback broadcast: keep it to my own rooms.
+                    val onMyBoard = prior != null
+                    if (!(onMyBoard || isMyRoom(alert.roomId))) return
                     runOnUiThread {
                         allAlerts.removeAll { it.id == alert.id }
                         allAlerts.add(0, alert)
@@ -1148,9 +1250,13 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                         updateCountBadge()
                         refreshDrawerAlertCount()
                         binding.rvAlerts.scrollToPosition(0)
-                        // Every alert makes a sound; Critical gets a distinct
-                        // emergency signal. Deduped per id via chimedIds.
-                        if (!alert.acknowledged) chimeForAlert(alert.id, alert.priority)
+                        // In front: in-app chime (Critical = distinct signal).
+                        // In background: a system notification (sound via channel).
+                        // An escalation re-notifies; a plain update does not.
+                        val fresh = announcedIds.add(alert.id)
+                        if (!alert.acknowledged && (fresh || (event == "alert_updated" && alert.escalated))) {
+                            if (isForeground) chimeForAlert(alert.id, alert.priority) else notifyIfBackground(alert)
+                        }
                         // Speak the summary for every unacknowledged alert (TTS).
                         tts.maybeAnnounce(
                             alertId      = alert.id,
@@ -1184,10 +1290,16 @@ class NurseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         })
     }
 
+    private var wsFailures = 0
+
+    /** Reconnect with backoff (2 s → 30 s, jittered) so a server restart doesn't hammer it. */
     private fun scheduleWsReconnect() {
-        wsReconnectJob?.cancel()
+        if (wsReconnectJob?.isActive == true) return
+        wsFailures++
+        val base = minOf(2_000L * (1L shl minOf(wsFailures - 1, 4)), 30_000L)
+        val wait = base / 2 + (Math.random() * base / 2).toLong()
         wsReconnectJob = lifecycleScope.launch {
-            delay(5_000)
+            delay(wait)
             if (isActive) connectWebSocket()
         }
     }

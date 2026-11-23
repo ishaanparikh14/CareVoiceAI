@@ -198,6 +198,77 @@ async def notify_admins(frame: dict) -> None:
     await ws_router.manager.send_to_admins(json.dumps(frame))
 
 
+async def push_alert_update(db: aiosqlite.Connection, alert_id: int, text: str) -> list[str]:
+    """Deliver a server-side change to an alert (e.g. Urgent -> Critical) ONLY
+    to whoever holds it under the dispatch rules — never to every nurse:
+      pending_primary / assigned -> the offered / assigned nurse
+      broadcasting / needs_admin -> the FREE nurses (a busy nurse is never free)
+      no dispatch row (legacy)   -> the room's own nurses who are online
+    Admins always receive it. Returns the nurses it went to."""
+    from database import get_dispatch_by_alert, get_alert_by_id
+    from routers import ws as ws_router
+    sent: list[str] = []
+    row = await get_dispatch_by_alert(db, alert_id)
+    if row is None:
+        alert = await get_alert_by_id(db, alert_id)
+        if alert is not None:
+            from pg_database import get_conn, get_nurses_for_room
+            async for conn in get_conn():
+                nurses = await get_nurses_for_room(conn, alert["room_id"])
+                break
+            for n in nurses:
+                if await ws_router.manager.send_to_nurse(n, text):
+                    sent.append(n)
+    elif row["state"] in ("pending_primary", "assigned") and row["assignee"]:
+        if await ws_router.manager.send_to_nurse(row["assignee"], text):
+            sent.append(row["assignee"])
+    elif row["state"] in ("broadcasting", "needs_admin"):
+        for n in await available_nurses(db):
+            if await ws_router.manager.send_to_nurse(n, text):
+                sent.append(n)
+    await ws_router.manager.send_to_admins(text)
+    return sent
+
+
+async def nurse_can_see(db: aiosqlite.Connection, nurse: str, my_rooms: set[str],
+                        alert: dict, row: dict | None, *, i_am_free: bool) -> bool:
+    """Whether an alert belongs on THIS nurse's dashboard (poll + reconnect).
+
+    Mirrors the live dispatch so the list never shows a nurse a request the
+    engine did not give her:
+      offered to / assigned to / accepted by her        -> yes
+      broadcasting, she is FREE and not the busy primary -> yes (she may take it)
+      assigned to another nurse                          -> no
+      needs admin reassignment                           -> no (admin assigns)
+      finished (resolved/cancelled)                      -> history, if she handled
+                                                            it or it is her patient
+      no dispatch row (not paged, older alerts)          -> her own rooms only
+    """
+    room = (alert.get("room_id") or "").strip()
+    if row is None:
+        return room in my_rooms
+    state, assignee = row["state"], row["assignee"]
+    if assignee == nurse and state not in ("resolved", "cancelled"):
+        return True
+    if state in ("broadcasting", "needs_admin"):
+        # Unclaimed: every FREE nurse keeps seeing it until someone takes it,
+        # even after it is also flagged to the admin ("Needs reassignment").
+        # A busy nurse (including the busy primary) does not.
+        return i_am_free
+    if state in ("resolved", "cancelled"):
+        return room in my_rooms and assignee in (None, nurse)
+    return False
+
+
+async def rooms_handled_by(db: aiosqlite.Connection, nurse: str) -> set[str]:
+    """Rooms a nurse is TEMPORARILY mapped to: she holds an active (unresolved)
+    request for them (accepted broadcast or admin reassignment)."""
+    async with db.execute(
+        "SELECT DISTINCT room_id FROM dispatch_requests WHERE assignee = ? "
+        "AND state NOT IN ('resolved','cancelled')", (nurse,)) as cur:
+        return {r[0] for r in await cur.fetchall() if r[0]}
+
+
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 async def start_dispatch(db: aiosqlite.Connection, alert: dict) -> dict:
@@ -219,24 +290,26 @@ async def start_dispatch(db: aiosqlite.Connection, alert: dict) -> dict:
 
     # Decide the opening move.
     if primary and await is_available(db, primary):
+        # The patient's own nurse is online and free: the request is HERS
+        # straight away (no Accept step, no timer). It stays on her screen until
+        # she acknowledges it. Only if she goes offline is it re-broadcast
+        # (reclaim_from_offline_nurse). While she holds it she counts as busy,
+        # so the patient's next request goes to the other free nurses.
         req_id = await create_dispatch_request(
             db, alert_id=alert_id, room_id=room_id,
-            primary_nurse=primary, initial_state="pending_primary", assignee=primary,
+            primary_nurse=primary, initial_state="assigned", assignee=primary,
         )
         await set_alert_routed_to(db, alert_id, primary, False)
         frame = _dispatch_frame(
-            "dispatch_request", request_id=req_id, alert=alert,
+            "dispatch_assigned", request_id=req_id, alert=alert,
             extra={"stage": "primary", "assignee": primary},
         )
         delivered = await _send_to(primary, frame)
-        logger.info("[DISPATCH] alert=%d → primary=%s delivered=%s req=%d",
+        logger.info("[DISPATCH] alert=%d → primary=%s (assigned) delivered=%s req=%d",
                     alert_id, primary, delivered, req_id)
         if not delivered:
             # Primary vanished between the availability check and the send.
             return await _begin_broadcast(db, req_id, alert, primary, reason="primary_unreachable")
-        # Arm a primary-response timer: if she doesn't accept/decline in time,
-        # fall through to a broadcast automatically.
-        _arm_primary_timer(req_id, alert_id)
         return {"request_id": req_id, "state": "pending_primary", "primary": primary}
 
     # No available primary → broadcast straight away.

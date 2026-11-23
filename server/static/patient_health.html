@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>CareVoice — My Health</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F4F6FB;--surface:#FFFFFF;--soft:#EEF1FA;--line:#E3E8F2;
+  --brand:#4F46E5;--brand-2:#7C3AED;--brand-soft:#EEF0FF;
+  --teal:#0F766E;--teal-soft:#E6F4F2;
+  --ink:#0F172A;--ink-2:#334155;--muted:#64748B;
+  --ok:#15803D;--ok-soft:#DCFCE7;--high:#B45309;--high-soft:#FEF3C7;--low:#1D4ED8;--low-soft:#DBEAFE;
+  --danger:#DC2626;--danger-soft:#FEE2E2;
+  --r:18px;--font:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Devanagari",sans-serif}
+html,body{height:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;-webkit-tap-highlight-color:transparent}
+
+/* ── Header ─────────────────────────────────────────── */
+.top{background:linear-gradient(135deg,var(--brand) 0%,var(--brand-2) 100%);color:#fff;padding:12px 14px 14px;flex:none}
+.bar{display:flex;align-items:center;gap:10px}
+.icon-btn{width:38px;height:38px;border-radius:12px;border:none;background:rgba(255,255,255,.18);color:#fff;font-size:1.15rem;display:grid;place-items:center;cursor:pointer;flex:none}
+.icon-btn.off{opacity:.55}
+.who{flex:1;min-width:0}
+.who h1{font-size:1.05rem;font-weight:800;line-height:1.2}
+.who .sub{font-size:.78rem;opacity:.88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg{display:flex;background:rgba(255,255,255,.16);border-radius:14px;padding:4px;margin-top:12px}
+.seg button{flex:1;border:none;background:transparent;color:#fff;font-weight:700;font-size:.88rem;padding:9px 6px;border-radius:10px;cursor:pointer;opacity:.85}
+.seg button.on{background:#fff;color:var(--brand);opacity:1;box-shadow:0 2px 8px rgba(15,23,42,.12)}
+
+.view{flex:1;min-height:0;display:none}
+.view.on{display:flex;flex-direction:column}
+
+/* ── Ask CareVoice ──────────────────────────────────── */
+.chat{flex:1;overflow-y:auto;padding:16px 14px 8px;display:flex;flex-direction:column;gap:10px}
+.hello{text-align:center;padding:18px 8px 6px}
+.avatar-lg{width:64px;height:64px;border-radius:50%;margin:0 auto 10px;background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;display:grid;place-items:center;font-size:1.7rem;box-shadow:0 8px 20px rgba(79,70,229,.25)}
+.hello h2{font-size:1.15rem;font-weight:800}
+.hello p{color:var(--muted);font-size:.88rem;margin-top:4px;line-height:1.4}
+.sugg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.sugg button{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:left;font-size:.86rem;color:var(--ink-2);cursor:pointer;line-height:1.3;display:flex;gap:8px;align-items:flex-start}
+.sugg button span{font-size:1.1rem;line-height:1}
+.row{display:flex;gap:8px;align-items:flex-end}
+.row.me{justify-content:flex-end}
+.av{width:30px;height:30px;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;font-size:.85rem;flex:none}
+.msg{max-width:80%;padding:11px 14px;border-radius:18px;font-size:.95rem;line-height:1.45;word-wrap:break-word}
+.row.me .msg{background:var(--brand);color:#fff;border-bottom-right-radius:6px}
+.row.ai .msg{background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:6px;color:var(--ink)}
+.row.ai .msg.sos{background:var(--danger-soft);border-color:#FECACA;color:#991B1B;font-weight:700}
+.msg .voice-tag{display:block;font-size:.7rem;opacity:.8;margin-bottom:2px}
+.replay{display:inline-flex;align-items:center;gap:4px;margin-top:8px;border:none;background:var(--soft);color:var(--ink-2);border-radius:999px;padding:4px 10px;font-size:.75rem;font-weight:600;cursor:pointer}
+.dots{display:inline-flex;gap:4px;padding:4px 2px}
+.dots i{width:7px;height:7px;border-radius:50%;background:#A5B4FC;animation:blink 1.2s infinite}
+.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.note{font-size:.74rem;color:var(--muted);text-align:center;padding:4px 10px 2px;line-height:1.4}
+
+.dock{flex:none;background:var(--surface);border-top:1px solid var(--line);padding:10px 14px calc(12px + env(safe-area-inset-bottom))}
+.langs{display:flex;justify-content:center;gap:6px;margin-bottom:10px}
+.langs button{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:5px 12px;font-size:.76rem;font-weight:700;cursor:pointer}
+.langs button.on{background:var(--brand-soft);border-color:#C7D2FE;color:var(--brand)}
+.micwrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.mic{width:76px;height:76px;border-radius:50%;border:none;cursor:pointer;color:#fff;font-size:1.9rem;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--teal),#0EA5A4);box-shadow:0 10px 24px rgba(15,118,110,.32);transition:transform .15s}
+.mic:active{transform:scale(.95)}
+.mic.rec{background:linear-gradient(135deg,#DC2626,#F43F5E);box-shadow:0 0 0 0 rgba(220,38,38,.45);animation:ring 1.3s infinite}
+.mic.busy{background:#94A3B8;box-shadow:none}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(220,38,38,.45)}100%{box-shadow:0 0 0 18px rgba(220,38,38,0)}}
+.miclabel{font-size:.82rem;font-weight:700;color:var(--ink-2)}
+.miclabel.rec{color:var(--danger)}
+.typer{display:flex;gap:8px;margin-top:10px}
+.typer input{flex:1;min-width:0;border:1px solid var(--line);background:var(--soft);border-radius:14px;padding:12px 14px;font-size:.93rem;outline:none}
+.typer input:focus{border-color:#A5B4FC;background:#fff}
+.send{width:46px;border-radius:14px;border:none;background:var(--brand);color:#fff;font-size:1.1rem;cursor:pointer}
+
+/* ── My readings ────────────────────────────────────── */
+.scroll{flex:1;overflow-y:auto;padding:14px 14px 28px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.card h3{font-size:.8rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.banner{display:flex;gap:10px;align-items:center;border-radius:var(--r);padding:12px 14px;margin-bottom:12px;font-size:.88rem;line-height:1.35}
+.banner.ok{background:var(--ok-soft);color:#14532D}.banner.warn{background:var(--high-soft);color:#78350F}
+.banner b{font-size:1.2rem}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{border:1px solid var(--line);border-radius:14px;padding:11px 12px;position:relative;overflow:hidden;background:#fff}
+.tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--ok)}
+.tile.high::before{background:#F59E0B}.tile.low::before{background:#3B82F6}
+.tile .n{font-size:.76rem;color:var(--muted);font-weight:600}
+.tile .v{font-size:1.25rem;font-weight:800;margin-top:3px}.tile .v small{font-size:.72rem;font-weight:600;color:var(--muted);margin-left:2px}
+.chip{display:inline-block;font-size:.68rem;font-weight:800;padding:2px 8px;border-radius:999px;margin-top:6px}
+.chip.normal{background:var(--ok-soft);color:var(--ok)}.chip.high{background:var(--high-soft);color:var(--high)}.chip.low{background:var(--low-soft);color:var(--low)}
+.tile .rr{font-size:.68rem;color:var(--muted);margin-top:4px}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font-size:.8rem;font-weight:700;padding:6px 11px;border-radius:999px;background:var(--brand-soft);color:#3730A3}
+.pill.teal{background:var(--teal-soft);color:var(--teal)}
+.li{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.li:last-child{border-bottom:none}
+.st{font-size:.68rem;font-weight:800;padding:3px 9px;border-radius:999px;text-transform:uppercase}
+.st.preparing,.st.approved{background:var(--high-soft);color:var(--high)}.st.delivered{background:var(--ok-soft);color:var(--ok)}
+.st.pending_approval,.st.requested{background:var(--brand-soft);color:var(--brand)}.st.rejected{background:var(--danger-soft);color:var(--danger)}
+.hint{font-size:.78rem;color:var(--muted);margin-top:8px;line-height:1.4}
+.empty{color:var(--muted);font-size:.86rem}
+.src{text-align:center;font-size:.72rem;color:var(--muted);margin-top:4px}
+.skel{height:84px;border-radius:14px;background:linear-gradient(90deg,#EEF1F7 25%,#F7F8FC 50%,#EEF1F7 75%);background-size:200% 100%;animation:sh 1.2s infinite}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-80px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:.85rem;transition:transform .25s;z-index:20;max-width:90%;text-align:center}
+.toast.show{transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="bar">
+    <button class="icon-btn" onclick="goBack()" aria-label="Back">&#8592;</button>
+    <div class="who"><h1>My Health</h1><div class="sub" id="sub">Loading…</div></div>
+    <button class="icon-btn" id="speakBtn" onclick="toggleSpeak()" aria-label="Read answers aloud" title="Read answers aloud">🔊</button>
+  </div>
+  <div class="seg"><button id="tabAsk" class="on" onclick="tab('ask')">Ask CareVoice</button><button id="tabRead" onclick="tab('read')">My readings</button></div>
+</div>
+
+<!-- Ask CareVoice -->
+<section class="view on" id="vAsk">
+  <div class="chat" id="chat">
+    <div class="hello" id="hello">
+      <div class="avatar-lg">💙</div>
+      <h2 id="helloName">Hello! How can I help?</h2>
+      <p>Tap the microphone and speak, or type below.<br/>Ask about your readings, your diet, or just how you're feeling.</p>
+      <div class="sugg">
+        <button onclick="ask('How is my blood pressure?')"><span>🩺</span>How is my blood pressure?</button>
+        <button onclick="ask('Are my test results okay?')"><span>🧪</span>Are my test results okay?</button>
+        <button onclick="ask('What can I eat?')"><span>🍲</span>What can I eat?</button>
+        <button onclick="ask('I feel worried')"><span>🤍</span>I feel worried</button>
+      </div>
+    </div>
+    <div class="note">CareVoice gives general information only — your nurse and doctor decide your treatment. For anything urgent, say "Help" or press Call Nurse.</div>
+  </div>
+  <div class="dock">
+    <div class="langs" id="langs">
+      <button data-l="" class="on" onclick="setLang('')">Auto</button>
+      <button data-l="en" onclick="setLang('en')">English</button>
+      <button data-l="hi" onclick="setLang('hi')">हिंदी</button>
+    </div>
+    <div class="micwrap">
+      <button class="mic" id="mic" onclick="micTap()" aria-label="Speak">🎤</button>
+      <div class="miclabel" id="micLabel">Tap to speak</div>
+    </div>
+    <div class="typer">
+      <input id="in" placeholder="Type your question…" enterkeyhint="send" onkeydown="if(event.key==='Enter')sendText()"/>
+      <button class="send" onclick="sendText()" aria-label="Send">➤</button>
+    </div>
+  </div>
+</section>
+
+<!-- My readings -->
+<section class="view" id="vRead">
+  <div class="scroll" id="readings">
+    <div class="card"><div class="grid"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div></div>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE=location.origin;let token=null;
+try{if(window.CareVoiceApp&&window.CareVoiceApp.getToken)token=window.CareVoiceApp.getToken()||null}catch(e){}
+if(!token)token=localStorage.getItem('cv_token');
+const NATIVE_REC=!!(window.CareVoiceApp&&window.CareVoiceApp.startRecording);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+async function api(p,o={}){const r=await fetch(BASE+p,{...o,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'}});
+ if(r.status===401){if(window.CareVoiceApp&&window.CareVoiceApp.sessionExpired)window.CareVoiceApp.sessionExpired();throw new Error('Please sign in again')}
+ if(!r.ok){const t=await r.json().catch(()=>({}));throw new Error(typeof t.detail==='string'?t.detail:'Something went wrong')}return r.json()}
+function goBack(){try{if(window.CareVoiceApp&&window.CareVoiceApp.back){window.CareVoiceApp.back();return}}catch(e){}history.length>1?history.back():location.href='/'}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2600)}
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+function tab(which){
+ document.getElementById('tabAsk').classList.toggle('on',which==='ask');
+ document.getElementById('tabRead').classList.toggle('on',which==='read');
+ document.getElementById('vAsk').classList.toggle('on',which==='ask');
+ document.getElementById('vRead').classList.toggle('on',which==='read');
+ if(which==='read'&&!loaded)load()}
+
+// ── Settings: language + read aloud ──────────────────────────────────────────
+let lang=localStorage.getItem('cv_ask_lang')||'';
+let speakOn=localStorage.getItem('cv_ask_speak')!=='0';
+function setLang(l){lang=l;localStorage.setItem('cv_ask_lang',l);
+ document.querySelectorAll('#langs button').forEach(b=>b.classList.toggle('on',b.dataset.l===l))}
+function toggleSpeak(){speakOn=!speakOn;localStorage.setItem('cv_ask_speak',speakOn?'1':'0');renderSpeak();
+ if(!speakOn)stopSpeaking();toast(speakOn?'Answers will be read aloud':'Answers will not be read aloud')}
+function renderSpeak(){const b=document.getElementById('speakBtn');b.textContent=speakOn?'🔊':'🔈';b.classList.toggle('off',!speakOn)}
+
+// ── Chat rendering ───────────────────────────────────────────────────────────
+const chat=document.getElementById('chat');
+function hideHello(){const h=document.getElementById('hello');if(h)h.remove()}
+function addMe(text,voice){hideHello();const row=document.createElement('div');row.className='row me';
+ row.innerHTML=`<div class="msg">${voice?'<span class="voice-tag">🎤 You said</span>':''}<span class="t">${esc(text)}</span></div>`;
+ chat.insertBefore(row,chat.querySelector('.note'));scrollEnd();return row.querySelector('.t')}
+function addAi(){hideHello();const row=document.createElement('div');row.className='row ai';
+ row.innerHTML=`<div class="av">💙</div><div class="msg"><span class="dots"><i></i><i></i><i></i></span></div>`;
+ chat.insertBefore(row,chat.querySelector('.note'));scrollEnd();return row.querySelector('.msg')}
+function fillAi(el,r){el.innerHTML=`<span>${esc(r.reply)}</span>`;if(r.emergency)el.classList.add('sos');
+ if(r.reply){const b=document.createElement('button');b.className='replay';b.innerHTML='🔊 Listen';b.onclick=()=>speak(r.reply,r.lang);el.appendChild(b)}
+ scrollEnd()}
+function fail(el,msg){el.innerHTML=`<span>${esc(msg)}</span>`;scrollEnd()}
+function scrollEnd(){requestAnimationFrame(()=>chat.scrollTop=chat.scrollHeight)}
+
+// ── Text questions ───────────────────────────────────────────────────────────
+function ask(t){document.getElementById('in').value=t;sendText()}
+async function sendText(){const i=document.getElementById('in');const t=i.value.trim();if(!t)return;i.value='';i.blur();
+ addMe(t,false);const el=addAi();
+ try{const r=await api('/patient/chat',{method:'POST',body:JSON.stringify({message:t})});fillAi(el,r);if(speakOn)speak(r.reply,r.lang)}
+ catch(e){fail(el,'Sorry, I could not answer just now. If you need help, press Call Nurse.')}}
+
+// ── Read aloud (native Android TTS via the app, else the browser) ────────────
+function speak(text,l){if(!text)return;const code=(l==='hi')?'hi':'en';
+ try{if(window.CareVoiceApp&&window.CareVoiceApp.speak){window.CareVoiceApp.speak(text,code);return}}catch(e){}
+ try{if('speechSynthesis' in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang=code==='hi'?'hi-IN':'en-IN';u.rate=.95;speechSynthesis.speak(u)}}catch(e){}}
+function stopSpeaking(){try{if(window.CareVoiceApp&&window.CareVoiceApp.stopSpeaking)window.CareVoiceApp.stopSpeaking()}catch(e){}
+ try{if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}}
+
+// ── Voice questions: tap to start, tap again to send ─────────────────────────
+// In the CareVoice app the phone's own recorder is used (no browser microphone
+// permission involved). In a normal browser, MediaRecorder is the fallback.
+let micState='idle',recTimer=null,recStart=0,webRec=null,webStream=null,webChunks=[];
+function setMic(state,label){micState=state;const m=document.getElementById('mic'),l=document.getElementById('micLabel');
+ m.className='mic'+(state==='rec'?' rec':state==='busy'?' busy':'');m.textContent=state==='rec'?'■':state==='busy'?'…':'🎤';
+ l.className='miclabel'+(state==='rec'?' rec':'');l.textContent=label}
+function tick(){const s=Math.floor((Date.now()-recStart)/1000);setMic('rec',`Listening… 0:${String(s).padStart(2,'0')} · tap to send`);
+ if(s>=30)micTap()}
+function micTap(){
+ if(micState==='busy')return;
+ if(micState==='rec'){stopRec();return}
+ stopSpeaking();
+ if(NATIVE_REC){setMic('busy','Starting…');try{window.CareVoiceApp.startRecording()}catch(e){setMic('idle','Tap to speak');toast('Could not start the microphone')}}
+ else startWebRec()}
+function recStarted(){recStart=Date.now();tick();clearInterval(recTimer);recTimer=setInterval(tick,500)}
+function stopRec(){clearInterval(recTimer);setMic('busy','Sending…');
+ if(NATIVE_REC){try{window.CareVoiceApp.stopRecording()}catch(e){setMic('idle','Tap to speak')}}
+ else{try{webRec.stop()}catch(e){}try{webStream.getTracks().forEach(t=>t.stop())}catch(e){}}}
+
+// Callbacks from the app.
+window.cvOnRecState=function(s){
+ if(s==='recording'){recStarted();return}
+ clearInterval(recTimer);setMic('idle','Tap to speak');
+ if(s==='denied')addAiText('I need the microphone to hear you. Please allow microphone access for CareVoice (Settings → Apps → CareVoice → Permissions), or type your question.');
+ else if(s==='error')addAiText('The microphone is busy right now. Please try again in a moment, or type your question.')};
+window.cvOnRecorded=function(b64,ms){
+ if(!b64||ms<700){setMic('idle','Tap to speak');toast('That was too short — tap, speak, then tap again');return}
+ const bin=atob(b64),bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+ sendVoice(new Blob([bytes],{type:'audio/wav'}),'question.wav')};
+function addAiText(t){const el=addAi();fail(el,t)}
+
+async function startWebRec(){
+ if(!window.MediaRecorder||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+  addAiText('Voice questions need the latest CareVoice app. You can type your question below.');return}
+ setMic('busy','Starting…');
+ try{webStream=await navigator.mediaDevices.getUserMedia({audio:true})}
+ catch(e){setMic('idle','Tap to speak');
+  addAiText(e&&e.name==='NotAllowedError'?'Please allow microphone access in your browser, or type your question.':'The microphone is busy or unavailable. Please type your question.');return}
+ const types=['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4'];
+ const mime=types.find(t=>{try{return MediaRecorder.isTypeSupported(t)}catch(e){return false}})||'';
+ webChunks=[];webRec=new MediaRecorder(webStream,mime?{mimeType:mime}:undefined);
+ webRec.ondataavailable=e=>{if(e.data&&e.data.size)webChunks.push(e.data)};
+ webRec.onstop=()=>{const ms=Date.now()-recStart;const type=webRec.mimeType||'audio/webm';
+  if(ms<700){setMic('idle','Tap to speak');toast('That was too short — tap, speak, then tap again');return}
+  sendVoice(new Blob(webChunks,{type}),'question.'+(type.includes('mp4')?'m4a':type.includes('ogg')?'ogg':'webm'))};
+ webRec.start();recStarted()}
+
+async function sendVoice(blob,name){
+ const meText=addMe('…',true);const el=addAi();
+ const fd=new FormData();fd.append('audio',blob,name);fd.append('lang',lang);
+ try{const resp=await fetch(BASE+'/patient/chat/voice',{method:'POST',headers:{Authorization:'Bearer '+token},body:fd});
+  if(resp.status===401){if(window.CareVoiceApp&&window.CareVoiceApp.sessionExpired)window.CareVoiceApp.sessionExpired();throw new Error('auth')}
+  const r=await resp.json();if(!resp.ok)throw new Error(typeof r.detail==='string'?r.detail:'failed');
+  meText.textContent=r.transcript||'(nothing heard)';fillAi(el,r);if(speakOn)speak(r.reply,r.lang)}
+ catch(e){meText.textContent='(not sent)';fail(el,'Sorry, I could not hear that properly. Please try again, or type your question. If you need help, press Call Nurse.')}
+ finally{setMic('idle','Tap to speak')}}
+
+// ── My readings ──────────────────────────────────────────────────────────────
+let loaded=false;
+const label=f=>f==='high'?'Above usual':f==='low'?'Below usual':'Normal';
+function tile(o){const f=o.flag==='high'||o.flag==='low'?o.flag:'normal';
+ return `<div class="tile ${f}"><div class="n">${esc(o.display)}</div><div class="v">${esc(o.value)}<small>${esc(o.unit)}</small></div>
+  <span class="chip ${f}">${label(f)}</span>${o.ref_range?`<div class="rr">Usual: ${esc(o.ref_range)}</div>`:''}</div>`}
+async function load(){loaded=true;const box=document.getElementById('readings');
+ try{const d=await api('/patient/health');
+  const all=[...(d.vitals||[]),...(d.labs||[])];const out=all.filter(o=>o.flag==='high'||o.flag==='low').length;
+  box.innerHTML=`
+   <div class="banner ${out?'warn':'ok'}"><b>${out?'ℹ️':'✅'}</b><div>${out?`${out} reading${out>1?'s are':' is'} outside the usual range. Your doctor will explain what this means for you.`:'All your latest readings are in the usual range.'}</div></div>
+   <div class="card"><h3>Vital signs</h3><div class="grid">${(d.vitals||[]).map(tile).join('')||'<div class="empty">No readings yet</div>'}</div></div>
+   <div class="card"><h3>Test results</h3><div class="grid">${(d.labs||[]).map(tile).join('')||'<div class="empty">No results yet</div>'}</div></div>
+   <div class="card"><h3>My diet</h3><div class="pills"><span class="pill teal">${esc(d.diet_label||'No restriction')}</span></div>
+     <h3 style="margin-top:16px">My medicines</h3><div class="pills">${(d.medication_names||[]).map(m=>`<span class="pill">${esc(m)}</span>`).join('')||'<span class="empty">None listed</span>'}</div>
+     <div class="hint">Your diet and medicines are set by your care team. Ask your nurse if you have questions.</div></div>
+   <div class="card"><h3>My meals</h3>${(d.food_orders||[]).map(o=>`<div class="li"><span>${esc(o.item_name)}</span><span class="st ${esc(o.order_status)}">${esc((o.order_status||'').replace('_',' '))}</span></div>`).join('')||'<div class="empty">No meals ordered yet.</div>'}
+     <div class="hint">Your nurse orders meals that match your diet. Hungry? Say "Help, I'm hungry".</div></div>
+   <div class="src">Source: ${esc(d.source_label)}</div>`;
+ }catch(e){loaded=false;box.innerHTML=`<div class="card"><div class="empty">${esc(e.message)}</div></div>`}}
+
+async function header(){try{const d=await api('/patient/health');
+ document.getElementById('sub').textContent=`${d.full_name||'Patient'} · Room ${d.room_number}`;
+ const first=(d.full_name||'').split(' ')[0];if(first)document.getElementById('helloName').textContent=`Hello ${first}! How can I help?`}
+ catch(e){document.getElementById('sub').textContent='Your readings & care companion'}}
+
+setLang(lang);renderSpeak();header();
+</script>
+</body>
+</html>

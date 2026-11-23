@@ -212,97 +212,36 @@ async def patient_ws(
             async with aiofiles.open(wav_path, "wb") as f:
                 await f.write(wav_bytes)
 
-            # Resolve patient name for the standardised message prefix.
-            patient_name = await get_patient_name_by_room(room_id)
-
-            # Insert alert into SQLite + route to the next available nurse.
+            # Triage -> persist -> dispatch (shared with POST /audio/ingest).
             async with aiosqlite.connect(settings.DB_PATH) as db:
                 db.row_factory = aiosqlite.Row
-                alert_id = await insert_alert(
-                    db,
-                    room_id        = room_id,
-                    priority       = result.priority.value,
-                    intent         = result.intent.value,
-                    distress_score = result.distress_score,
-                    transcript     = result.transcript,
-                    wav_path       = str(wav_path),
-                    language       = getattr(result, "language", None),
-                    patient_name   = patient_name,
-                    summary        = getattr(result, "summary", None),
-                    emotion        = getattr(result, "emotion", None),
-                    alert_message  = getattr(result, "alert_message", None),
+                await db.execute("PRAGMA busy_timeout=5000")
+                from ingest_flow import handle_pipeline_result
+                out = await handle_pipeline_result(
+                    db, result=result, room_id=room_id, wav_path=str(wav_path),
+                    language=getattr(result, "language", None), broadcast=_nurse_broadcast,
                 )
-                await db.commit()
-
-                logger.info(
-                    "Alert created via WS: id=%d room=%s priority=%s intent=%s emotion=%s",
-                    alert_id, room_id, result.priority.value, result.intent.value,
-                    getattr(result, "emotion", None),
-                )
-
-                # Route to the next available assigned nurse (fallback: broadcast).
-                alert_resp = AlertResponse(
-                    id             = alert_id,
-                    room_id        = room_id,
-                    priority       = result.priority,
-                    intent         = result.intent,
-                    distress_score = result.distress_score,
-                    transcript     = result.transcript,
-                    wav_path       = str(wav_path),
-                    acknowledged   = False,
-                    created_at     = utcnow(),
-                    language       = getattr(result, "language", None),
-                    patient_name   = patient_name,
-                    summary        = getattr(result, "summary", None),
-                    emotion        = getattr(result, "emotion", None),
-                    alert_message  = getattr(result, "alert_message", None),
-                )
-                payload_json = WsAlertPayload.from_alert_response(alert_resp).model_dump_json()
-
-                # Department routing (same central agent as /audio/ingest). In
-                # shadow mode it only logs; otherwise it may hand the request to
-                # a department and tell us the nurse is no longer the owner.
-                nurse_primary = True
-                dept_result = None
-                try:
-                    from department_dispatch import process_alert_routing
-                    dept_result = await process_alert_routing(
-                        db, alert_id=alert_id, room_id=room_id,
-                        transcript=result.transcript, intent=result.intent,
-                        stt_avg_logprob=getattr(result, "stt_avg_logprob", None),
-                        stt_corrected=getattr(result, "stt_corrected", False),
-                    )
-                    nurse_primary = dept_result.get("nurse_primary", True)
-                except Exception:
-                    logger.exception("Department routing failed for WS alert %d — nurse default", alert_id)
-                    nurse_primary = True
-
-                if nurse_primary:
-                    try:
-                        from routing import route_alert
-                        routed_to, fell_back = await route_alert(
-                            db, room_id=room_id, alert_id=alert_id, payload_json=payload_json,
-                        )
-                        logger.info("WS alert %d routed_to=%s fell_back=%s",
-                                    alert_id, routed_to, fell_back)
-                    except Exception:
-                        logger.exception("Scheduler routing failed for WS alert %d — broadcasting", alert_id)
-                        if _nurse_broadcast is not None:
-                            await _nurse_broadcast(payload_json)
-                else:
-                    logger.info("WS alert %d routed to department(s) %s — nurse not paged",
-                                alert_id, (dept_result or {}).get("departments"))
+            alert_id = out["alert_id"]
+            if out["request_class"] == "facility" and out["departments"]:
+                confirm = "Sent to housekeeping ✓"
+            elif out["request_class"] == "food":
+                confirm = "Food request noted — your attender or nurse will order it ✓"
+            elif out["nurse_paged"]:
+                confirm = "Your nurse has been notified ✓"
+            else:
+                confirm = "I didn't catch a request. Say \"Help\" and try again."
 
             # Confirm to patient
             await websocket.send_json({
-                "event":        "alert_sent",
+                "event":        "alert_sent" if (out["nurse_paged"] or out["departments"] or out["request_class"] == "food") else "no_request",
                 "alert_id":     alert_id,
-                "priority":     result.priority.value,
-                "intent":       result.intent.value,
+                "priority":     out["priority"].value,
+                "intent":       out["intent"].value,
+                "request_class": out["request_class"],
                 "distress":     result.distress_score,
                 "transcript":   result.transcript,
                 "is_stub":      result.is_stub,
-                "message":      "Your nurse has been notified ✓",
+                "message":      confirm,
             })
 
     except asyncio.TimeoutError:

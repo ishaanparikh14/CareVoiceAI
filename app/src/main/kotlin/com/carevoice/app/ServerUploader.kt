@@ -21,7 +21,13 @@ import java.util.concurrent.TimeUnit
 data class UploadResult(
     val success: Boolean,
     val shouldAlert: Boolean = true,
-    val intent: String = ""
+    val intent: String = "",
+    /** Server's human-readable outcome ("Nurse notified", "Sent to housekeeping", ...). */
+    val message: String = "",
+    val transcript: String = "",
+    /** True for network errors / 5xx / 408 / 429 — worth retrying later. */
+    val retryable: Boolean = false,
+    val httpCode: Int = 0,
 )
 
 /** A room assigned to the logged-in nurse (from GET /auth/patients). */
@@ -86,7 +92,7 @@ class ServerUploader(private val context: Context) {
      * Creates a Critical/Emergency alert on the server immediately.
      * Returns true on success.
      */
-    suspend fun sendManualAlert(): Boolean = withContext(Dispatchers.IO) {
+    suspend fun sendManualAlert(requestKey: String = ""): UploadResult = withContext(Dispatchers.IO) {
         val prefs       = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val serverUrl   = prefs.getString(KEY_SERVER_URL, DEFAULT_SERVER_URL) ?: DEFAULT_SERVER_URL
         val roomId      = prefs.getString(KEY_ROOM_ID, DEFAULT_ROOM_ID) ?: DEFAULT_ROOM_ID
@@ -96,7 +102,7 @@ class ServerUploader(private val context: Context) {
             java.net.URLEncoder.encode(roomId, "UTF-8")
         }&patient_name=${
             java.net.URLEncoder.encode(patientName, "UTF-8")
-        }"
+        }&request_key=${java.net.URLEncoder.encode(requestKey, "UTF-8")}"
 
         Log.d(TAG, "Sending manual alert to $url")
 
@@ -110,14 +116,25 @@ class ServerUploader(private val context: Context) {
 
         return@withContext try {
             httpClient.newCall(request).execute().use { response ->
-                val success = response.code in 200..201
-                Log.i(TAG, "Manual alert — HTTP ${response.code}")
-                success
+                val code = response.code
+                Log.i(TAG, "Manual alert — HTTP $code")
+                if (code in 200..201) UploadResult(true, message = "Nurse notified", httpCode = code)
+                else UploadResult(false, retryable = isRetryable(code), httpCode = code,
+                                  message = errorText(code))
             }
         } catch (e: Exception) {
             Log.e(TAG, "Manual alert failed", e)
-            false
+            UploadResult(false, retryable = true, message = "No connection to the hospital server")
         }
+    }
+
+    private fun isRetryable(code: Int) = code >= 500 || code == 408 || code == 429
+
+    private fun errorText(code: Int) = when (code) {
+        401, 403 -> "Your login has expired. Please log in again."
+        413      -> "The recording was too long."
+        in 500..599 -> "The hospital server had a problem (HTTP $code)"
+        else     -> "The request was not accepted (HTTP $code)"
     }
 
     /**
@@ -126,7 +143,7 @@ class ServerUploader(private val context: Context) {
      * @param wavBytes  Complete WAV file produced by [WavUtils.toWavByteArray].
      * @return          [UploadResult] with success flag, shouldAlert, and intent.
      */
-    suspend fun uploadAudio(wavBytes: ByteArray): UploadResult = withContext(Dispatchers.IO) {
+    suspend fun uploadAudio(wavBytes: ByteArray, requestKey: String = ""): UploadResult = withContext(Dispatchers.IO) {
 
         val prefs     = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val serverUrl = prefs.getString(KEY_SERVER_URL, DEFAULT_SERVER_URL) ?: DEFAULT_SERVER_URL
@@ -143,6 +160,7 @@ class ServerUploader(private val context: Context) {
                 body     = wavBytes.toRequestBody(MEDIA_TYPE_WAV)
             )
             .addFormDataPart(name = "room_id", value = roomId)
+            .addFormDataPart(name = "request_key", value = requestKey)
             .build()
 
         val request = Request.Builder()
@@ -163,15 +181,21 @@ class ServerUploader(private val context: Context) {
                     val json        = runCatching { JSONObject(bodyText) }.getOrNull()
                     val shouldAlert = json?.optBoolean("should_alert", true) ?: true
                     val intent      = json?.optString("intent", "") ?: ""
-                    UploadResult(success = true, shouldAlert = shouldAlert, intent = intent)
+                    UploadResult(
+                        success = true, shouldAlert = shouldAlert, intent = intent,
+                        message = json?.optString("message", "") ?: "",
+                        transcript = json?.optString("transcript", "") ?: "",
+                        httpCode = code,
+                    )
                 } else {
                     Log.e(TAG, "Upload failed — HTTP $code | body: $bodyText")
-                    UploadResult(success = false)
+                    UploadResult(success = false, retryable = isRetryable(code), httpCode = code,
+                                 message = errorText(code))
                 }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Upload exception — $endpoint", e)
-            UploadResult(success = false)
+            UploadResult(success = false, retryable = true, message = "No connection to the hospital server")
         }
     }
 

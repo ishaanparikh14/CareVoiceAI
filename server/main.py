@@ -42,6 +42,7 @@ from routers import signal as signal_router
 from routers import voice_notes as voice_notes_router
 from routers import dispatch_router
 from routers import department_api as department_api_router
+from routers import v3_api as v3_api_router
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -98,8 +99,12 @@ async def _escalation_loop():
                     payload = WsAlertPayload.from_alert_response(
                         AlertResponse.from_db_row(updated), event="alert_updated"
                     )
-                    await ws_router.manager.broadcast(payload.model_dump_json())
-                    logger.info("Broadcast escalation for alert %d (room %s)", row["id"], row["room_id"])
+                    # Only the nurse holding it (or the free nurses while it is
+                    # broadcasting, or the admin) — never every nurse.
+                    from dispatch import push_alert_update
+                    sent = await push_alert_update(db, row["id"], payload.model_dump_json())
+                    logger.info("Escalation for alert %d (room %s) sent to %s (+admins)",
+                                row["id"], row["room_id"], sent or "no nurse")
         except asyncio.CancelledError:
             logger.info("Escalation loop cancelled — shutting down")
             break
@@ -262,6 +267,7 @@ app.include_router(signal_router.router)       # WS   /ws/signal   (WebRTC call 
 app.include_router(voice_notes_router.router)  # POST /voice-notes, GET /voice-notes/latest, /{id}/audio
 app.include_router(dispatch_router.router)     # POST /dispatch/{id}/accept|decline|reassign, /dispatch/status
 app.include_router(department_api_router.router)  # /department/*, /admin/department/* (central routing agent)
+app.include_router(v3_api_router.router)          # workflow, stats, orders, dietician, doctor, care agent
 
 # ── Static pages (registered BEFORE admin API router so /admin exact match ──
 # serves the HTML page while /admin/stats etc. route into the API)
@@ -294,6 +300,25 @@ async def admin_page():
 async def dept_page():
     """Serve the department dashboard (canteen/pharmacy/floor mgr — JS enforces the JWT)."""
     return FileResponse(str(_static_dir / "dept.html"), headers=_NO_CACHE)
+
+@app.get("/nurse-care", include_in_schema=False)
+async def nurse_care_page():
+    """Nurse diet + medication editor for their mapped patients (JS enforces JWT)."""
+    return FileResponse(str(_static_dir / "nurse_care.html"), headers=_NO_CACHE)
+
+# v3 pages. Each page enforces its role with the JWT in JS; the API re-checks.
+for _path, _file in {
+    "/doctor": "doctor.html",            # doctor: full history + AI summary
+    "/dietician": "dietician.html",      # dietician: per-patient food plans
+    "/my-health": "patient_health.html", # patient (in-app WebView): key parameters + care chat
+    "/attender": "attender.html",        # attender ordering on the patient's device
+    "/admin-workflow": "workflow.html",  # admin: workflow settings + routing stats
+}.items():
+    def _make(f):
+        async def _page():
+            return FileResponse(str(_static_dir / f), headers=_NO_CACHE)
+        return _page
+    app.add_api_route(_path, _make(_file), methods=["GET"], include_in_schema=False)
 
 @app.get("/", include_in_schema=False)
 async def root():

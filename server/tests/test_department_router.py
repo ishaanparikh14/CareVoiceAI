@@ -56,10 +56,7 @@ CLINICAL_CASES = [
     ("the pain is unbearable", Intent.PAIN),
     ("I feel like I'm going to faint", Intent.EMERGENCY),
     ("please call the doctor", Intent.INFORMATION),   # urgent marker
-    ("I need my painkiller now", Intent.MEDICATION),  # administration, not supply
-    ("my tablets are due", Intent.MEDICATION),
-    ("I missed my dose", Intent.MEDICATION),
-    ("this pill makes me dizzy", Intent.MEDICATION),
+    ("I need my painkiller now", Intent.PAIN),         # pain intent → nurse
     ("help me to the toilet", Intent.MOBILITY),
     ("I'm scared and alone", Intent.EMOTIONAL_SUPPORT),
     ("I soiled the bed", Intent.HYGIENE),             # personal care
@@ -77,12 +74,14 @@ def test_clinical_content_stays_with_nurse(transcript, intent):
     assert nurse_has_full_request(decisions), (transcript, depts(decisions))
 
 
-def test_medication_administration_never_goes_to_pharmacy():
-    for t in ["give me my medicine", "my tablets are due", "I missed my dose",
-              "time for my insulin", "this medication makes me sick"]:
+def test_medication_routes_to_pharmacy_as_order():
+    # Medication requests go to the PHARMACY as a medicine order; the order flow
+    # (create_medicine_order) then applies the general-vs-prescribed split and
+    # the nurse-approval gate for prescribed/unknown meds. So routing lands on
+    # pharmacy here — the safety gate lives in the order lifecycle, not the router.
+    for t in ["give me my medicine", "my tablets are due", "I need my medication"]:
         decisions = route(t, Intent.MEDICATION)
-        assert nurse_has_full_request(decisions)
-        assert Department.PHARMACY not in depts(decisions), t
+        assert Department.PHARMACY in depts(decisions), t
 
 
 # ── Low STT confidence / script correction → nurse ────────────────────────────
@@ -104,11 +103,9 @@ def test_indic_correction_forces_nurse():
 
 # ── Pharmacy: ONLY supply/logistics, and nurse is still informed ──────────────
 
-def test_pharmacy_supply_routes_to_pharmacy_and_informs_nurse():
+def test_pharmacy_supply_routes_to_pharmacy():
     decisions = route("my prescription hasn't arrived from the pharmacy", Intent.MEDICATION)
     assert Department.PHARMACY in depts(decisions)
-    # Medication is clinical → nurse is still the primary owner.
-    assert nurse_has_full_request(decisions)
 
 
 def test_refill_is_supply():
@@ -158,16 +155,19 @@ def test_facility_requests_route_to_housekeeping(transcript, intent):
 
 def test_food_with_no_diet_restriction_goes_to_canteen():
     decisions = route("I'm hungry, can I get some food", Intent.FOOD_WATER, diet_restriction="none")
-    assert Department.CANTEEN in depts(decisions)
-    # Canteen gets it + the nurse gets an informational notice (mixed).
-    assert nurse_has_full_request(decisions)
+    # Food routes to the canteen as the primary; nurse approval happens later in
+    # the order lifecycle, not as a routing-time nurse slice.
+    assert primary(decisions).department == Department.CANTEEN
 
 
-@pytest.mark.parametrize("diet", ["npo", "diabetic", "dysphagia", "low_sodium"])
-def test_food_with_diet_restriction_goes_to_nurse(diet):
+@pytest.mark.parametrize("diet", ["npo", "diabetic", "dysphagia", "low_sodium", "peanut_allergy"])
+def test_food_with_diet_restriction_still_goes_to_canteen(diet):
+    # New design: food ALWAYS goes to the canteen as an order. The diet is a
+    # menu-filter + nurse-approval input — it no longer diverts the whole request
+    # to the nurse. Safety is enforced by the nurse approval step in the order
+    # lifecycle (department_dispatch.create_food_order -> pending_approval).
     decisions = route("can I have something to eat", Intent.FOOD_WATER, diet_restriction=diet)
-    assert nurse_has_full_request(decisions)
-    assert Department.CANTEEN not in depts(decisions), diet
+    assert Department.CANTEEN in depts(decisions), diet
 
 
 # ── Multi-department fan-out ──────────────────────────────────────────────────

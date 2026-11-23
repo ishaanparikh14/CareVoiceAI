@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS users (
     username        TEXT  NOT NULL UNIQUE,
     password_hash   TEXT  NOT NULL,
     full_name       TEXT  NOT NULL,
-    role            TEXT  NOT NULL CHECK (role IN ('nurse','patient','admin','canteen','pharmacy','floor_manager')),
+    role            TEXT  NOT NULL CHECK (role IN ('nurse','patient','admin','canteen','pharmacy','floor_manager','doctor','dietician')),
     ward            TEXT,
     is_active       BOOLEAN NOT NULL DEFAULT TRUE,
     approval_status TEXT NOT NULL DEFAULT 'approved'
@@ -194,6 +194,9 @@ _SEED_DEPARTMENT_STAFF = [
     ("floor_mgr_4",    "dept1234", "Fatima Noor (Floor 4 Mgr)",   "floor_manager", "housekeeping", "4",   "floor_mgr_5"),
     ("floor_mgr_5",    "dept1234", "Sam Patel (Floor 5 Mgr)",     "floor_manager", "housekeeping", "5",   "floor_mgr_4"),
     ("floor_mgr_6",    "dept1234", "Liu Wei (Floor 6 Mgr)",       "floor_manager", "housekeeping", "6",   None),
+    # v3 clinical support roles (log in through the Staff tab).
+    ("doctor_dev",     "doc12345", "Dr. Dev Sharma",              "doctor",        "doctor",       "",    None),
+    ("dietician_demo", "diet1234", "Meera Iyer (Dietician)",      "dietician",     "dietician",    "",    None),
 ]
 
 _SEED_PATIENTS = [
@@ -321,12 +324,12 @@ async def _migrate_role_constraint(conn: asyncpg.Connection) -> None:
         )
         # Recreate the constraint whenever any required role is missing (this
         # already added 'admin'; now it also adds the department-staff roles).
-        required_roles = ("admin", "canteen", "pharmacy", "floor_manager")
+        required_roles = ("admin", "canteen", "pharmacy", "floor_manager", "doctor", "dietician")
         if defn and any(r not in defn for r in required_roles):
             await conn.execute(f'ALTER TABLE users DROP CONSTRAINT "{conname}"')
             await conn.execute(
                 "ALTER TABLE users ADD CONSTRAINT users_role_check "
-                "CHECK (role IN ('nurse','patient','admin','canteen','pharmacy','floor_manager'))"
+                "CHECK (role IN ('nurse','patient','admin','canteen','pharmacy','floor_manager','doctor','dietician'))"
             )
             logger.info("Migrated users.role CHECK constraint to include admin + department roles")
 
@@ -399,11 +402,11 @@ async def _migrate_department_columns(conn: asyncpg.Connection) -> None:
     # both the diet gate (NURSE) and the open path (CANTEEN) are exercisable.
     # Deterministic here = fixed demo assignment; still editable in the profile.
     demo_diets = [
-        ("patient_raj",  "diabetic"),   # Food/Water → nurse (gated)
-        ("patient_sara", "none"),       # Food/Water → canteen (open) + nurse notice
-        ("patient_tom",  "npo"),        # Food/Water → nurse (gated)
-        ("patient_lima", "none"),       # Food/Water → canteen (open) + nurse notice
-        ("patient_zoe",  "dysphagia"),  # Food/Water → nurse (gated)
+        ("patient_raj",  "veg_only"),        # vegetarian menu recommendations
+        ("patient_sara", "none"),            # no restriction — full menu
+        ("patient_tom",  "gluten_free"),     # gluten-free recommendations
+        ("patient_lima", "peanut_allergy"),  # peanut-safe recommendations
+        ("patient_zoe",  "jain"),            # Jain recommendations
     ]
     for username, diet in demo_diets:
         await conn.execute(
@@ -418,7 +421,392 @@ async def _migrate_department_columns(conn: asyncpg.Connection) -> None:
 
     # Seed per-person department-staff accounts (NOT shared logins).
     await _seed_department_staff(conn)
-    logger.info("Department columns ensured + demo data seeded (floors, diets, dept staff)")
+
+    # Menu + medication catalogues for the order-lifecycle feature.
+    await _migrate_menu_and_meds(conn)
+
+    # v3: dietician plans, attender PINs, demo EMR (HIS/EMR adapter data).
+    await _migrate_v3(conn)
+    logger.info("Department columns ensured + demo data seeded (floors, diets, dept staff, menu, meds)")
+
+
+async def _migrate_v3(conn: asyncpg.Connection) -> None:
+    """v3 tables (idempotent): dietician plans, attender PINs, and the local demo
+    EMR used by the HIS/EMR adapter (FHIR R4-style shapes)."""
+    await conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS dietician_plans (
+            room_number   TEXT PRIMARY KEY,
+            allowed_items TEXT NOT NULL DEFAULT '',
+            avoid_items   TEXT NOT NULL DEFAULT '',
+            notes         TEXT NOT NULL DEFAULT '',
+            food_cleared  BOOLEAN NOT NULL DEFAULT FALSE,
+            updated_by    TEXT,
+            updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """
+    )
+    # Attender PIN per room (hashed). Set by the nurse or admin; the attender
+    # enters it on the patient's device to unlock food ordering.
+    await conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS attender_access (
+            room_number  TEXT PRIMARY KEY,
+            pin_hash     TEXT NOT NULL,
+            attender_name TEXT NOT NULL DEFAULT 'Attender',
+            failed       INT  NOT NULL DEFAULT 0,
+            locked_until TIMESTAMPTZ,
+            updated_by   TEXT,
+            updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """
+    )
+    # ── Demo EMR (LocalDemoEMR). Real hospitals plug in the FHIR adapter. ──
+    await conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS emr_observations (
+            id           SERIAL PRIMARY KEY,
+            room_number  TEXT NOT NULL,
+            category     TEXT NOT NULL,          -- vital-signs | laboratory
+            code         TEXT NOT NULL,          -- e.g. heart_rate, hba1c
+            display      TEXT NOT NULL,
+            value        TEXT NOT NULL,
+            unit         TEXT NOT NULL DEFAULT '',
+            ref_range    TEXT NOT NULL DEFAULT '',
+            flag         TEXT NOT NULL DEFAULT 'normal',  -- normal | high | low
+            effective_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """
+    )
+    await conn.execute("CREATE INDEX IF NOT EXISTS idx_emr_obs_room ON emr_observations (room_number, effective_at DESC)")
+    await conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS emr_conditions (
+            id          SERIAL PRIMARY KEY,
+            room_number TEXT NOT NULL,
+            display     TEXT NOT NULL,
+            status      TEXT NOT NULL DEFAULT 'active',
+            onset       TEXT NOT NULL DEFAULT ''
+        )
+        """
+    )
+    await conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS emr_encounters (
+            id          SERIAL PRIMARY KEY,
+            room_number TEXT NOT NULL,
+            kind        TEXT NOT NULL,           -- admission | procedure | note | visit
+            summary     TEXT NOT NULL,
+            author      TEXT NOT NULL DEFAULT '',
+            occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """
+    )
+    await conn.execute("CREATE INDEX IF NOT EXISTS idx_emr_enc_room ON emr_encounters (room_number, occurred_at DESC)")
+    # Write-back store (DocumentReference / Communication) for summaries + alert logs.
+    await conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS emr_documents (
+            id          SERIAL PRIMARY KEY,
+            room_number TEXT NOT NULL,
+            doc_type    TEXT NOT NULL,           -- patient_summary | shift_summary | alert_log
+            title       TEXT NOT NULL,
+            content     TEXT NOT NULL,
+            author      TEXT NOT NULL DEFAULT '',
+            created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """
+    )
+    await _seed_demo_emr(conn)
+    await _seed_attender_pins(conn)
+
+
+# Demo clinical data per seeded room (illustrative only, not real patients).
+_DEMO_EMR = {
+    "4B": {
+        "conditions": [("Laparoscopic cholecystectomy (post-op day 2)", "active", "2026-10-22"),
+                       ("Type 2 diabetes mellitus", "active", "2019"),
+                       ("Hypertension", "active", "2017")],
+        "vitals": [("heart_rate", "Heart rate", "84", "bpm", "60-100", "normal"),
+                   ("bp", "Blood pressure", "138/86", "mmHg", "<130/80", "high"),
+                   ("temp", "Temperature", "37.4", "°C", "36.1-37.5", "normal"),
+                   ("spo2", "Oxygen saturation", "97", "%", "95-100", "normal"),
+                   ("resp_rate", "Respiratory rate", "16", "/min", "12-20", "normal")],
+        "labs": [("glucose", "Blood glucose (fasting)", "156", "mg/dL", "70-100", "high"),
+                 ("hba1c", "HbA1c", "7.8", "%", "<5.7", "high"),
+                 ("hb", "Haemoglobin", "12.9", "g/dL", "13.5-17.5", "low"),
+                 ("wbc", "White cell count", "9.1", "x10^9/L", "4.0-11.0", "normal")],
+        "encounters": [("admission", "Admitted for elective laparoscopic cholecystectomy.", "Dr. Dev Sharma"),
+                       ("procedure", "Laparoscopic cholecystectomy completed without complication.", "Dr. Dev Sharma"),
+                       ("note", "Pain controlled on oral analgesia; mobilising with assistance.", "Nurse Anna")],
+    },
+    "4C": {
+        "conditions": [("Closed fracture of right tibial shaft", "active", "2026-10-20"),
+                       ("Mild asthma", "active", "2012")],
+        "vitals": [("heart_rate", "Heart rate", "76", "bpm", "60-100", "normal"),
+                   ("bp", "Blood pressure", "118/74", "mmHg", "<130/80", "normal"),
+                   ("temp", "Temperature", "36.9", "°C", "36.1-37.5", "normal"),
+                   ("spo2", "Oxygen saturation", "99", "%", "95-100", "normal"),
+                   ("pain_score", "Pain score", "4", "/10", "0-3", "high")],
+        "labs": [("hb", "Haemoglobin", "13.1", "g/dL", "12.0-15.5", "normal"),
+                 ("crp", "C-reactive protein", "18", "mg/L", "<5", "high"),
+                 ("vitd", "Vitamin D", "22", "ng/mL", "30-100", "low")],
+        "encounters": [("admission", "Admitted after fall; X-ray confirmed tibial shaft fracture.", "Dr. Dev Sharma"),
+                       ("procedure", "Intramedullary nailing of right tibia.", "Dr. Dev Sharma"),
+                       ("note", "Physiotherapy started; partial weight bearing with crutches.", "Physio")],
+    },
+    "5A": {
+        "conditions": [("Hypertensive urgency", "active", "2026-10-21"),
+                       ("Chronic kidney disease stage 3a", "active", "2021")],
+        "vitals": [("heart_rate", "Heart rate", "92", "bpm", "60-100", "normal"),
+                   ("bp", "Blood pressure", "162/98", "mmHg", "<130/80", "high"),
+                   ("temp", "Temperature", "36.8", "°C", "36.1-37.5", "normal"),
+                   ("spo2", "Oxygen saturation", "96", "%", "95-100", "normal")],
+        "labs": [("creatinine", "Creatinine", "1.6", "mg/dL", "0.7-1.3", "high"),
+                 ("egfr", "eGFR", "48", "mL/min", ">60", "low"),
+                 ("potassium", "Potassium", "4.9", "mmol/L", "3.5-5.0", "normal")],
+        "encounters": [("admission", "Admitted with severe headache and BP 190/110.", "Dr. Dev Sharma"),
+                       ("note", "IV labetalol given; BP trending down.", "Nurse Ben")],
+    },
+    "5B": {
+        "conditions": [("Acute appendicitis, post appendectomy", "active", "2026-10-23")],
+        "vitals": [("heart_rate", "Heart rate", "88", "bpm", "60-100", "normal"),
+                   ("bp", "Blood pressure", "122/78", "mmHg", "<130/80", "normal"),
+                   ("temp", "Temperature", "37.8", "°C", "36.1-37.5", "high"),
+                   ("spo2", "Oxygen saturation", "98", "%", "95-100", "normal")],
+        "labs": [("wbc", "White cell count", "12.4", "x10^9/L", "4.0-11.0", "high"),
+                 ("crp", "C-reactive protein", "34", "mg/L", "<5", "high")],
+        "encounters": [("admission", "Admitted with right iliac fossa pain; ultrasound positive.", "Dr. Dev Sharma"),
+                       ("procedure", "Laparoscopic appendectomy.", "Dr. Dev Sharma")],
+    },
+    "6A": {
+        "conditions": [("Acute asthma exacerbation", "active", "2026-10-22"),
+                       ("Allergic rhinitis", "active", "2015")],
+        "vitals": [("heart_rate", "Heart rate", "98", "bpm", "60-100", "normal"),
+                   ("bp", "Blood pressure", "116/72", "mmHg", "<130/80", "normal"),
+                   ("spo2", "Oxygen saturation", "94", "%", "95-100", "low"),
+                   ("resp_rate", "Respiratory rate", "22", "/min", "12-20", "high"),
+                   ("peak_flow", "Peak flow", "310", "L/min", ">400", "low")],
+        "labs": [("eos", "Eosinophils", "0.6", "x10^9/L", "0.0-0.5", "high")],
+        "encounters": [("admission", "Admitted with wheeze and breathlessness.", "Dr. Dev Sharma"),
+                       ("note", "Nebulised salbutamol 4-hourly; improving.", "Nurse Carol")],
+    },
+}
+
+
+async def _seed_demo_emr(conn: asyncpg.Connection) -> None:
+    """Seed the demo EMR once per room (skips rooms that already have data)."""
+    for room, d in _DEMO_EMR.items():
+        exists = await conn.fetchval("SELECT 1 FROM emr_observations WHERE room_number = $1 LIMIT 1", room)
+        if exists:
+            continue
+        for disp, status, onset in d["conditions"]:
+            await conn.execute(
+                "INSERT INTO emr_conditions (room_number, display, status, onset) VALUES ($1,$2,$3,$4)",
+                room, disp, status, onset)
+        for i, (code, disp, val, unit, rng, flag) in enumerate(d["vitals"]):
+            await conn.execute(
+                "INSERT INTO emr_observations (room_number, category, code, display, value, unit, ref_range, flag, "
+                "effective_at) VALUES ($1,'vital-signs',$2,$3,$4,$5,$6,$7, NOW() - ($8 || ' minutes')::interval)",
+                room, code, disp, val, unit, rng, flag, str(30 + i))
+        for i, (code, disp, val, unit, rng, flag) in enumerate(d["labs"]):
+            await conn.execute(
+                "INSERT INTO emr_observations (room_number, category, code, display, value, unit, ref_range, flag, "
+                "effective_at) VALUES ($1,'laboratory',$2,$3,$4,$5,$6,$7, NOW() - ($8 || ' hours')::interval)",
+                room, code, disp, val, unit, rng, flag, str(6 + i))
+        for i, (kind, summary, author) in enumerate(d["encounters"]):
+            await conn.execute(
+                "INSERT INTO emr_encounters (room_number, kind, summary, author, occurred_at) "
+                "VALUES ($1,$2,$3,$4, NOW() - ($5 || ' hours')::interval)",
+                room, kind, summary, author, str((len(d["encounters"]) - i) * 20))
+    logger.info("Demo EMR ensured for %d rooms", len(_DEMO_EMR))
+
+
+async def _seed_attender_pins(conn: asyncpg.Connection) -> None:
+    """Demo attender PIN 1234 for each seeded room (only where none is set)."""
+    from passlib.context import CryptContext
+    ctx = CryptContext(schemes=["argon2"], deprecated="auto")
+    for room in _DEMO_EMR:
+        has = await conn.fetchval("SELECT 1 FROM attender_access WHERE room_number = $1", room)
+        if not has:
+            await conn.execute(
+                "INSERT INTO attender_access (room_number, pin_hash, attender_name, updated_by) "
+                "VALUES ($1,$2,'Attender','seed')",
+                room, ctx.hash("1234"))
+
+
+# ── v3 query helpers ──────────────────────────────────────────────────────────
+
+async def get_dietician_plan(room_number: str) -> dict | None:
+    if _pool is None or not room_number:
+        return None
+    async with _pool.acquire() as conn:
+        r = await conn.fetchrow("SELECT * FROM dietician_plans WHERE room_number = $1", room_number.strip())
+    return dict(r) if r else None
+
+
+async def set_dietician_plan(room_number: str, *, allowed_items: str, avoid_items: str,
+                             notes: str, food_cleared: bool, by: str) -> dict:
+    async with _pool.acquire() as conn:
+        r = await conn.fetchrow(
+            """
+            INSERT INTO dietician_plans (room_number, allowed_items, avoid_items, notes, food_cleared,
+                                         updated_by, updated_at)
+            VALUES ($1,$2,$3,$4,$5,$6,NOW())
+            ON CONFLICT (room_number) DO UPDATE SET allowed_items=EXCLUDED.allowed_items,
+                avoid_items=EXCLUDED.avoid_items, notes=EXCLUDED.notes,
+                food_cleared=EXCLUDED.food_cleared, updated_by=EXCLUDED.updated_by, updated_at=NOW()
+            RETURNING *
+            """,
+            room_number.strip(), allowed_items, avoid_items, notes, food_cleared, by)
+    return dict(r)
+
+
+async def get_menu_raw() -> list[dict]:
+    if _pool is None:
+        return []
+    async with _pool.acquire() as conn:
+        rows = await conn.fetch("SELECT id, name, description, tags FROM menu_items WHERE is_active = TRUE ORDER BY id")
+    return [dict(r) for r in rows]
+
+
+async def set_attender_pin(room_number: str, pin: str, name: str, by: str) -> None:
+    from passlib.context import CryptContext
+    ctx = CryptContext(schemes=["argon2"], deprecated="auto")
+    async with _pool.acquire() as conn:
+        await conn.execute(
+            """
+            INSERT INTO attender_access (room_number, pin_hash, attender_name, failed, locked_until, updated_by, updated_at)
+            VALUES ($1,$2,$3,0,NULL,$4,NOW())
+            ON CONFLICT (room_number) DO UPDATE SET pin_hash=EXCLUDED.pin_hash,
+                attender_name=EXCLUDED.attender_name, failed=0, locked_until=NULL,
+                updated_by=EXCLUDED.updated_by, updated_at=NOW()
+            """,
+            room_number.strip(), ctx.hash(pin), name, by)
+
+
+async def verify_attender_pin(room_number: str, pin: str) -> tuple[bool, str]:
+    """Return (ok, reason). Locks the room for 15 minutes after 5 bad PINs."""
+    from passlib.context import CryptContext
+    ctx = CryptContext(schemes=["argon2"], deprecated="auto")
+    async with _pool.acquire() as conn:
+        r = await conn.fetchrow(
+            "SELECT pin_hash, failed, locked_until, locked_until > NOW() AS locked, attender_name "
+            "FROM attender_access WHERE room_number = $1", room_number.strip())
+        if r is None:
+            return False, "no_pin"
+        if r["locked"]:
+            return False, "locked"
+        if ctx.verify(pin, r["pin_hash"]):
+            await conn.execute("UPDATE attender_access SET failed = 0, locked_until = NULL WHERE room_number = $1",
+                               room_number.strip())
+            return True, r["attender_name"]
+        failed = (r["failed"] or 0) + 1
+        if failed >= 5:
+            await conn.execute(
+                "UPDATE attender_access SET failed = 0, locked_until = NOW() + INTERVAL '15 minutes' "
+                "WHERE room_number = $1", room_number.strip())
+            return False, "locked"
+        await conn.execute("UPDATE attender_access SET failed = $2 WHERE room_number = $1",
+                           room_number.strip(), failed)
+        return False, "bad_pin"
+
+
+async def _migrate_menu_and_meds(conn: asyncpg.Connection) -> None:
+    """Create + seed the canteen menu and per-patient medication catalogues.
+
+    menu_items: a fixed 10-item canteen menu. `tags` is a comma-separated set of
+      dietary tags the item SATISFIES (e.g. 'veg_only,jain,gluten_free'); the
+      canteen UI recommends items whose tags cover the patient's restriction.
+    patient_medications: each patient's meds, split by kind:
+      'prescribed' (clinical — needs nurse approval) vs 'general' (OTC — may go
+      straight to pharmacy).
+    """
+    await conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS menu_items (
+            id          SERIAL PRIMARY KEY,
+            name        TEXT NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
+            tags        TEXT NOT NULL DEFAULT '',   -- comma-sep dietary tags satisfied
+            is_active   BOOLEAN NOT NULL DEFAULT TRUE
+        )
+        """
+    )
+    await conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS patient_medications (
+            id           SERIAL PRIMARY KEY,
+            room_number  TEXT NOT NULL,
+            name         TEXT NOT NULL,
+            kind         TEXT NOT NULL CHECK (kind IN ('prescribed','general')),
+            dosage       TEXT NOT NULL DEFAULT '',
+            created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (room_number, name)
+        )
+        """
+    )
+    await conn.execute("CREATE INDEX IF NOT EXISTS idx_patient_meds_room ON patient_medications (room_number)")
+
+    # Seed the 10-item menu once (idempotent on name).
+    # Dietary tags vocabulary: veg_only, jain, gluten_free, peanut_allergy_safe,
+    # green_veg, none(implicitly satisfied by all).
+    menu = [
+        ("Steamed Rice & Dal",        "Plain dal with steamed rice",              "veg_only,jain,gluten_free,peanut_allergy_safe"),
+        ("Grilled Chicken & Veg",     "Grilled chicken with steamed vegetables",  "gluten_free,peanut_allergy_safe,green_veg"),
+        ("Palak Paneer",              "Spinach and cottage cheese curry",         "veg_only,gluten_free,green_veg"),
+        ("Jain Veg Thali",            "No onion/garlic/root vegetables",          "veg_only,jain,peanut_allergy_safe"),
+        ("Gluten-Free Khichdi",       "Rice-lentil porridge, mildly spiced",      "veg_only,jain,gluten_free,peanut_allergy_safe"),
+        ("Mixed Green Salad",         "Lettuce, spinach, cucumber, olive oil",    "veg_only,jain,gluten_free,peanut_allergy_safe,green_veg"),
+        ("Peanut-Free Veg Pulao",     "Vegetable rice, cooked without peanuts",   "veg_only,gluten_free,peanut_allergy_safe,green_veg"),
+        ("Fish Curry & Rice",         "Light fish curry with rice",               "gluten_free,peanut_allergy_safe"),
+        ("Vegetable Soup",            "Clear broth with seasonal vegetables",     "veg_only,jain,gluten_free,peanut_allergy_safe,green_veg"),
+        ("Fruit Bowl",                "Seasonal fresh fruit",                     "veg_only,jain,gluten_free,peanut_allergy_safe"),
+    ]
+    for name, desc, tags in menu:
+        await conn.execute(
+            """
+            INSERT INTO menu_items (name, description, tags)
+            VALUES ($1,$2,$3)
+            ON CONFLICT DO NOTHING
+            """,
+            name, desc, tags,
+        )
+    # menu_items has no unique on name by default; guard against dup seeding.
+    await conn.execute(
+        """
+        DELETE FROM menu_items a USING menu_items b
+        WHERE a.id > b.id AND a.name = b.name
+        """
+    )
+
+    # Seed demo medications per room (prescribed = clinical; general = OTC).
+    # general meds a patient may request straight from pharmacy without a nurse.
+    meds = [
+        # room, name, kind, dosage
+        ("4B", "Metformin",     "prescribed", "500mg twice daily"),
+        ("4B", "Paracetamol",   "general",    "500mg as needed"),
+        ("4B", "Antacid",       "general",    "as needed"),
+        ("4C", "Amoxicillin",   "prescribed", "250mg three times daily"),
+        ("4C", "Paracetamol",   "general",    "500mg as needed"),
+        ("4C", "Cough Syrup",   "general",    "10ml as needed"),
+        ("5A", "Amlodipine",    "prescribed", "5mg once daily"),
+        ("5A", "Paracetamol",   "general",    "500mg as needed"),
+        ("5B", "Pantoprazole",  "prescribed", "40mg once daily"),
+        ("5B", "ORS",           "general",    "as needed"),
+        ("6A", "Salbutamol",    "prescribed", "inhaler, 2 puffs"),
+        ("6A", "Paracetamol",   "general",    "500mg as needed"),
+        ("6A", "Lozenges",      "general",    "as needed"),
+    ]
+    for room, name, kind, dosage in meds:
+        await conn.execute(
+            """
+            INSERT INTO patient_medications (room_number, name, kind, dosage)
+            VALUES ($1,$2,$3,$4)
+            ON CONFLICT (room_number, name) DO NOTHING
+            """,
+            room, name, kind, dosage,
+        )
 
 
 async def _seed_department_staff(conn: asyncpg.Connection) -> None:
@@ -1338,3 +1726,125 @@ async def get_floor_manager_chain(conn: asyncpg.Connection, floor: str | None) -
             chain.append({"username": r["username"], "full_name": r["full_name"], "is_deputy": True})
             seen.add(r["username"])
     return chain
+
+
+# ── Menu + medication query helpers (order-lifecycle feature) ─────────────────
+
+# Maps a patient diet_restriction to the menu tag an item must carry to be safe.
+# 'none' means every active item is allowed.
+_DIET_TO_REQUIRED_TAG = {
+    "none":            None,
+    "veg_only":        "veg_only",
+    "jain":            "jain",
+    "gluten_free":     "gluten_free",
+    "peanut_allergy":  "peanut_allergy_safe",
+    "needs_green_veg": "green_veg",
+    "green_veg":       "green_veg",
+    # Legacy clinical diets still route via nurse; if a menu is ever requested
+    # for them we fall back to the safest universally-tagged items.
+    "npo":             "gluten_free",
+    "dysphagia":       "gluten_free",
+    "diabetic":        "gluten_free",
+    "low_sodium":      "gluten_free",
+}
+
+
+async def get_menu_for_diet(diet_restriction: str | None) -> list[dict]:
+    """Return active menu items, flagged as recommended/allowed for a diet.
+
+    Every active item is returned; `recommended=True` means it satisfies the
+    patient's restriction (so the canteen UI can highlight safe choices while
+    still showing the full menu)."""
+    if _pool is None:
+        return []
+    diet = (diet_restriction or "none").strip().lower()
+    required = _DIET_TO_REQUIRED_TAG.get(diet, None)
+    async with _pool.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT id, name, description, tags FROM menu_items WHERE is_active = TRUE ORDER BY id"
+        )
+    out = []
+    for r in rows:
+        tags = {t for t in (r["tags"] or "").split(",") if t}
+        recommended = (required is None) or (required in tags)
+        out.append({
+            "id": r["id"], "name": r["name"], "description": r["description"],
+            "tags": sorted(tags), "recommended": recommended,
+        })
+    return out
+
+
+async def get_patient_medications(room_number: str) -> list[dict]:
+    """Return a patient's medications (prescribed + general) for a room."""
+    if _pool is None or not room_number:
+        return []
+    async with _pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT id, name, kind, dosage FROM patient_medications
+            WHERE room_number = $1 ORDER BY kind, name
+            """,
+            room_number.strip(),
+        )
+    return [{"id": r["id"], "name": r["name"], "kind": r["kind"], "dosage": r["dosage"]} for r in rows]
+
+
+async def match_general_medication(room_number: str, transcript: str) -> dict | None:
+    """If the transcript clearly names one of this patient's GENERAL meds, return
+    it (so the request can go straight to pharmacy). Prescribed meds never match
+    here — they must go through nurse approval. Returns None if no general-med
+    name is found in the transcript."""
+    if not room_number or not transcript:
+        return None
+    meds = await get_patient_medications(room_number)
+    t = transcript.lower()
+    for m in meds:
+        if m["kind"] == "general" and m["name"].lower() in t:
+            return m
+    return None
+
+
+async def nurse_covers_room(conn: asyncpg.Connection, nurse_username: str, room_number: str) -> bool:
+    """True if this nurse is mapped to the room (attending OR in patient_nurses).
+    Authorization gate for nurse diet/medication edits."""
+    if not room_number:
+        return False
+    nurses = await get_nurses_for_room(conn, room_number)
+    return nurse_username in nurses
+
+
+async def set_patient_diet_by_room(conn: asyncpg.Connection, room_number: str, diet: str) -> bool:
+    """Set the active patient's diet_restriction for a room. Returns True if a row changed."""
+    res = await conn.execute(
+        "UPDATE patients SET diet_restriction = $2 WHERE room_number = $1 AND is_discharged = FALSE",
+        room_number, diet,
+    )
+    return res.endswith(tuple(str(n) for n in range(1, 10))) or res.split()[-1] != "0"
+
+
+async def add_patient_medication(
+    conn: asyncpg.Connection, room_number: str, name: str, kind: str, dosage: str
+) -> None:
+    await conn.execute(
+        """
+        INSERT INTO patient_medications (room_number, name, kind, dosage)
+        VALUES ($1,$2,$3,$4)
+        ON CONFLICT (room_number, name) DO UPDATE SET kind = EXCLUDED.kind, dosage = EXCLUDED.dosage
+        """,
+        room_number, name, kind, dosage,
+    )
+
+
+async def remove_patient_medication(conn: asyncpg.Connection, room_number: str, name: str) -> None:
+    await conn.execute(
+        "DELETE FROM patient_medications WHERE room_number = $1 AND name = $2",
+        room_number, name,
+    )
+
+
+async def get_menu_item(item_id: int) -> dict | None:
+    if _pool is None:
+        return None
+    async with _pool.acquire() as conn:
+        r = await conn.fetchrow("SELECT id, name, description, tags FROM menu_items WHERE id = $1", item_id)
+    return dict(r) if r else None

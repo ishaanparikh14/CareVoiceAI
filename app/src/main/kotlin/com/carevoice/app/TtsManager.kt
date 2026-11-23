@@ -58,6 +58,10 @@ class TtsManager(context: Context) {
         Log.d(TAG, "Speaking voice note $noteId (lang=$lang)")
     }
 
+    fun stop() {
+        try { tts?.stop() } catch (_: Exception) {}
+    }
+
     fun shutdown() {
         try {
             tts?.stop()

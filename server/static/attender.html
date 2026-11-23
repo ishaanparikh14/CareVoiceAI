@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CareVoice — Attender food order</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F1F5F9;--surface:#fff;--surface2:#F8FAFC;--border:#E2E8F0;--nurse:#0F766E;--brand:#4F46E5;--ink:#0F172A;--muted:#64748B;--ok:#16A34A;--ok-bg:#DCFCE7;--danger:#DC2626;--danger-bg:#FEE2E2;--warn:#D97706;--warn-bg:#FEF3C7;--font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh}
+.appbar{background:linear-gradient(135deg,var(--nurse) 0%,#0284C7 100%);color:#fff;padding:14px 16px;position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px}
+.appbar button{background:rgba(255,255,255,.18);border:none;border-radius:8px;padding:6px 11px;color:#fff;font-size:1.1rem;cursor:pointer}
+.appbar h1{font-size:1.05rem;font-weight:800}.appbar .sub{font-size:.74rem;opacity:.9}
+main{max-width:720px;margin:12px auto;padding:0 12px 40px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+.pin{display:flex;gap:8px;margin-top:10px}.pin input{flex:1;font-size:1.4rem;letter-spacing:.5em;text-align:center;padding:12px;border:1px solid #CBD5E1;border-radius:12px}
+.btn{background:var(--nurse);color:#fff;border:none;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer;font-size:.9rem}
+.btn:disabled{opacity:.5}
+.item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:12px;margin-bottom:8px}
+.item.rec{border-color:#86EFAC;background:#F0FDF4}.item.no{opacity:.55;background:var(--surface2)}
+.item .d{font-size:.76rem;color:var(--muted)}.item .why{font-size:.72rem;margin-top:3px}
+.why.ok{color:var(--ok)}.why.no{color:var(--danger)}
+.tag{font-size:.64rem;font-weight:800;background:var(--ok);color:#fff;border-radius:5px;padding:1px 6px;margin-left:4px}
+.diet{display:inline-block;background:#E0E7FF;color:#3730A3;border-radius:999px;padding:3px 10px;font-weight:700;font-size:.78rem}
+.err{background:var(--danger-bg);color:var(--danger);border-radius:10px;padding:10px;font-size:.85rem;margin-top:10px}
+.hint{font-size:.78rem;color:var(--muted);margin-top:6px}
+.st{font-size:.7rem;font-weight:800;padding:2px 8px;border-radius:6px;text-transform:uppercase}
+.st.preparing{background:var(--warn-bg);color:#92400E}.st.delivered{background:var(--ok-bg);color:#166534}.st.pending_approval{background:#E0E7FF;color:#3730A3}.st.rejected{background:var(--danger-bg);color:var(--danger)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;font-size:.86rem;opacity:0;transition:.2s}.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="appbar"><button onclick="goBack()">&#8592;</button><div><h1>Order food</h1><div class="sub" id="sub">Attender access</div></div></div>
+<main id="main"></main>
+<div id="toast" class="toast"></div>
+<script>
+const BASE=location.origin;let ptoken=null;
+try{if(window.CareVoiceApp&&window.CareVoiceApp.getToken)ptoken=window.CareVoiceApp.getToken()||null}catch(e){}
+if(!ptoken)ptoken=localStorage.getItem('cv_token');
+let atoken=sessionStorage.getItem('cv_attender');let room=sessionStorage.getItem('cv_attender_room');
+async function api(p,o={},tok){const r=await fetch(BASE+p,{...o,headers:{Authorization:'Bearer '+(tok||atoken),'Content-Type':'application/json'}});
+ const body=await r.json().catch(()=>({}));
+ if(r.status===401&&!tok){sessionStorage.removeItem('cv_attender');atoken=null;showPin('Your attender session expired. Enter the PIN again.');throw new Error('expired')}
+ if(!r.ok){const d=body.detail;throw new Error(typeof d==='string'?d:(d&&d.message)||'Something went wrong')}return body}
+function goBack(){if(history.length>1)history.back();else location.href='/my-health'}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+const esc=s=>String(s??'').replace(/</g,'&lt;');
+function showPin(msg){
+ document.getElementById('main').innerHTML=`<div class="card"><b>Attender access</b>
+  <div class="hint">This is for the attender (family member staying with the patient) to order <b>their own</b> meal from the canteen, billed to the room.
+   Enter the 4-digit room PIN your nurse gave you. The PIN keeps this menu away from the patient, whose meals are ordered by the nurse to match their diet.</div>
+  <div class="pin"><input id="pin" type="password" inputmode="numeric" maxlength="8" autocomplete="one-time-code"/><button class="btn" onclick="unlock()">Unlock</button></div>
+  ${msg?`<div class="err">${esc(msg)}</div>`:''}</div>`;
+ setTimeout(()=>document.getElementById('pin')?.focus(),50)}
+async function unlock(){const pin=document.getElementById('pin').value.trim();
+ try{const r=await api('/attender/unlock',{method:'POST',body:JSON.stringify({pin})},ptoken);atoken=r.attender_token;room=r.room;
+  sessionStorage.setItem('cv_attender',atoken);sessionStorage.setItem('cv_attender_room',room);loadMenu()}
+ catch(e){showPin(e.message)}}
+async function loadMenu(){
+ try{const d=await api('/orders/menu/'+encodeURIComponent(room));
+  document.getElementById('sub').textContent=`Room ${room} · attender's own meal`;
+  if(!d.canteen_enabled){document.getElementById('main').innerHTML='<div class="card">The hospital has switched canteen ordering off.</div>';return}
+  const o=await api('/orders/room/'+encodeURIComponent(room));
+  document.getElementById('main').innerHTML=`
+   <div class="card"><b>Meal for you (the attender)</b>
+    <div class="hint">Do not give this food to the patient. The patient's meals are ordered by the nurse to match their diet.</div></div>
+   <div class="card"><b>Menu</b>
+    ${d.menu.map(m=>`<div class="item">
+      <div><b>${esc(m.name)}</b><div class="d">${esc(m.description)}</div></div>
+      <button class="btn" onclick="order(${m.id},'${esc(m.name).replace(/'/g,"\\'")}')">Order</button></div>`).join('')}</div>
+   <div class="card"><b>My orders</b>${o.orders.filter(x=>x.kind==='food'&&x.ordered_by_role==='attender').map(x=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span>${esc(x.item_name)}</span><span class="st ${x.order_status}">${esc((x.order_status||'').replace('_',' '))}</span></div>`).join('')||'<div class="hint">No orders yet.</div>'}</div>
+   <button class="btn" style="width:100%;background:#64748B" onclick="lock()">Lock attender access</button>`;
+ }catch(e){if(e.message!=='expired')document.getElementById('main').innerHTML=`<div class="card"><div class="err">${esc(e.message)}</div></div>`}}
+async function order(id,name){if(!confirm('Order '+name+'?'))return;
+ try{await api('/orders/food',{method:'POST',body:JSON.stringify({room,item_id:id})});
+  toast('Ordered — the kitchen is preparing your meal');loadMenu()}
+ catch(e){toast(e.message)}}
+function lock(){sessionStorage.removeItem('cv_attender');sessionStorage.removeItem('cv_attender_room');atoken=null;showPin()}
+if(atoken&&room)loadMenu();else showPin();
+setInterval(()=>{if(atoken&&room&&document.visibilityState==='visible')loadMenu()},20000);
+</script>
+</body>
+</html>

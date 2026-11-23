@@ -129,6 +129,10 @@ _HOUSEKEEPING_ENV = [
     "change the sheets", "change bedsheets", "fresh sheets", "clean sheets",
     "mop the floor", "floor is dirty", "clean the floor", "spill on the floor",
     "bin is full", "dustbin", "trash", "garbage", "empty the bin", "rubbish",
+    # Spills / generic ground-support asks (the screenshot cases).
+    "spilled", "spilt", "spill", "on the floor", "floor is wet", "wet floor",
+    "housekeeping", "house keeping", "cleaner", "cleaning staff", "sweeper",
+    "send someone to clean", "mop", "broken glass",
     "room is dirty", "clean the room", "clean my room", "tidy the room",
     "window is dirty", "clean the window",
     # Facility / maintenance — these classify as Other/Information today and get
@@ -145,7 +149,13 @@ _HOUSEKEEPING_ENV = [
     "water leak", "leaking", "tap is broken", "tap not working", "flush not working",
     "toilet not flushing", "door wont close", "door is broken", "window wont close",
     "socket not working", "plug not working", "charging point", "wifi not working",
-    # Hindi (Devanagari, normalised)
+    # Hindi (Devanagari) — environmental / facility. Fragments are the NORMALISED
+    # forms (diacritics stripped), matched against the normalised transcript:
+    #   "एसी खराब"→"एस खरब", "गंदा"→"गद", "पंखा"→"पख", "लाइट"→"लइट".
+    "एस खरब", "खरब ह", "पख खरब", "टव खरब", "टव नह चल", "लइट खरब", "बत खरब",
+    "गद ह", "गद", "बथरम गद", "टयलट गद", "कमर गद", "कमर सफ", "सफ",
+    "चदर बदल", "बसतर बदल", "कचर", "कड", "नल खरब", "पन टपक", "फरश",
+    # Hindi (romanized)
     "kamra ganda", "safai", "safaai", "bistar badlo", "chadar badlo",
     "ac kharab", "pankha kharab", "tv kharab", "batti kharab", "latt kharab",
     "nal kharab", "bathroom ganda", "kachra", "kuda",
@@ -178,8 +188,15 @@ _HYGIENE_PERSONAL = [
 _CANTEEN = [
     "water", "hungry", "thirsty", "food", "meal", "eat", "drink", "juice",
     "tea", "coffee", "breakfast", "lunch", "dinner", "snack", "biscuit",
-    # Hindi
-    "pani", "paani", "bhookh", "khana", "chai", "pyaas",
+    # Hindi (romanized)
+    "pani", "paani", "bhookh", "khana", "chai", "pyaas", "nashta",
+    # Hindi (Devanagari, NORMALISED forms: diacritics stripped)
+    "खन",      # खाना (food)
+    "पन",      # पानी (water)
+    "भख",      # भूख (hunger)
+    "पयस",     # प्यास (thirst)
+    "नशत",     # नाश्ता (breakfast)
+    "चय",      # चाय (tea)
     # Kannada
     "neeru", "oota", "hasivu",
     # German
@@ -224,6 +241,68 @@ def _nurse(reason: str, *, is_primary: bool = True, confidence: float = 1.0) -> 
     )
 
 
+def decisions_from_llm(
+    transcript: str,
+    llm: dict,
+    *,
+    stt_avg_logprob: float | None = None,
+    stt_corrected: bool = False,
+    min_confidence: float = 0.6,
+    min_stt_avg_logprob: float = -0.7,
+) -> list[DepartmentDecision]:
+    """Turn a trusted LLM classification into a DepartmentDecision list, applying
+    the SAME hard safety gates the keyword path uses. The LLM only proposes a
+    department; these gates still protect the patient:
+
+      • A critical/urgent marker in the transcript -> nurse, full stop.
+      • Low STT confidence or a script auto-correction -> nurse.
+      • LLM confidence below the floor for a non-nurse route -> nurse.
+      • LLM said nurse, or needs_nurse -> nurse is primary (plus the department
+        as a secondary notice when a non-nurse department was also named).
+    """
+    text = transcript or ""
+    # Safety overrides win over the LLM.
+    if priority_engine.has_critical_marker(text):
+        return [_nurse("critical marker present — nurse handles the full request")]
+    if priority_engine.has_urgent_marker(text):
+        # Urgent cues (e.g. "call the doctor") still go to the nurse, but a
+        # medicine/food/housekeeping LLM call rides along as a secondary notice.
+        dep = llm.get("department")
+        if dep in ("canteen", "pharmacy", "housekeeping"):
+            d = _dep_decision(dep, llm)
+            return [_nurse("urgent marker present — nurse leads"), d]
+        return [_nurse("urgent marker present — nurse handles the full request")]
+    if (stt_avg_logprob is not None and stt_avg_logprob < min_stt_avg_logprob) or stt_corrected:
+        return [_nurse("low STT confidence / script-corrected — nurse decides")]
+
+    dep = llm.get("department", "nurse")
+    conf = float(llm.get("confidence", 0.0))
+    needs_nurse = bool(llm.get("needs_nurse", False))
+    reason = f"llm: {llm.get('reason','') or dep}"
+
+    if dep == "nurse":
+        return [_nurse(reason)]
+    # Non-nurse route needs confidence; otherwise defer to the nurse.
+    if conf < min_confidence:
+        return [_nurse(f"llm low confidence ({conf:.2f}) — nurse decides")]
+
+    d = _dep_decision(dep, llm)
+    if needs_nurse:
+        return [_nurse(reason), d]   # nurse leads, department notified
+    return [d]                        # pure non-nurse route
+
+
+def _dep_decision(dep: str, llm: dict) -> DepartmentDecision:
+    return DepartmentDecision(
+        department=Department(dep),
+        confidence=float(llm.get("confidence", 0.9)),
+        routing_reason="model",
+        reason=f"llm: {llm.get('reason','') or dep}",
+        is_primary=True,
+        model_version="groq-llm",
+    )
+
+
 def route_departments(
     transcript: str,
     intent: Intent,
@@ -260,22 +339,29 @@ def route_departments(
     pharmacy_hit = _first_hit(norm, _PHARMACY_NORM)
 
     # ── Hard safety overrides: the nurse takes the whole thing ────────────────
-    # 1. Critical/urgent markers in the transcript (life-threatening cues, "call
-    #    the doctor", etc.) — reuse the exact same detectors the priority engine
-    #    uses so the two can never disagree.
+    # 1. A CRITICAL marker (life-threatening cue) always goes straight to the nurse.
     if priority_engine.has_critical_marker(text):
         return [_nurse("critical marker present — nurse handles the full request")]
-    if priority_engine.has_urgent_marker(text) and not pharmacy_hit:
+    # 2. An URGENT marker ("call the doctor", etc.) goes to the nurse — EXCEPT
+    #    when this is a medicine request. The priority engine's urgent markers
+    #    include generic medication words ("medicine"/"tablet"), so a plain
+    #    "give me my medicine" would otherwise be swallowed here and never reach
+    #    the pharmacy. A Medication intent or an explicit pharmacy-supply phrase
+    #    falls through to the pharmacy order flow, where the general-vs-prescribed
+    #    split applies the nurse-approval safety gate.
+    if (priority_engine.has_urgent_marker(text)
+            and intent != Intent.MEDICATION and not pharmacy_hit):
         return [_nurse("urgent marker present — nurse handles the full request")]
 
-    # 2. Clinical intents always go to the nurse, full stop.
+    # 2. Clinical intents that always go to the nurse, full stop.
+    #    Medication is handled separately below: it goes to PHARMACY as a medicine
+    #    ORDER, where the general-vs-prescribed split decides whether a nurse
+    #    approval step is required (general OTC meds skip it; prescribed/unknown
+    #    meds require nurse approval before the pharmacy prepares them).
     clinical = {
-        Intent.EMERGENCY, Intent.PAIN, Intent.MEDICATION,
+        Intent.EMERGENCY, Intent.PAIN,
         Intent.MOBILITY, Intent.EMOTIONAL_SUPPORT,
     }
-    # (Medication is intentionally clinical: administration/timing/dosing/side
-    #  effects are the nurse's. A supply-only phrasing is handled below, where
-    #  the nurse still receives it AND pharmacy gets a secondary notification.)
 
     # 3. STT is unreliable → veto all non-nurse routing.
     stt_ok = True
@@ -306,16 +392,18 @@ def route_departments(
         nurse_needed = True
         nurse_reasons.append(f"clinical intent {intent.value}")
 
-    # ── PHARMACY (supply only) ────────────────────────────────────────────────
-    if pharmacy_hit:
+    # ── PHARMACY (medicine order) ─────────────────────────────────────────────
+    # A Medication intent OR an explicit supply phrase routes to the pharmacy as
+    # a medicine ORDER. The order flow (department_dispatch.create_medicine_order)
+    # then decides: a GENERAL med named in the transcript goes straight to the
+    # pharmacy; a prescribed/unknown med requires nurse approval first. So the
+    # nurse-approval safety step lives in the order lifecycle, not here.
+    if intent == Intent.MEDICATION or pharmacy_hit:
         secondary.append(DepartmentDecision(
             department=Department.PHARMACY, confidence=0.9, routing_reason="keyword",
-            reason="medication supply/logistics request", matched=pharmacy_hit,
+            reason="medicine request (general→pharmacy, prescribed→nurse approval)",
+            matched=pharmacy_hit or "medication intent",
         ))
-        # Pharmacy supply requests also inform the nurse (they own the patient's
-        # medication chart) — so the nurse gets a notice too.
-        nurse_needed = True
-        nurse_reasons.append("pharmacy supply request (nurse informed)")
 
     # ── HOUSEKEEPING (environmental) ──────────────────────────────────────────
     # Only if there is NOT a personal-care hygiene phrase (that is the nurse's).
@@ -336,21 +424,20 @@ def route_departments(
         nurse_needed = True
         nurse_reasons.append("hygiene intent, ambiguous — nurse")
 
-    # ── CANTEEN (food/water) with the diet gate ───────────────────────────────
+    # ── CANTEEN (food/water) ───────────────────────────────────────────────────
+    # Food always goes to the canteen as an ORDER. The diet restriction is NOT a
+    # block here — it's a recommendation input the canteen uses to suggest safe
+    # menu items, and the order still passes through nurse approval before it is
+    # prepared. So safety is enforced by the approval step, not by diverting the
+    # whole request to the nurse (which is what the old diet gate did).
     is_food = intent == Intent.FOOD_WATER or canteen_hit is not None
     if is_food:
-        if diet in _DIET_GATED:
-            # Diet restriction: a nurse must verify before any food is sent.
-            nurse_needed = True
-            nurse_reasons.append(f"diet restriction '{diet}' — nurse must check before catering")
-        else:
-            secondary.append(DepartmentDecision(
-                department=Department.CANTEEN, confidence=0.88, routing_reason="keyword",
-                reason="food/water request (no diet restriction)", matched=canteen_hit or "food/water intent",
-            ))
-            # Canteen request still gets an actionable notice to the nurse.
-            nurse_needed = True
-            nurse_reasons.append("catering request (nurse informed)")
+        reason = ("food/water order" if diet in ("", "none")
+                  else f"food/water order (diet '{diet}' — menu will be filtered, nurse approves)")
+        secondary.append(DepartmentDecision(
+            department=Department.CANTEEN, confidence=0.88, routing_reason="keyword",
+            reason=reason, matched=canteen_hit or "food/water intent",
+        ))
 
     # ── Assemble the decision list ────────────────────────────────────────────
     # Apply the asymmetric confidence gate to every non-nurse decision: anything

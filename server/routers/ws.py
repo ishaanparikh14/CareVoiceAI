@@ -95,8 +95,11 @@ class ConnectionManager:
         )
 
     async def connect_department(self, ws: WebSocket, username: str) -> None:
-        """Register a department-staff socket (canteen/pharmacy/floor manager)."""
-        await ws.accept()
+        """Register a department-staff socket (canteen/pharmacy/floor manager).
+
+        NOTE: the /ws/department route already called ws.accept() (so it can
+        reject a bad token with a close code before we get here), so we must NOT
+        accept again — a double accept raises and crashes the socket."""
         self._connections.add(ws)
         self._by_dept_user.setdefault(username, set()).add(ws)
         self._dept_user_of[ws] = username
@@ -283,6 +286,30 @@ async def nurse_ws(
     # Send an immediate welcome frame so the client knows the connection is live.
     await websocket.send_json({"event": "connected", "nurse_id": nurse_id})
 
+    # Backlog: deliver any orders currently awaiting approval so a nurse who was
+    # offline when the canteen/pharmacy requested approval still sees them on
+    # (re)connect. Without this, an approval request pushed while the nurse's
+    # socket was down would be lost (the bug where "nurse didn't receive the
+    # request after the canteen recommended the meal").
+    if nurse_username or is_admin:
+        try:
+            import aiosqlite
+            from database import list_orders_pending_approval
+            async with aiosqlite.connect(settings.DB_PATH) as _db:
+                _db.row_factory = aiosqlite.Row
+                pend = await list_orders_pending_approval(_db)
+            for r in pend:
+                d = dict(r)
+                await websocket.send_json({
+                    "event": "order_needs_approval", "request_id": d["id"], "alert_id": d["alert_id"],
+                    "department": d["department"], "kind": d.get("kind"), "room_id": d["room_id"],
+                    "transcript": d["transcript"], "order_status": d.get("order_status"),
+                    "item_name": d.get("item_name"), "item_detail": d.get("item_detail"),
+                    "diet_restriction": d.get("diet_restriction"), "backlog": True,
+                })
+        except Exception as exc:
+            logger.warning("Nurse approval backlog delivery failed for %s: %s", nurse_id, exc)
+
     try:
         while True:
             # Wait for either an incoming client frame OR a keepalive timeout.
@@ -349,7 +376,8 @@ async def department_ws(
     await manager.connect_department(websocket, username)
     await websocket.send_json({"event": "connected", "username": username, "role": role})
 
-    # Deliver any requests that are already pending for this user (offline catch-up).
+    # Deliver any requests already pending for this user (offline catch-up).
+    # Guarded so a single bad row can never close the socket.
     try:
         import aiosqlite
         from database import list_department_requests_for_user
@@ -357,11 +385,18 @@ async def department_ws(
             db.row_factory = aiosqlite.Row
             pending = await list_department_requests_for_user(db, username)
         for r in pending:
+            d = dict(r)
             await websocket.send_json({
-                "event": "department_request", "request_id": r["id"], "alert_id": r["alert_id"],
-                "department": r["department"], "room_id": r["room_id"], "floor": r["floor"],
-                "transcript": r["transcript"], "created_at": r["created_at"],
-                "state": r["state"], "repeat_count": r["repeat_count"], "backlog": True,
+                "event": "order_update" if d.get("kind") in ("food", "medicine") else "department_request",
+                "request_id": d["id"], "alert_id": d["alert_id"],
+                "department": d["department"], "kind": d.get("kind", "facility"),
+                "room_id": d["room_id"], "floor": d.get("floor"),
+                "transcript": d["transcript"], "created_at": d["created_at"],
+                "state": d.get("state"), "order_status": d.get("order_status", "requested"),
+                "item_name": d.get("item_name"), "item_detail": d.get("item_detail"),
+                "needs_approval": bool(d.get("needs_approval")),
+                "diet_restriction": d.get("diet_restriction"),
+                "repeat_count": d.get("repeat_count", 0), "backlog": True,
             })
     except Exception as exc:
         logger.warning("Department backlog delivery failed for %s: %s", username, exc)

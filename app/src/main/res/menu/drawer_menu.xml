@@ -17,6 +17,23 @@
             android:icon="@drawable/ic_vn_mic"
             android:title="@string/vn_send" />
 
+        <!-- Patient only -->
+        <item
+            android:id="@+id/nav_my_health"
+            android:icon="@drawable/ic_cv_person"
+            android:title="@string/drawer_my_health" />
+
+        <item
+            android:id="@+id/nav_attender"
+            android:icon="@drawable/ic_cv_person"
+            android:title="@string/drawer_attender" />
+
+        <!-- Nurse only -->
+        <item
+            android:id="@+id/nav_care"
+            android:icon="@drawable/ic_cv_person"
+            android:title="@string/drawer_care" />
+
         <item
             android:id="@+id/nav_voice"
             android:icon="@drawable/ic_cv_volume"

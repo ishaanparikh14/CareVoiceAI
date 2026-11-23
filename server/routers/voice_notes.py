@@ -161,6 +161,18 @@ async def nurse_inbox(
 
     patients = await get_patients_for_nurse(conn, current_user["username"])
     rooms = [p["room_number"] for p in patients if p["room_number"]]
+    # Temporary mapping: rooms this nurse is handling a reassigned / broadcast
+    # request for, until that request is resolved.
+    try:
+        import aiosqlite
+        from config import settings as _s
+        from dispatch import rooms_handled_by
+        async with aiosqlite.connect(_s.DB_PATH) as _db:
+            for r in await rooms_handled_by(_db, current_user["username"]):
+                if r not in rooms:
+                    rooms.append(r)
+    except Exception as exc:
+        log.warning("Temporary room mapping lookup failed: %s", exc)
     if not rooms:
         return []
 

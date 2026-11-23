@@ -304,6 +304,19 @@ body {
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Nurses
     </div>
+    <div class="nav-section">CareVoice v3</div>
+    <div class="nav-item" onclick="location.href='/admin-workflow'">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Workflow &amp; Routing Stats
+    </div>
+    <div class="nav-item" onclick="location.href='/doctor'">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Doctor view
+    </div>
+    <div class="nav-item" onclick="location.href='/dietician'">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
+      Dietician
+    </div>
     <div class="nav-section">System</div>
     <div class="nav-item" data-page="logs" onclick="nav('logs')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -411,8 +424,8 @@ body {
       <div class="table-wrap">
         <div class="filter-bar"><label><input type="checkbox" id="filter-show-discharged" checked onchange="loadPatients()"/> Show discharged</label></div>
         <table class="tbl">
-          <thead><tr><th>Name</th><th>Room</th><th>Age</th><th>Diagnosis</th><th>Attending Nurse</th><th>Requests</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="patients-body"><tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr></tbody>
+          <thead><tr><th>Name</th><th>Room</th><th>Age</th><th>Diagnosis</th><th>Diet</th><th>Attending Nurse</th><th>Requests</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="patients-body"><tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -730,12 +743,16 @@ async function loadPatients() {
     if (!assignableNurses.length) assignableNurses = await api('/admin/assignable-nurses');
     const patients = await api(`/admin/patients?include_discharged=${showDischarged}`);
     const tb = document.getElementById('patients-body');
-    tb.innerHTML = !patients.length ? `<tr><td colspan="8"><div class="empty">No patients found</div></td></tr>`
+    const DIETS = ['none','npo','diabetic','dysphagia','low_sodium','fluid_restricted','renal'];
+    tb.innerHTML = !patients.length ? `<tr><td colspan="9"><div class="empty">No patients found</div></td></tr>`
       : patients.map(p => `<tr style="${p.is_discharged?'opacity:.55':''}">
           <td><span style="font-weight:600">${escHtml(p.full_name)}</span><div style="font-size:.75rem;color:var(--muted);font-family:monospace">${escHtml(p.username)}</div></td>
           <td>${p.is_discharged?'—':`<span class="badge badge-info">${escHtml(p.room_number)}</span>`}</td>
           <td style="color:var(--muted)">${p.age ?? '—'}</td>
           <td style="font-size:.82rem;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.diagnosis||'—')}</td>
+          <td><select class="mini-select" title="Diet restriction — gates Food/Water routing" onchange="setDiet(${p.id}, this.value)">
+            ${DIETS.map(dt=>`<option value="${dt}" ${((p.diet_restriction||'none')===dt)?'selected':''}>${dt}</option>`).join('')}
+          </select></td>
           <td><select class="mini-select" onchange="assignPatient(${p.id}, this.value)">
             <option value="">Unassigned</option>
             ${assignableNurses.map(n=>`<option value="${escHtml(n.username)}" ${n.username===p.attending?'selected':''}>${escHtml(n.full_name)}</option>`).join('')}
@@ -747,6 +764,11 @@ async function loadPatients() {
             : `<button class="btn-sm reject" onclick="dischargePatient(${p.id}, true)">Discharge</button>`}</td></tr>`).join('');
     stampUpdate();
   } catch(e) { console.error(e); }
+}
+async function setDiet(id, diet) {
+  try { const r = await api(`/admin/patients/${id}/diet`, { method:'POST', body: JSON.stringify({diet_restriction: diet}) });
+    toast(diet==='none' ? 'Diet cleared — meals may route to canteen' : `Diet set to ${diet} — meals route via nurse`);
+  } catch(e) { toast(e.message, true); loadPatients(); }
 }
 async function assignPatient(id, username) {
   try { await api(`/admin/patients/${id}/assign`, { method:'POST', body: JSON.stringify({nurse_username: username||null}) });

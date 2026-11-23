@@ -97,6 +97,49 @@ class Settings(BaseSettings):
     # A department request nobody acknowledges within this many seconds is
     # escalated to the nurse through the existing dispatch engine.
     DEPT_ACK_SLA_SECONDS: int = 150
+    # Demo convenience: once an order is marked "preparing", auto-advance it to
+    # "delivered" after this many seconds if the department hasn't clicked it.
+    # Set 0 to require a manual "Delivered" click (realistic hospital behaviour).
+    DEPT_PREPARING_AUTO_DELIVER_SECONDS: int = 60
+
+    # ── LLM department classifier (Groq) ──────────────────────────────────────
+    # When enabled AND GROQ_API_KEY is set, an LLM classifies the transcript into
+    # a department directly from meaning (robust to STT noise and wrong intent
+    # labels — e.g. "spilled water on the floor" -> housekeeping, "mujhe khana
+    # chahiye" -> canteen). It is a DROP-IN stage: on any failure (no key,
+    # disabled, timeout, network error, unparseable reply) the router silently
+    # falls back to the keyword classifier, so nothing breaks when it is off.
+    USE_LLM_CLASSIFIER: bool = False          # master switch (needs GROQ_API_KEY)
+    GROQ_API_KEY: str = ""                     # set via env GROQ_API_KEY
+    # OpenAI-compatible chat-completions endpoint + model. Model is configurable
+    # so a Groq catalogue change never needs a code edit.
+    GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
+    GROQ_MODEL: str = "openai/gpt-oss-20b"
+    GROQ_TIMEOUT_SECONDS: float = 6.0          # fail fast -> keyword fallback
+    # The LLM's confidence floor for a non-nurse route (same asymmetric gate idea
+    # as the keyword path: anything below -> nurse).
+    LLM_MIN_CONFIDENCE: float = 0.6
+
+    # ── Care agent (self-hosted Ollama) ───────────────────────────────────────
+    # Doctor case summaries, supportive patient replies, health Q&A, nurse
+    # copilot. Runs against an Ollama HTTP API; if it is unreachable every care
+    # agent feature returns a templated answer built from the data instead.
+    OLLAMA_BASE_URL: str = "http://127.0.0.1:11434"
+    OLLAMA_MODEL: str = "llama3.2"
+    OLLAMA_TIMEOUT_SECONDS: float = 45.0
+    # Optional: fall back to Groq for the care agent when Ollama is down. Off by
+    # default because EMR-derived text would leave the hospital network.
+    CARE_AGENT_GROQ_FALLBACK: bool = False
+    # AskCareVoice (patient chat, text + voice) uses Groq first — the hospital
+    # chose this. Sends the patient's question plus their key readings, diet,
+    # condition label and medicine NAMES (no name/room) to Groq.
+    ASK_CAREVOICE_USE_GROQ: bool = True
+
+    # ── HIS / EMR integration ─────────────────────────────────────────────────
+    # The adapter (local demo vs FHIR) is chosen in the admin Workflow Settings.
+    HIS_BASE_URL: str = ""        # e.g. https://his.hospital.local/fhir
+    HIS_AUTH: str = ""            # bearer token for the hospital FHIR server
+    HIS_TIMEOUT_SECONDS: float = 8.0
     # Repeat requests for the same room + department inside this window are merged
     # into one request with a repeat counter instead of creating duplicates.
     DEPT_DEDUPE_WINDOW_SECONDS: int = 120

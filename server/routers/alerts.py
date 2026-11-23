@@ -15,7 +15,7 @@ degrades gracefully if WebSocket connectivity is unavailable on the ward network
 import logging
 
 import aiosqlite
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from auth import CurrentUser
@@ -31,6 +31,17 @@ from models import AckRequest, AckResponse, AlertListResponse, AlertResponse
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/alerts", tags=["Alerts"])
+
+# request_key -> alert_id for recent manual calls (bounded; single process).
+_MANUAL_KEYS: dict[str, dict[str, int]] = {}
+
+
+def _remember_key(key: str, alert_id: int) -> None:
+    store = _MANUAL_KEYS.setdefault("_", {})
+    store[key] = alert_id
+    if len(store) > 500:
+        for k in list(store)[:250]:
+            store.pop(k, None)
 
 
 
@@ -51,12 +62,23 @@ async def manual_alert(
     db: aiosqlite.Connection = Depends(get_db),
     room_id: str = Query(..., description="Patient room identifier, e.g. 4B"),
     patient_name: str = Query(default="Patient", description="Patient's full name"),
+    request_key: str = Query(default="", description="Idempotency key from the app's retry queue"),
 ):
     from database import insert_alert
     from models import Priority, Intent, AlertResponse, WsAlertPayload
     from routers.audio import _ws_broadcast
 
     room_id = room_id.strip() or "Unknown"
+
+    # Idempotency: the app retries queued Call Nurse taps after a network drop.
+    # A repeat with the same key returns the original alert instead of paging
+    # the nurse twice.
+    if request_key:
+        _MANUAL_KEYS.setdefault("_", {})
+        prev = _MANUAL_KEYS["_"].get(request_key)
+        if prev is not None:
+            return AckResponse(alert_id=prev, acknowledged=False, ack_by="", ack_at=utcnow(),
+                               message="Already received")
 
     # Resolve the real patient name for the room when the caller didn't pass one.
     resolved_name = patient_name
@@ -117,6 +139,8 @@ async def manual_alert(
             await _ws_broadcast(payload)
 
     logger.info("Manual alert created: id=%d room=%s patient=%s", alert_id, room_id, resolved_name)
+    if request_key:
+        _remember_key(request_key, alert_id)
 
     return AckResponse(
         alert_id     = alert_id,
@@ -144,9 +168,27 @@ async def list_latest_alerts(
                                description="Maximum number of alerts to return"),
     unacked_only: bool = Query(default=False,
                                description="If true, return only unacknowledged alerts"),
+    authorization: str | None = Header(default=None),
     db: aiosqlite.Connection = Depends(get_db),
 ):
-    rows = await get_latest_alerts(db, limit=limit, unacked_only=unacked_only)
+    # A signed-in NURSE gets only the alerts the dispatch engine gave her
+    # (offered/assigned to her, or broadcast while she is free, or her own
+    # patients' finished/unpaged alerts). Admins and unauthenticated callers
+    # keep the full list.
+    nurse = None
+    if authorization and authorization.lower().startswith("bearer "):
+        try:
+            from auth import decode_token
+            claims = decode_token(authorization.split(" ", 1)[1].strip())
+            if claims.get("role") == "nurse":
+                nurse = claims.get("sub")
+        except Exception:
+            nurse = None
+
+    if nurse is None:
+        rows = await get_latest_alerts(db, limit=limit, unacked_only=unacked_only)
+    else:
+        rows = await _scoped_alerts_for_nurse(db, nurse, limit=limit, unacked_only=unacked_only)
     alerts = [AlertResponse.from_db_row(row) for row in rows]
 
     logger.debug(
@@ -158,7 +200,37 @@ async def list_latest_alerts(
         alerts       = alerts,
         total        = len(alerts),
         unacked_only = unacked_only,
+        scoped       = nurse is not None,
     )
+
+
+async def _scoped_alerts_for_nurse(db: aiosqlite.Connection, nurse: str, *, limit: int,
+                                   unacked_only: bool) -> list:
+    import dispatch
+    from pg_database import get_conn, get_patients_for_nurse
+    my_rooms: set[str] = set()
+    try:
+        async for conn in get_conn():
+            my_rooms = {(p["room_number"] or "").strip() for p in await get_patients_for_nurse(conn, nurse)}
+            break
+    except Exception as exc:
+        logger.warning("Room lookup failed for %s (%s) — showing only dispatched alerts", nurse, exc)
+    candidates = await get_latest_alerts(db, limit=min(limit * 4, 300), unacked_only=unacked_only)
+    ids = [r["id"] for r in candidates]
+    rows_by_alert: dict[int, dict] = {}
+    if ids:
+        marks = ",".join("?" * len(ids))
+        async with db.execute(f"SELECT * FROM dispatch_requests WHERE alert_id IN ({marks})", ids) as cur:
+            rows_by_alert = {r["alert_id"]: dict(r) for r in await cur.fetchall()}
+    i_am_free = await dispatch.is_available(db, nurse)
+    out = []
+    for r in candidates:
+        if await dispatch.nurse_can_see(db, nurse, my_rooms, dict(r), rows_by_alert.get(r["id"]),
+                                        i_am_free=i_am_free):
+            out.append(r)
+            if len(out) >= limit:
+                break
+    return out
 
 
 # ── GET /alerts/{alert_id} ────────────────────────────────────────────────────
@@ -224,13 +296,25 @@ async def ack_alert(
     now = utcnow()
     logger.info("Alert %d acknowledged by %s", alert_id, body.ack_by)
 
-    # Resolve any dispatch request for this alert (cancels its 10s timer and
-    # clears the broadcast from other nurses' screens).
-    try:
-        from dispatch import on_alert_acknowledged
-        await on_alert_acknowledged(db, alert_id, body.ack_by)
-    except Exception as exc:
-        logger.warning("Dispatch resolve failed for alert %d: %s", alert_id, exc)
+    # Resolve the dispatch request (cancels timers, clears the card from other
+    # nurses) in the BACKGROUND with its own DB connection, so the ACK answers
+    # immediately instead of waiting on WebSocket fan-out — a slow socket was
+    # one cause of the "ACK button freezes" report.
+    await db.commit()
+    import asyncio
+
+    async def _resolve_bg(aid: int, who: str):
+        try:
+            from config import settings as _s
+            from dispatch import on_alert_acknowledged
+            async with aiosqlite.connect(_s.DB_PATH) as bg:
+                bg.row_factory = aiosqlite.Row
+                await bg.execute("PRAGMA busy_timeout=5000")
+                await on_alert_acknowledged(bg, aid, who)
+        except Exception as exc:
+            logger.warning("Dispatch resolve failed for alert %d: %s", aid, exc)
+
+    asyncio.create_task(_resolve_bg(alert_id, body.ack_by))
 
     return AckResponse(
         alert_id     = alert_id,

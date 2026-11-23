@@ -86,6 +86,11 @@ def _normalize(text: str) -> str:
     e.g. 'साँस' → 'सस', 'सांस' → 'सस', 'सास' → 'सस'.
     """
     t = text.lower().strip()
+    # Drop apostrophes so "can't breathe" (how Whisper writes it) matches the
+    # "cant breathe" fragment. Without this the most common emergency phrasing
+    # was NOT detected as critical.
+    for ap in ("'", "\u2019", "\u02bc", "`", "\u00b4"):
+        t = t.replace(ap, "")
     # Decompose then drop combining marks (category Mn/Mc)
     decomposed = unicodedata.normalize("NFD", t)
     stripped = "".join(ch for ch in decomposed if unicodedata.category(ch) not in ("Mn", "Mc"))

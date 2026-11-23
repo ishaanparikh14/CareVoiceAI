@@ -63,11 +63,11 @@ async def admin_stats(
     pg_stats = await get_admin_stats(conn)
 
     # SQLite alert counts
-    async with db.execute("SELECT COUNT(*) FROM alerts") as cur:
+    async with db.execute("SELECT COUNT(*) FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts") as cur:
         total_alerts = (await cur.fetchone())[0]
-    async with db.execute("SELECT COUNT(*) FROM alerts WHERE acknowledged=0") as cur:
+    async with db.execute("SELECT COUNT(*) FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts WHERE acknowledged=0") as cur:
         unacked_alerts = (await cur.fetchone())[0]
-    async with db.execute("SELECT COUNT(*) FROM alerts WHERE priority='Critical'") as cur:
+    async with db.execute("SELECT COUNT(*) FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts WHERE priority='Critical'") as cur:
         critical_alerts = (await cur.fetchone())[0]
 
     return {
@@ -103,8 +103,8 @@ async def dispatch_board(
     query = """
         SELECT id, room_id, patient_name, priority, intent, summary,
                created_at, routed_to, fell_back, reroute_count
-        FROM alerts
-        WHERE acknowledged = 0
+        FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts
+        WHERE acknowledged = 0 AND is_demo = 0 AND visible_to_nurse = 1
         ORDER BY created_at DESC
         LIMIT 100
     """
@@ -193,7 +193,7 @@ async def admin_nurses(
 
     # Build alert-ack counts per nurse from SQLite
     async with db.execute(
-        "SELECT ack_by, COUNT(*) AS cnt FROM alerts WHERE ack_by IS NOT NULL GROUP BY ack_by"
+        "SELECT ack_by, COUNT(*) AS cnt FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts WHERE ack_by IS NOT NULL GROUP BY ack_by"
     ) as cur:
         ack_rows = await cur.fetchall()
     ack_map = {row[0]: row[1] for row in ack_rows}
@@ -226,7 +226,7 @@ async def admin_patients(
 
     # Alert counts per room from SQLite
     async with db.execute(
-        "SELECT room_id, COUNT(*) AS cnt FROM alerts GROUP BY room_id"
+        "SELECT room_id, COUNT(*) AS cnt FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts GROUP BY room_id"
     ) as cur:
         alert_rows = await cur.fetchall()
     alert_map = {row[0]: row[1] for row in alert_rows}
@@ -267,9 +267,9 @@ async def admin_rooms(
     async with db.execute(
         """
         SELECT room_id, priority, intent, transcript, created_at, acknowledged
-        FROM alerts
+        FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts
         WHERE id IN (
-            SELECT MAX(id) FROM alerts GROUP BY room_id
+            SELECT MAX(id) FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts GROUP BY room_id
         )
         """
     ) as cur:
@@ -286,7 +286,7 @@ async def admin_rooms(
 
     # Unacked count per room
     async with db.execute(
-        "SELECT room_id, COUNT(*) AS cnt FROM alerts WHERE acknowledged=0 GROUP BY room_id"
+        "SELECT room_id, COUNT(*) AS cnt FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts WHERE acknowledged=0 GROUP BY room_id"
     ) as cur:
         unacked_rows = await cur.fetchall()
     unacked_map = {row[0]: row[1] for row in unacked_rows}
@@ -321,7 +321,7 @@ async def admin_alerts(
     unacked_only: bool = Query(default=False),
 ):
     """Paginated alert list for admin. Supports filtering by room, priority, ack state."""
-    conditions: list[str] = []
+    conditions: list[str] = ["is_demo = 0"]
     params:     list[Any] = []
 
     if room_id:
@@ -336,7 +336,7 @@ async def admin_alerts(
     where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
 
     # Total count for pagination
-    async with db.execute(f"SELECT COUNT(*) FROM alerts {where}", params) as cur:
+    async with db.execute(f"SELECT COUNT(*) FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts {where}", params) as cur:
         total = (await cur.fetchone())[0]
 
     # Actual rows (distress_score intentionally omitted — removed from product)
@@ -345,7 +345,7 @@ async def admin_alerts(
         f"""
         SELECT id, room_id, priority, intent, transcript,
                acknowledged, ack_by, created_at, ack_at, wav_path
-        FROM alerts
+        FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts
         {where}
         ORDER BY created_at DESC
         LIMIT ? OFFSET ?
@@ -388,20 +388,20 @@ async def admin_alert_stats(
         return [{"label": row[0], "count": row[1]} for row in rows]
 
     by_priority = await _agg(
-        "SELECT priority, COUNT(*) FROM alerts GROUP BY priority ORDER BY COUNT(*) DESC"
+        "SELECT priority, COUNT(*) FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts GROUP BY priority ORDER BY COUNT(*) DESC"
     )
     by_room = await _agg(
-        "SELECT room_id, COUNT(*) FROM alerts GROUP BY room_id ORDER BY COUNT(*) DESC LIMIT 10"
+        "SELECT room_id, COUNT(*) FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts GROUP BY room_id ORDER BY COUNT(*) DESC LIMIT 10"
     )
     by_intent = await _agg(
-        "SELECT intent, COUNT(*) FROM alerts GROUP BY intent ORDER BY COUNT(*) DESC"
+        "SELECT intent, COUNT(*) FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts GROUP BY intent ORDER BY COUNT(*) DESC"
     )
 
     # Alerts per day (last 14 days)
     async with db.execute(
         """
         SELECT DATE(created_at) AS day, COUNT(*) AS cnt
-        FROM alerts
+        FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts
         WHERE created_at >= DATE('now', '-14 days')
         GROUP BY day
         ORDER BY day ASC
@@ -414,7 +414,7 @@ async def admin_alert_stats(
     async with db.execute(
         """
         SELECT CAST(strftime('%H', created_at) AS INTEGER) AS hr, COUNT(*)
-        FROM alerts
+        FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts
         GROUP BY hr
         ORDER BY hr
         """
@@ -427,7 +427,7 @@ async def admin_alert_stats(
     async with db.execute(
         """
         SELECT ack_by, COUNT(*)
-        FROM alerts
+        FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts
         WHERE ack_by IS NOT NULL
         GROUP BY ack_by
         ORDER BY COUNT(*) DESC
@@ -439,7 +439,7 @@ async def admin_alert_stats(
 
     # Ack rate
     async with db.execute(
-        "SELECT SUM(acknowledged), COUNT(*) FROM alerts"
+        "SELECT SUM(acknowledged), COUNT(*) FROM (SELECT * FROM alerts WHERE is_demo = 0) AS alerts"
     ) as cur:
         row = await cur.fetchone()
     acked_total = row[0] or 0

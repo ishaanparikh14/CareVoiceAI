@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CareVoice AI — Workflow &amp; Routing Stats</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f1f5f9;--surface:#fff;--surface2:#f8fafc;--border:#e2e8f0;--accent:#4f46e5;--green:#16a34a;--yellow:#d97706;--red:#dc2626;--text:#0f172a;--muted:#64748b;--font:system-ui,-apple-system,sans-serif}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:58px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.logo{display:flex;align-items:center;gap:10px}.logo h1{font-size:1.1rem;font-weight:800}
+.logo span{font-size:.7rem;font-weight:600;color:var(--accent);background:rgba(79,70,229,.12);padding:2px 8px;border-radius:20px;border:1px solid rgba(79,70,229,.25)}
+.btn{border:1px solid var(--border);background:var(--surface);color:var(--text);padding:7px 14px;border-radius:8px;font-size:.83rem;cursor:pointer;font-weight:600}
+.btn.prim{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.warn{color:var(--red)}
+.wrap{max-width:1100px;margin:20px auto;padding:0 20px 60px}
+h2{font-size:1.05rem;font-weight:800;margin:22px 0 10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.row:last-child{border-bottom:none}
+.row .lbl{font-size:.9rem;font-weight:600}.row .sub{font-size:.75rem;color:var(--muted);margin-top:2px}
+.sw{position:relative;width:46px;height:26px;flex-shrink:0}
+.sw input{opacity:0;width:0;height:0}
+.sw span{position:absolute;inset:0;background:#cbd5e1;border-radius:26px;cursor:pointer;transition:.2s}
+.sw span:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.sw input:checked+span{background:var(--green)}.sw input:checked+span:before{transform:translateX(20px)}
+input[type=number],select{padding:7px 9px;border:1px solid #cbd5e1;border-radius:8px;font-size:.85rem;width:110px}
+.preset{border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px}
+.preset b{display:block;margin-bottom:3px}.preset p{font-size:.8rem;color:var(--muted);margin-bottom:8px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:820px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px}
+.kpi .v{font-size:1.6rem;font-weight:800}.kpi .k{font-size:.75rem;color:var(--muted);margin-top:2px}
+.note{background:#fef3c7;color:#92400e;border:1px solid #fde68a;padding:10px 14px;border-radius:10px;font-size:.84rem;margin:10px 0}
+.bars{display:flex;align-items:flex-end;gap:3px;height:110px;margin-top:8px}
+.bars div{flex:1;background:var(--accent);border-radius:3px 3px 0 0;min-height:2px;position:relative}
+.bars div span{position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border)}th{color:var(--muted);font-weight:600}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 18px;border-radius:10px;font-size:.86rem;opacity:0;transition:.2s}
+.toast.show{opacity:1}
+.hbar{height:9px;background:var(--accent);border-radius:5px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo"><h1>CareVoice AI</h1><span>Workflow &amp; Routing</span></div>
+  <div style="display:flex;gap:8px"><a class="btn" href="/admin">← Admin console</a></div>
+</div>
+<div class="wrap">
+  <h2>Configurable workflow, set by the hospital</h2>
+  <div class="grid">
+    <div class="card" id="toggles"></div>
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <b style="font-size:.9rem">Presets</b>
+        <div style="margin-top:10px" id="presets"></div>
+      </div>
+      <div class="card" id="tunables"></div>
+    </div>
+  </div>
+
+  <h2>Routing agent — value datapoints <span style="font-size:.78rem;color:var(--muted);font-weight:500" id="window"></span></h2>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+    <select id="days" onchange="loadStats()"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select>
+    <select id="src" onchange="loadStats()"><option value="real" selected>Real data</option><option value="sim">Simulated (rehearsal)</option></select>
+    <button class="btn" onclick="exportCsv()">Export CSV</button>
+    <button class="btn" onclick="loadStats()">Refresh</button>
+  </div>
+  <div id="lownote"></div>
+  <div class="kpis" id="kpis"></div>
+  <div class="grid" style="margin-top:16px">
+    <div class="card"><b style="font-size:.9rem">Requests by route</b><div id="byclass" style="margin-top:10px"></div></div>
+    <div class="card"><b style="font-size:.9rem">Median minutes to acknowledge</b><div id="ack" style="margin-top:10px"></div></div>
+    <div class="card"><b style="font-size:.9rem">Calls per hour (hospital time)</b><div class="bars" id="hours"></div><div style="height:18px"></div></div>
+    <div class="card"><b style="font-size:.9rem">Routing confidence &amp; per-floor load</b><div id="conf" style="margin-top:10px"></div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <b style="font-size:.9rem">Presentation rehearsal data</b>
+    <p style="font-size:.8rem;color:var(--muted);margin:6px 0 10px">Simulated rows are flagged SIMULATED and never counted in the statistics above or shown to nurses.</p>
+    <button class="btn" onclick="demo(true)">Generate 120 simulated requests</button>
+    <button class="btn warn" onclick="demo(false)">Delete simulated requests</button>
+  </div>
+
+  <h2>Change history</h2>
+  <div class="card"><table><thead><tr><th>When</th><th>Setting</th><th>Old</th><th>New</th><th>By</th></tr></thead><tbody id="log"></tbody></table></div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+const BASE=location.origin;let token=null;
+try{if(window.CareVoiceApp&&window.CareVoiceApp.getToken)token=window.CareVoiceApp.getToken()||null}catch(e){}
+if(token)localStorage.setItem('cv_token',token);else token=localStorage.getItem('cv_token');
+if(!token)location.href='/login';
+async function api(p,o={}){const r=await fetch(BASE+p,{...o,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',...(o.headers||{})}});
+ if(r.status===401){localStorage.clear();location.href='/login';throw new Error('auth')}
+ if(!r.ok){const t=await r.json().catch(()=>({}));throw new Error(typeof t.detail==='string'?t.detail:JSON.stringify(t.detail||r.status))}
+ return r.headers.get('content-type')?.includes('json')?r.json():r.text()}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+const TOGGLES=[
+ ['canteen_routing','Canteen routing','Attender / nurse can order food from the canteen'],
+ ['housekeeping_routing','Housekeeping routing, per floor','Ground-support tasks go to the floor manager, never the nurse'],
+ ['pharmacy_orders_nurse_only','Pharmacy orders (nurse only)','Patients can never request medicine from the pharmacy'],
+ ['dietician_augments','Dietician augments food orders','Dietician allowed/avoid lists and clearance are enforced'],
+ ['attender_can_order','Attender can order food','From the patient dashboard, unlocked with the room PIN'],
+ ['nurse_approval_food','Nurse approval of food orders','Attender orders wait for the nurse before cooking'],
+ ['housekeeping_nurse_fallback','Nurse fallback for unplaceable tasks','Only when no housekeeping staff covers the floor'],
+ ['llm_classifier','LLM classifier','Groq model; transcripts leave the hospital network'],
+ ['shadow','Shadow mode','Log routing decisions only; everything goes to the nurse'],
+];
+let cfg={};
+function sw(k,v){return `<label class="sw"><input type="checkbox" ${v?'checked':''} onchange="setKey('${k}',this.checked)"><span></span></label>`}
+async function load(){
+ const d=await api('/admin/workflow');cfg=d.config;
+ document.getElementById('toggles').innerHTML=TOGGLES.map(([k,l,s])=>`<div class="row"><div><div class="lbl">${l}</div><div class="sub">${s}</div></div>${sw(k,cfg[k])}</div>`).join('');
+ document.getElementById('presets').innerHTML=`
+  <div class="preset"><b>Small clinic</b><p>Nurse-only workflow; canteen on, dietician and floor managers off.</p><button class="btn" onclick="preset('small_clinic')">Apply</button></div>
+  <div class="preset"><b>Multi-specialty hospital</b><p>All departments on, dietician augmentation, one floor manager per floor.</p><button class="btn" onclick="preset('multi_specialty')">Apply</button></div>`;
+ document.getElementById('tunables').innerHTML=`<b style="font-size:.9rem">Tunables</b>
+  <div class="row"><div><div class="lbl">Routing threshold τ<sub>r</sub></div><div class="sub">Below this confidence the request goes to the nurse</div></div><input type="number" step="0.05" min="0" max="1" value="${cfg.tau_r}" onchange="setKey('tau_r',parseFloat(this.value))"></div>
+  <div class="row"><div><div class="lbl">Escalation timeout T<sub>esc</sub> (s)</div><div class="sub">Housekeeping moves to the next person after this</div></div><input type="number" min="10" max="3600" value="${cfg.t_esc_seconds}" onchange="setKey('t_esc_seconds',parseInt(this.value))"></div>
+  <div class="row"><div><div class="lbl">Minutes saved per routed task</div><div class="sub">Assumption for the time-saved estimate</div></div><input type="number" step="0.5" min="0" max="120" value="${cfg.minutes_saved_per_task}" onchange="setKey('minutes_saved_per_task',parseFloat(this.value))"></div>
+  <div class="row"><div><div class="lbl">Languages</div><div class="sub">${['en','hi','kn','de'].map(l=>`<label style="margin-right:8px"><input type="checkbox" ${cfg.languages.includes(l)?'checked':''} onchange="setLang('${l}',this.checked)"> ${l}</label>`).join('')}</div></div></div>
+  <div class="row"><div><div class="lbl">HIS / EMR adapter</div><div class="sub">${d.notes.his_adapter}</div></div><select onchange="setKey('his_adapter',this.value)"><option value="local" ${cfg.his_adapter==='local'?'selected':''}>Demo EMR</option><option value="fhir" ${cfg.his_adapter==='fhir'?'selected':''}>FHIR R4</option></select></div>`;
+ loadLog();
+}
+async function setKey(k,v){try{const d=await api('/admin/workflow',{method:'PATCH',body:JSON.stringify({[k]:v})});cfg=d.config;toast('Saved');loadLog()}catch(e){toast(e.message);load()}}
+function setLang(l,on){const s=new Set(cfg.languages);on?s.add(l):s.delete(l);setKey('languages',[...s])}
+async function preset(n){try{await api('/admin/workflow/preset/'+n,{method:'POST'});toast('Preset applied');load()}catch(e){toast(e.message)}}
+async function loadLog(){const d=await api('/admin/workflow/log');document.getElementById('log').innerHTML=d.log.map(r=>`<tr><td>${new Date(r.changed_at).toLocaleString()}</td><td>${r.key}</td><td>${r.old_value}</td><td>${r.new_value}</td><td>${r.changed_by||''}</td></tr>`).join('')||'<tr><td colspan=5 style="color:var(--muted)">No changes yet</td></tr>'}
+const pct=v=>v==null?'—':Math.round(v*100)+'%';
+async function loadStats(){
+ const days=document.getElementById('days').value;const sim=document.getElementById('src').value==='sim';
+ const s=await api('/admin/routing-stats?days='+days+(sim?'&simulated=true':''));
+ document.getElementById('window').textContent=`(${s.data_label}, last ${s.window_days} days)`;
+ document.getElementById('lownote').innerHTML=(sim?`<div class="note" style="background:#fee2e2;color:#991b1b;border-color:#fecaca"><b>SIMULATED</b> — rehearsal data only. Do not present these as real results.</div>`:'')
+  +(s.low_data?`<div class="note">Not enough data yet: ${s.low_data_note}</div>`:'');
+ const k=[[s.total_requests,'Total patient requests'],[s.nurse_interruptions_avoided,'Nurse interruptions avoided'],[pct(s.share_routed_away),'Share routed away from nurses'],
+  [s.estimated_nurse_minutes_saved+' min','Estimated nurse time saved*'],[s.mislabels_corrected,'Intent mislabels corrected'],[pct(s.fallback_rate),'Fallback-to-nurse rate'],
+  [pct(s.override_rate),'"Not mine" override rate'],[pct(s.night_share),'Night-time share (22:00–06:00)']];
+ document.getElementById('kpis').innerHTML=k.map(([v,l])=>`<div class="kpi"><div class="v">${v}</div><div class="k">${l}</div></div>`).join('')+`<div style="grid-column:1/-1;font-size:.74rem;color:var(--muted)">* ${s.estimate_assumption}</div>`;
+ const tot=Math.max(1,s.total_requests);
+ document.getElementById('byclass').innerHTML=[['Nurse (direct)',s.by_class.nurse],['Housekeeping (floor manager)',s.by_class.facility],['Food requests',s.by_class.food]]
+  .map(([l,v])=>`<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:.82rem"><span>${l}</span><b>${v||0}</b></div><div class="hbar" style="width:${(100*(v||0)/tot)}%"></div></div>`).join('')
+  +`<div style="font-size:.8rem;color:var(--muted);margin-top:8px">Food orders placed: ${s.food_orders.total} (attender ${s.food_orders.by_attender}, nurse ${s.food_orders.by_nurse}) · escalations ${s.escalations} · unattended ${s.unattended}</div>`;
+ const a=s.median_minutes_to_ack;
+ document.getElementById('ack').innerHTML=[['Nurse',a.nurse],['Housekeeping',a.housekeeping],['Canteen delivery',a.canteen_delivery]].map(([l,v])=>`<div class="row"><span>${l}</span><b>${v==null?'no data':v+' min'}</b></div>`).join('');
+ const mx=Math.max(1,...s.calls_per_hour);
+ document.getElementById('hours').innerHTML=s.calls_per_hour.map((v,h)=>`<div style="height:${100*v/mx}%" title="${h}:00 — ${v}">${h%3===0?`<span>${h}</span>`:''}</div>`).join('');
+ const cb=s.routing_confidence;
+ document.getElementById('conf').innerHTML=Object.entries(cb).map(([k,v])=>`<div class="row"><span>confidence ${k}</span><b>${v}</b></div>`).join('')
+  +Object.entries(s.per_floor_housekeeping).map(([f,v])=>`<div class="row"><span>Floor ${f} housekeeping</span><b>${v}</b></div>`).join('');
+}
+async function exportCsv(){const days=document.getElementById('days').value;const sim=document.getElementById('src').value==='sim';const t=await api('/admin/routing-stats?format=csv&days='+days+(sim?'&simulated=true':''));
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download='routing-stats.csv';a.click()}
+async function demo(on){try{if(on){const r=await api('/admin/routing-stats/demo?n=120',{method:'POST'});toast(r.inserted+' simulated rows added — switch to "Simulated" to view');document.getElementById('src').value='sim'}else{const r=await api('/admin/routing-stats/demo',{method:'DELETE'});toast(r.deleted+' simulated rows removed');document.getElementById('src').value='real'}loadStats()}catch(e){toast(e.message)}}
+load();loadStats();
+</script>
+</body>
+</html>
