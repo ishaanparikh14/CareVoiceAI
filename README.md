@@ -38,33 +38,75 @@ The entire AI pipeline runs on infrastructure you control (a self-hosted server)
 
 ## Prototype overview and screenshots
 
-CareVoice AI is a working prototype of a voice-driven hospital request system. This section describes what is in the repository today (Android app v2.9 and the matching FastAPI server) and shows the interfaces.
+CareVoice AI is a working prototype of a voice-driven hospital request system (Android app v2.9 plus a FastAPI server). The slides below summarize the problem, the routing design and the solution.
 
-### Roles and interfaces
+### Why it is needed
+
+![Nurse-call burden in numbers](docs/screenshots/nurse-call-burden.png)
+
+### How we solve it
+
+![Solution overview](docs/screenshots/solution-overview.png)
+
+### Routing and alarm-fatigue control
+
+An alert goes to the assigned nurse if she is online, otherwise it is broadcast to all online nurses. An admin can redirect it to a specific nurse. Critical alerts are spoken with a distinct tone, Urgent and Routine show a silent badge, and Urgent auto-escalates to Critical on timeout.
+
+![Routing and alarm-fatigue control](docs/screenshots/alarm-fatigue-routing.png)
+
+### Central routing agent
+
+Emergency, pain, medicine and general requests go straight to the nurse and skip the router. Only food and housekeeping requests reach the central router, which forwards them to the Canteen or the Floor manager. Patients cannot request food directly; the nurse orders it based on the dietician's recommendations. The admin logs every route.
+
+![Central routing agent](docs/screenshots/routing-agent.png)
+
+### How the router decides
+
+The router picks `d* = argmax p(d | x)` over {Canteen, Floor manager} and routes there if `p(d*) >= tau_r`. Otherwise the request falls back to the nurse. Nurse-bound intents never enter the router, so urgent calls are not delayed by an extra hop.
+
+![Router decision](docs/screenshots/router-decision.png)
+
+### Patient app features
+
+- **Hands-free voice requests.** Speak a wake word ("help", "nurse", "madad") and the app records your message on-device, so a bedridden or low-mobility patient can call for help without touching the phone.
+- **On-device speech detection.** Wake-word listening and energy-based voice-activity detection run entirely on the phone (no always-on streaming). A recording starts only when you actually speak.
+- **Instant "Call Nurse" button.** One tap raises a Critical emergency alert with no recording needed. It carries full patient context (name and request summary) and is routed and broadcast to a nurse even if the assigned nurse is offline.
+- **Two-way communication.** Real-time WebRTC voice calls with your nurse, plus voice notes you can record and receive, with on-device translation and spoken playback. The speak and listen language is chosen in Settings (English / Hindi / German).
+- **Simple, configurable and multilingual.** Clear status feedback (listening / recording / sent), works in English, Hindi and German, and the server address is configurable in Settings for any hospital LAN or hosted deployment.
+- **LLM-based medical query responses and emotional intelligence.** A Groq LLM replies to simple health-related queries. Responses are kept short and limited, with the emotional side of the conversation in mind.
+
+### Nurse app features
+
+- **Real-time alert feed.** Live incoming requests over WebSocket (with a 15 s HTTP poll fallback), sorted by priority with Critical / Urgent / Routine badges, patient name, request summary and emotion. Every request is read aloud (all categories, not just Critical) in the nurse's chosen language.
+- **One-tap acknowledge, reliably.** Acknowledge any request instantly. The ACK handles races and already-acknowledged requests gracefully, so it never gets stuck and no logout/login workaround is needed.
+- **Smart request dispatch.** Requests for the nurse's own patients go straight to Acknowledge. Requests reassigned or broadcast from other patients show an Accept/Decline offer. A nurse handling a reassigned request can call that patient and exchange voice notes until it is resolved.
+- **Automatic status with manual override.** Status switches to Occupied while the nurse holds requests and back to Available once all are acknowledged, synced to the admin board. A manual Available/Occupied toggle is available when free.
+- **Two-way patient communication.** WebRTC voice calls to the patient, plus voice notes with on-device translation and spoken playback (English / Hindi / German). A push notification arrives when a voice note comes in.
+- **Instant call and manual alerts.** Manual "Call Nurse" emergencies show full patient context (name and summary, no blanks) and are routed and broadcast even when the primary nurse is offline, so nothing is missed.
+- **Dedicated patient care.** Nurses can order medicines from the pharmacy and food from the canteen as prescribed by the dietician.
+
+### Admin dashboard features
+
+- **Live dispatch board.** Real-time nurse availability (Free / Occupied / Offline) and all pending requests, refreshing every 5 s. Nurse status is automatic: Occupied as soon as a request is held, Available again once all are acknowledged, on both the board and the nurse's phone.
+- **Smart routing and reassignment.** Every request flows primary nurse, then broadcast to all free nurses, then admin escalation, for all request types including manual "Call Nurse" alerts. An admin can reassign any request to any online nurse in one tap. A reassigned nurse is temporarily mapped to that patient so she can call and exchange voice notes until it is resolved. Requests are never dropped: if the assigned nurse is offline or busy, the request is broadcast and surfaces as "Needs reassignment".
+- **Full hospital management.** Approve or reject nurse registrations; manage rooms (status, ward, assignments); keep a patient registry with nurse assignment and discharge/re-admit; browse complete nurse and patient directories. All configurable to the hospital's requirements.
+- **Alerts and analytics.** A searchable, paginated alert log (filter by room, priority, status) and analytics on alert trends by priority, intent, room and time of day, nurse workload and acknowledgment rate.
+- **Reliability and operations.** One-click Reset Nurses to clear stuck states, live server-log monitoring and resilient acknowledgment handling. English / Hindi / German across voice requests, alerts and notifications.
+- **Unified and on-premises.** The same light-themed dashboard runs in a browser and inside the app (WebView). Data stays on your own server.
+
+### Roles
 
 | Role | Interface | What they do |
 |---|---|---|
-| Patient | Android app | Wake word or **Call Nurse** button, voice notes, WebRTC call, **My Health** assistant |
-| Attender | Android app / web (`attender.html`) | Unlocks a menu with a room PIN and orders their own meal from the canteen |
-| Nurse | Android app + web | Live prioritized alerts, ACK, spoken critical alerts, background notifications, patient care page |
+| Patient | Android app | Wake word or **Call Nurse**, voice notes, WebRTC call, **My Health** assistant |
+| Attender | Android app / web | Unlocks a menu with a room PIN and orders their own meal from the canteen |
+| Nurse | Android app + web | Live prioritized alerts, ACK, spoken alerts, background notifications, patient care page |
 | Admin | Web dashboard (also WebView in the app) | Dispatch, analytics, approvals, rooms, users, workflow settings, routing statistics |
 | Doctor, Dietician, Floor manager, Canteen | Web dashboards | Case history and summaries, diet recommendations, ground-support and food requests |
 
-### Screenshots
+### Intent model evaluation
 
-**Staff sign-in** (Nurse, Admin and Staff tabs; role decides which dashboard opens)
-
-![Login](docs/screenshots/login.png)
-
-**My Health** (patient assistant: ask by voice or text about readings, diet or how they feel, in English or Hindi; advisory only)
-
-![My Health](docs/screenshots/patient_health.png)
-
-**Attender food ordering** (PIN-protected, so patients cannot order food themselves; menu is filtered by the patient's diet)
-
-![Attender access](docs/screenshots/attender.png)
-
-**Intent model evaluation** (generated by `server/ml/plot_intent_ml.py`)
+Generated by `server/ml/plot_intent_ml.py`.
 
 | Confusion matrix (normalized) | Per-class metrics |
 |---|---|
@@ -74,32 +116,13 @@ CareVoice AI is a working prototype of a voice-driven hospital request system. T
 |---|---|
 | ![Per-language accuracy](server/ml/plots/per_language_accuracy.png) | ![Class support](server/ml/plots/class_support.png) |
 
-> The nurse and admin dashboards need a running server and login, so they are not shown as static captures. To add them, run the server (see [Quick start](#quick-start-local)), sign in, and save screenshots into `docs/screenshots/`.
-
-### Request flow in the prototype
-
-1. A patient says the wake word and a request, or taps **Call Nurse**. Failed uploads are queued and retried.
-2. The server transcribes (Whisper), classifies intent (DistilBERT plus keyword and optional LLM fallback), summarizes with emotion, and assigns a priority.
-3. **Clinical requests** (emergency, pain, medicine, emotional support, unclear) go straight to the assigned nurse.
-4. **Food and housekeeping requests** pass through a router that picks Canteen or Floor manager, and falls back to the nurse when confidence is below the threshold. Housekeeping escalates floor manager, then deputy, and never pages the nurse.
-5. Nurses receive the alert over WebSocket, including in the background through a foreground service, and acknowledge it. Either side can start a WebRTC call.
-
-### Prototype features
-
-- Bilingual (English and Hindi) voice requests with on-device wake word and VAD.
-- Priority engine with a safety override so critical language is never downgraded.
-- Admin **Workflow Settings** (toggles, thresholds, "Small clinic" and "Multi-specialty hospital" presets) and **Routing statistics** with CSV export, computed from logged data.
-- Diet enforcement on every food order (veg, Jain, gluten-free, peanut allergy, diabetic, low sodium, NPO, dysphagia) with dietician recommendations.
-- Care agent on a self-hosted Ollama model: case summaries for doctors, supportive replies, shift summaries for nurses. It is advisory only and falls back to templates if the model is unreachable.
-- HIS/EMR adapter with a local demo EMR and a generic FHIR HTTP client (the FHIR client is untested against a real vendor and is off by default).
-- In-app auto-update through `/app/version`.
-
 ### Known prototype limitations
 
 - Seeded demo credentials exist and must be changed before any real use.
 - Push notifications use a foreground service, not Firebase Cloud Messaging.
 - The intent model (~516 MB) is not in the repository; use stub mode or train it (see [The intent model](#the-intent-model)).
 - A single server process is assumed (in-memory timers and caches).
+- The Groq LLM is a third-party API, so health-query text (not audio) leaves your server when it is enabled.
 
 ---
 ## Architecture
